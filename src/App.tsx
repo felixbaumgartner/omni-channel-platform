@@ -16,8 +16,7 @@ export default function App() {
       {/* Header */}
       <div className="app-layout-header">
         <div className="app-layout-header-title">
-          <span className="header-logo">OCP</span>
-          Omni-Channel Messaging Platform
+          Targeting (PROD)
         </div>
         <div className="app-layout-header-right">
           <span className="app-header-link">Help &amp; Feedback</span>
