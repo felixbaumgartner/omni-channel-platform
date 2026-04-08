@@ -2,15 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, type MessageChannel } from "../types";
 
-type DeliveryMode = "best_channel" | "multi_channel";
-
 export default function TransactionalCreate() {
   const navigate = useNavigate();
   const [campaignName, setCampaignName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>(["email"]);
-  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("best_channel");
-  const [fallbackTimeout, setFallbackTimeout] = useState("2");
   const [activeContentTab, setActiveContentTab] = useState<MessageChannel>("email");
   const [contentVariants, setContentVariants] = useState<Record<string, { subject: string; body: string }>>({});
   const [contentTrackingLabel, setContentTrackingLabel] = useState("");
@@ -46,7 +42,7 @@ export default function TransactionalCreate() {
             "{campaignName}" saved as a Transactional campaign targeting {selectedChannels.map(ch => CHANNEL_LABELS[ch]).join(", ")}.
           </p>
           <p className="text-muted mb-16">
-            Delivery Mode: <strong>{deliveryMode === "best_channel" ? "Best Channel" : "Multi-Channel"}</strong> &middot; Priority Pipeline &middot; Bypasses Janeway
+            Delivery Mode: <strong>Multi-Channel</strong> &middot; Priority Pipeline &middot; Bypasses Janeway
           </p>
           <div className="btn-group" style={{ justifyContent: "center", marginTop: 24 }}>
             <button className="btn btn-secondary" onClick={() => navigate("/campaigns")}>View All Campaigns</button>
@@ -70,7 +66,7 @@ export default function TransactionalCreate() {
             <span className="badge badge-constructive">Transactional</span>
             <span className="badge badge-draft">Draft</span>
             {selectedChannels.length > 1 && (
-              <span className="badge badge-brand">{deliveryMode === "best_channel" ? "Best Channel" : "Multi-Channel"}</span>
+              <span className="badge badge-brand">Multi-Channel</span>
             )}
           </div>
         </div>
@@ -115,75 +111,21 @@ export default function TransactionalCreate() {
         </div>
       </div>
 
-      {/* Delivery Mode — shown when multiple channels selected */}
+      {/* Multi-Channel Delivery — shown when multiple channels selected */}
       {selectedChannels.length > 1 && (
         <div className="bui-box tier-selection-appear">
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Delivery Mode</div>
-          <p className="text-muted mb-16">Choose how this transactional message is routed across the selected channels.</p>
-          <div className="radio-card-group">
-            <div className={`radio-card ${deliveryMode === "best_channel" ? "selected" : ""}`} onClick={() => setDeliveryMode("best_channel")}>
-              <div className="radio-card-header">
-                <div className="radio-card-radio" />
-                <div className="radio-card-title">Best Channel</div>
-              </div>
-              <div className="radio-card-description">
-                Deliver on the subscriber's preferred channel. If the primary channel fails or goes undelivered within the timeout, automatically fallback to the next channel. Prevents duplicate delivery.
-              </div>
-            </div>
-            <div className={`radio-card ${deliveryMode === "multi_channel" ? "selected" : ""}`} onClick={() => setDeliveryMode("multi_channel")}>
-              <div className="radio-card-header">
-                <div className="radio-card-radio" />
-                <div className="radio-card-title">Multi-Channel</div>
-              </div>
-              <div className="radio-card-description">
-                Deliver across all selected channels simultaneously. Ideal for critical transactional messages where maximum reach is required (e.g., security alerts, OTPs, payment failures).
-              </div>
-            </div>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Multi-Channel Delivery</div>
+          <p className="text-muted mb-16">Transactional messages are delivered across all selected channels simultaneously for maximum reliability.</p>
+
+          <div className="alert alert-info" style={{ marginBottom: 0 }}>
+            <div className="alert-title">Multi-Channel Delivery Active</div>
+            <ul style={{ margin: "8px 0 0 16px", padding: 0 }}>
+              <li>Transactional messages bypass marketing consent — delivered regardless of subscription preferences</li>
+              <li>All selected channels fire simultaneously for maximum reliability</li>
+              <li>Duplicate content de-duplication is handled per subscriber per campaign</li>
+              <li>Priority pipeline SLA applies to all channels independently</li>
+            </ul>
           </div>
-
-          {/* Multi-channel guardrails */}
-          {deliveryMode === "multi_channel" && (
-            <div className="alert alert-info tier-selection-appear" style={{ marginTop: 16 }}>
-              <div className="alert-title">Multi-Channel Delivery Active</div>
-              <ul style={{ margin: "8px 0 0 16px", padding: 0 }}>
-                <li>Transactional messages bypass marketing consent — delivered regardless of subscription preferences</li>
-                <li>All selected channels fire simultaneously for maximum reliability</li>
-                <li>Duplicate content de-duplication is handled per subscriber per campaign</li>
-              </ul>
-            </div>
-          )}
-
-          {/* Fallback Config — Best Channel only */}
-          {deliveryMode === "best_channel" && (
-            <div className="tier-selection-appear" style={{ marginTop: 16 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Fallback Configuration</div>
-              <p className="text-muted mb-8" style={{ fontSize: 13 }}>
-                Define the fallback sequence when the primary channel fails. For transactional messages, shorter timeouts are recommended.
-              </p>
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Fallback Channel Order</label>
-                  <div className="fallback-sequence">
-                    {selectedChannels.map((ch, i) => (
-                      <div key={ch} className="fallback-item">
-                        <span className="fallback-number">{i + 1}</span>
-                        <span>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
-                        {i === 0 && <span className="badge badge-brand" style={{ fontSize: 10 }}>Primary</span>}
-                        {i > 0 && <span className="badge badge-outline" style={{ fontSize: 10 }}>Fallback</span>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Fallback Timeout (hours)</label>
-                  <input className="form-input" type="number" min="0.5" max="24" step="0.5" value={fallbackTimeout} onChange={e => setFallbackTimeout(e.target.value)} />
-                  <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
-                    Recommended: 1-2h for transactional. Fallback triggers: non-delivery, bounce, channel unavailable.
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
