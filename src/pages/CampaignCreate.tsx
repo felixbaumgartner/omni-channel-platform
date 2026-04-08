@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, type MessageChannel } from "../types";
 import ClassificationQuestionnaire, { type Classification } from "../components/ClassificationQuestionnaire";
+import BaseContentSection from "../components/BaseContentSection";
 
 type DeliveryMode = "best_channel" | "multi_channel";
 
@@ -14,8 +15,6 @@ export default function CampaignCreate() {
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("best_channel");
   const [fallbackOrder, setFallbackOrder] = useState<MessageChannel[]>([]);
   const [fallbackTimeout, setFallbackTimeout] = useState("4");
-  const [activeContentTab, setActiveContentTab] = useState<MessageChannel>("email");
-  const [contentVariants, setContentVariants] = useState<Record<string, { subject: string; body: string }>>({});
   const [experimentEnabled, setExperimentEnabled] = useState(false);
   const [experimentTag, setExperimentTag] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -199,79 +198,8 @@ export default function CampaignCreate() {
             </div>
           )}
 
-          {/* Per-Channel Content Variants (P1) */}
-          {selectedChannels.length > 0 && (
-            <div className="bui-box">
-              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Content Variants</div>
-              <p className="text-muted mb-16">Each channel requires its own content variant. If no content exists for a channel, it cannot be used as primary or fallback.</p>
-              <div className="content-tabs">
-                {selectedChannels.map(ch => (
-                  <button key={ch} className={`content-tab ${activeContentTab === ch ? "active" : ""}`} onClick={() => setActiveContentTab(ch)}>
-                    {CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}
-                  </button>
-                ))}
-              </div>
-              <div className="content-tab-panel">
-                {activeContentTab === "email" && (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">Subject Line</label>
-                      <input className="form-input" placeholder="Enter email subject line..." value={contentVariants.email?.subject || ""} onChange={e => setContentVariants(v => ({ ...v, email: { ...v.email, subject: e.target.value, body: v.email?.body || "" } }))} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Email Content (HTML)</label>
-                      <textarea className="form-textarea" placeholder="Enter email HTML content or select a template..." style={{ minHeight: 120 }} value={contentVariants.email?.body || ""} onChange={e => setContentVariants(v => ({ ...v, email: { ...v.email, body: e.target.value, subject: v.email?.subject || "" } }))} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Content ID</label>
-                      <input className="form-input" placeholder="Select existing content template..." />
-                    </div>
-                  </>
-                )}
-                {activeContentTab === "push" && (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">Push Title</label>
-                      <input className="form-input" placeholder="Short push notification title..." maxLength={50} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Push Body</label>
-                      <input className="form-input" placeholder="Push notification body text..." maxLength={150} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Deep Link URL</label>
-                      <input className="form-input" placeholder="e.g., booking://property/12345" />
-                    </div>
-                  </>
-                )}
-                {activeContentTab === "sms" && (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">SMS Text</label>
-                      <textarea className="form-textarea" placeholder="SMS message (max 160 chars for single segment)..." maxLength={320} style={{ minHeight: 80 }} />
-                      <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Keep under 160 chars for best delivery</div>
-                    </div>
-                  </>
-                )}
-                {activeContentTab === "in_app" && (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">In-App Card Title</label>
-                      <input className="form-input" placeholder="Card title..." />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">In-App Card Body</label>
-                      <textarea className="form-textarea" placeholder="Card body text..." style={{ minHeight: 80 }} />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">CTA Button Text</label>
-                      <input className="form-input" placeholder="e.g., View Details" />
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Base Content */}
+          <BaseContentSection selectedChannels={selectedChannels} />
 
           {/* Experiment */}
           <div className="bui-box">
