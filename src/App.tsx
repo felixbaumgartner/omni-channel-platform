@@ -7,6 +7,11 @@ import JourneyList from "./pages/JourneyList";
 import JourneyBuilder from "./pages/JourneyBuilder";
 import Analytics from "./pages/Analytics";
 import ChannelPreferences from "./pages/ChannelPreferences";
+import MessageTriggers from "./pages/MessageTriggers";
+import HoldoutManagement from "./pages/HoldoutManagement";
+import CampaignPriority from "./pages/CampaignPriority";
+import NoSendReasons from "./pages/NoSendReasons";
+import Subscriptions from "./pages/Subscriptions";
 
 const nav = ({ isActive }: { isActive: boolean }) => (isActive ? "active" : "");
 
@@ -16,7 +21,7 @@ export default function App() {
       {/* Header */}
       <div className="app-layout-header">
         <div className="app-layout-header-title">
-          Targeting (PROD)
+          Targeting &mdash; Omni-Channel Platform
         </div>
         <div className="app-layout-header-right">
           <span className="app-header-link">Help &amp; Feedback</span>
@@ -43,6 +48,25 @@ export default function App() {
             <div className="app-nav-link">
               <NavLink to="/journeys" className={nav}>Journeys</NavLink>
             </div>
+            <div className="app-nav-link">
+              <NavLink to="/triggers" className={nav}>Message Triggers</NavLink>
+            </div>
+          </div>
+
+          <div className="app-nav-section">
+            <div className="app-nav-section-title">Controls</div>
+            <div className="app-nav-link">
+              <NavLink to="/campaign-priority" className={nav}>Campaign Priority</NavLink>
+            </div>
+            <div className="app-nav-link">
+              <NavLink to="/holdouts" className={nav}>Holdout Management</NavLink>
+            </div>
+            <div className="app-nav-link">
+              <NavLink to="/no-send" className={nav}>No-Send Reasons</NavLink>
+            </div>
+            <div className="app-nav-link">
+              <NavLink to="/subscriptions" className={nav}>Subscriptions</NavLink>
+            </div>
           </div>
 
           <div className="app-nav-section">
@@ -60,7 +84,7 @@ export default function App() {
               <span className="sidebar-dot sidebar-dot--green" /> System Healthy
             </div>
             <div className="sidebar-footer-item text-muted" style={{ fontSize: 11 }}>
-              v1.0.0 &middot; Last sync: 2 min ago
+              v2.1.0 &middot; Omni-Channel &middot; Last sync: 2 min ago
             </div>
           </div>
         </div>
@@ -75,6 +99,11 @@ export default function App() {
             <Route path="/campaign/new/transactional" element={<TransactionalCreate />} />
             <Route path="/journeys" element={<JourneyList />} />
             <Route path="/journey/new" element={<JourneyBuilder />} />
+            <Route path="/triggers" element={<MessageTriggers />} />
+            <Route path="/campaign-priority" element={<CampaignPriority />} />
+            <Route path="/holdouts" element={<HoldoutManagement />} />
+            <Route path="/no-send" element={<NoSendReasons />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/channel-preferences" element={<ChannelPreferences />} />
             <Route path="/analytics" element={<Analytics />} />
           </Routes>

@@ -423,3 +423,233 @@ body {
 .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
 .modal-subtitle { font-size: 14px; color: var(--color-gray-500); margin-bottom: 24px; }
 .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color); }
+
+/* ══════════════════════════════════════════════════════════════
+   OMNI-CHANNEL ADDITIONS
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Omni KPI Row ── */
+
+.omni-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.omni-kpi-card { background: linear-gradient(135deg, #003580 0%, #006ce4 100%); color: #fff; border-radius: var(--radius-md); padding: 16px 20px; }
+.omni-kpi-card .kpi-label { color: rgba(255,255,255,0.8); }
+.omni-kpi-card .kpi-value { color: #fff; font-size: 24px; }
+.omni-kpi-card .kpi-sub { color: rgba(255,255,255,0.7); }
+
+/* ── View Toggle ── */
+
+.view-toggle { display: inline-flex; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; }
+.view-toggle-btn { padding: 6px 14px; font-size: 13px; font-weight: 600; font-family: var(--font-family); background: var(--card-bg); border: none; cursor: pointer; color: var(--color-gray-500); transition: all 0.15s; }
+.view-toggle-btn:not(:last-child) { border-right: 1px solid var(--border-color); }
+.view-toggle-btn.active { background: var(--color-blue-500); color: #fff; }
+.view-toggle-btn:hover:not(.active) { background: var(--color-gray-50); }
+
+/* ── Unified Campaign Group Card ── */
+
+.ucg-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); border-left: 4px solid; border-image: linear-gradient(180deg, var(--color-email), var(--color-push), var(--color-sms)) 1; overflow: hidden; }
+.ucg-card-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+.ucg-card-title { font-weight: 700; font-size: 15px; flex: 1; }
+.ucg-card-channels { display: flex; gap: 4px; }
+.ucg-card-channel { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.ucg-card-channel--email { background: #dbeafe; }
+.ucg-card-channel--push { background: #fef3c7; }
+.ucg-card-channel--sms { background: var(--color-green-100); }
+.ucg-card-channel--in_app { background: #ede9fe; }
+.ucg-card-metrics { padding: 0 20px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.ucg-card-metric { text-align: center; }
+.ucg-card-metric-value { font-weight: 700; font-size: 16px; }
+.ucg-card-metric-label { font-size: 11px; color: var(--color-gray-500); }
+.ucg-card-expand { padding: 12px 20px; border-top: 1px solid var(--border-color); background: var(--color-gray-50); cursor: pointer; font-size: 13px; font-weight: 600; color: var(--color-blue-500); display: flex; align-items: center; gap: 6px; }
+.ucg-card-expand:hover { background: var(--color-blue-50); }
+.ucg-card-children { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border-color); background: var(--color-gray-50); }
+.ucg-child-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--card-bg); border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 13px; }
+.ucg-child-row .badge { flex-shrink: 0; }
+
+/* ── Dedup Badge ── */
+
+.badge-dedup { background: #fef3e2; color: #92400e; border: 1px solid #fcd34d; }
+
+/* ── Orchestration Badges ── */
+
+.badge-orchestration { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-full); }
+.badge-orchestration--best_channel { background: linear-gradient(135deg, #dbeafe, #ede9fe); color: var(--color-blue-600); border: 1px solid #93c5fd; }
+.badge-orchestration--multi_channel { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+.badge-orchestration--sequential { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+
+/* ── Journey Orchestration Type ── */
+
+.badge-journey-type { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); font-weight: 600; }
+.badge-journey-type--single_channel { background: var(--color-gray-50); color: var(--color-gray-500); border: 1px solid var(--border-color); }
+.badge-journey-type--cross_channel { background: var(--color-blue-100); color: var(--color-blue-600); border: 1px solid #93c5fd; }
+.badge-journey-type--omni_channel { background: linear-gradient(135deg, #dbeafe, #d1fae5); color: #003580; border: 1px solid #6ee7b7; }
+
+/* ── Eligibility Rule Builder ── */
+
+.rule-builder { display: flex; flex-direction: column; gap: 8px; }
+.rule-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--color-gray-50); border-radius: var(--radius-sm); border: 1px solid var(--border-color); }
+.rule-row .form-select, .rule-row .form-input { height: 32px; font-size: 13px; flex: 1; }
+.rule-connector { padding: 2px 8px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: var(--color-blue-100); color: var(--color-blue-600); flex-shrink: 0; }
+.rule-remove-btn { background: none; border: none; color: var(--color-gray-300); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: var(--radius-sm); flex-shrink: 0; }
+.rule-remove-btn:hover { background: var(--color-red-100); color: var(--color-red-600); }
+
+/* ── Subscriber Profile Cards ── */
+
+.subscriber-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.subscriber-card { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; background: var(--card-bg); }
+.subscriber-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.subscriber-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--color-blue-100); color: var(--color-blue-600); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+.subscriber-name { font-weight: 700; font-size: 14px; }
+.subscriber-preferred { font-size: 12px; color: var(--color-gray-500); }
+.subscriber-channels { display: flex; flex-direction: column; gap: 6px; }
+.subscriber-channel-row { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; }
+.subscriber-channel-icon { width: 20px; text-align: center; }
+.subscriber-channel-name { width: 50px; font-weight: 500; flex-shrink: 0; }
+.subscriber-engagement-bar { flex: 1; height: 6px; background: var(--color-gray-100); border-radius: 3px; overflow: hidden; }
+.subscriber-engagement-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+.subscriber-engagement-score { width: 30px; text-align: right; font-weight: 600; font-size: 11px; }
+.subscriber-opted-out { color: var(--color-gray-300); font-style: italic; }
+
+/* ── Channel Overlap Venn ── */
+
+.channel-overlap-container { display: flex; justify-content: center; align-items: center; padding: 20px; position: relative; height: 260px; }
+.overlap-circle { position: absolute; border-radius: 50%; border: 3px solid; opacity: 0.15; }
+.overlap-circle--email { width: 180px; height: 180px; border-color: var(--color-email); background: var(--color-email); left: calc(50% - 120px); top: 20px; }
+.overlap-circle--push { width: 160px; height: 160px; border-color: var(--color-push); background: var(--color-push); left: calc(50% - 20px); top: 10px; }
+.overlap-circle--sms { width: 140px; height: 140px; border-color: var(--color-sms); background: var(--color-sms); left: calc(50% - 110px); top: 90px; }
+.overlap-circle--inapp { width: 120px; height: 120px; border-color: var(--color-inapp); background: var(--color-inapp); left: calc(50% + 20px); top: 80px; }
+.overlap-center-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card-bg); padding: 8px 14px; border-radius: var(--radius-md); box-shadow: var(--shadow-md); font-weight: 700; font-size: 18px; color: var(--color-blue-600); z-index: 2; text-align: center; }
+.overlap-center-sub { font-size: 11px; font-weight: 500; color: var(--color-gray-500); }
+.overlap-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 16px; }
+.overlap-stat { text-align: center; padding: 8px; background: var(--color-gray-50); border-radius: var(--radius-sm); }
+.overlap-stat-value { font-weight: 700; font-size: 16px; }
+.overlap-stat-label { font-size: 11px; color: var(--color-gray-500); }
+
+/* ── Frequency Timeline ── */
+
+.freq-timeline { display: flex; gap: 2px; height: 40px; align-items: flex-end; }
+.freq-timeline-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 4px; transition: height 0.3s; }
+
+/* ── SLA Tier Cards ── */
+
+.sla-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.sla-tier { padding: 16px; border: 2px solid var(--border-color); border-radius: var(--radius-md); text-align: center; transition: all 0.15s; }
+.sla-tier.selected { border-color: var(--color-blue-500); background: var(--color-blue-50); }
+.sla-tier-label { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.sla-tier-time { font-size: 24px; font-weight: 800; color: var(--color-blue-500); }
+.sla-tier-desc { font-size: 12px; color: var(--color-gray-500); margin-top: 4px; }
+
+/* ── Fallback Chain ── */
+
+.fallback-chain { display: flex; flex-direction: column; gap: 4px; }
+.fallback-chain-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--card-bg); }
+.fallback-chain-number { width: 28px; height: 28px; border-radius: 50%; background: var(--color-blue-500); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fallback-chain-arrow { text-align: center; color: var(--color-gray-300); font-size: 16px; padding: 2px 0; }
+.fallback-chain-sla { margin-left: auto; font-size: 12px; color: var(--color-gray-500); }
+
+/* ── Journey Builder — new node types ── */
+
+.journey-step--cross_channel_eligibility { border-left: 4px solid #8b5cf6; }
+.journey-step--best_channel { border-left: 4px solid transparent; border-image: linear-gradient(180deg, var(--color-email), var(--color-push), var(--color-sms), var(--color-inapp)) 1; border-image-slice: 1; }
+.journey-mini-step--cross_channel_eligibility { background: #ede9fe; }
+.journey-mini-step--best_channel { background: linear-gradient(135deg, #dbeafe, #d1fae5, #fef3c7); }
+
+/* ── Journey Settings Panel ── */
+
+.journey-settings-panel { background: var(--color-gray-50); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px; }
+.journey-settings-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.journey-settings-label { font-size: 13px; font-weight: 600; flex: 1; }
+
+/* ── Reachability Tiers ── */
+
+.reachability-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.reachability-card { text-align: center; padding: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--card-bg); }
+.reachability-channels { font-size: 20px; font-weight: 800; color: var(--color-blue-600); }
+.reachability-label { font-size: 11px; color: var(--color-gray-500); margin-top: 2px; }
+.reachability-pct { font-size: 16px; font-weight: 700; margin-top: 4px; }
+.reachability-engagement { font-size: 12px; color: var(--color-gray-500); }
+
+/* ── Dedup Engine ── */
+
+.dedup-metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.dedup-metric-card { padding: 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); text-align: center; }
+.dedup-metric-value { font-size: 22px; font-weight: 800; color: var(--callout-500); }
+.dedup-metric-label { font-size: 12px; color: var(--color-gray-500); margin-top: 4px; }
+
+/* ── Effectiveness Mini Bar ── */
+
+.effectiveness-bars { display: flex; gap: 2px; height: 16px; border-radius: 2px; overflow: hidden; }
+.effectiveness-bar { height: 100%; transition: width 0.3s; }
+.effectiveness-bar--email { background: var(--color-email); }
+.effectiveness-bar--push { background: var(--color-push); }
+.effectiveness-bar--sms { background: var(--color-sms); }
+.effectiveness-bar--in_app { background: var(--color-inapp); }
+
+/* ── Info Banner ── */
+
+.info-banner { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: linear-gradient(135deg, #eff6ff, #e0f2fe); border: 1px solid #93c5fd; border-radius: var(--radius-md); font-size: 13px; color: var(--color-blue-600); }
+.info-banner-icon { font-size: 20px; flex-shrink: 0; }
+
+/* ── Metrics Summary Bar ── */
+
+.metrics-summary-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 20px; background: var(--card-bg); border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+.metrics-summary-item { text-align: center; }
+.metrics-summary-value { font-weight: 700; font-size: 18px; }
+.metrics-summary-label { font-size: 11px; color: var(--color-gray-500); }
+
+/* ── Trigger Flow Visualization ── */
+
+.trigger-flow { display: flex; align-items: center; gap: 8px; padding: 12px; background: var(--color-gray-50); border-radius: var(--radius-md); overflow-x: auto; }
+.trigger-flow-node { padding: 8px 14px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; white-space: nowrap; border: 1px solid var(--border-color); background: var(--card-bg); }
+.trigger-flow-node--event { background: var(--color-yellow-100); border-color: var(--color-yellow-600); color: var(--color-yellow-600); }
+.trigger-flow-node--rules { background: var(--color-blue-100); border-color: var(--color-blue-500); color: var(--color-blue-600); }
+.trigger-flow-node--router { background: linear-gradient(135deg, #dbeafe, #d1fae5); border-color: #6ee7b7; color: #003580; }
+.trigger-flow-node--channel { padding: 6px 10px; border-radius: var(--radius-full); }
+.trigger-flow-arrow { color: var(--color-gray-300); font-size: 16px; flex-shrink: 0; }
+
+/* ── Holdout Hash Bar ── */
+
+.holdout-hash-bar { height: 24px; background: var(--color-gray-100); border-radius: var(--radius-sm); overflow: hidden; position: relative; }
+.holdout-hash-fill { height: 100%; position: absolute; top: 0; border-radius: var(--radius-sm); }
+.holdout-hash-label { position: absolute; top: 50%; transform: translateY(-50%); font-size: 10px; font-weight: 700; color: #fff; padding: 0 6px; }
+
+/* ── Priority Stack ── */
+
+.priority-stack { display: flex; flex-direction: column; gap: 4px; }
+.priority-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--card-bg); font-size: 13px; }
+.priority-rank { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+.priority-rank--critical { background: var(--color-red-100); color: var(--color-red-600); }
+.priority-rank--high { background: var(--callout-200); color: var(--callout-500); }
+.priority-rank--medium { background: var(--color-blue-100); color: var(--color-blue-600); }
+.priority-rank--low { background: var(--color-gray-50); color: var(--color-gray-500); }
+.priority-bar { flex: 1; height: 8px; background: var(--color-gray-100); border-radius: 4px; overflow: hidden; }
+.priority-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+/* ── Suppression Report ── */
+
+.suppression-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.suppression-card { padding: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--card-bg); }
+.suppression-value { font-size: 22px; font-weight: 800; }
+.suppression-label { font-size: 12px; color: var(--color-gray-500); margin-top: 2px; }
+
+/* ── Consent Matrix ── */
+
+.consent-matrix { width: 100%; border-collapse: collapse; }
+.consent-matrix th { padding: 10px 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-gray-500); border-bottom: 2px solid var(--border-color); text-align: center; }
+.consent-matrix th:first-child { text-align: left; }
+.consent-matrix td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border-color); text-align: center; }
+.consent-matrix td:first-child { text-align: left; font-weight: 600; }
+.consent-cell { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; }
+.consent-cell--yes { background: var(--color-green-100); color: var(--color-green-600); }
+.consent-cell--no { background: var(--color-gray-50); color: var(--color-gray-300); }
+
+/* ── Consent Gap Bars ── */
+
+.consent-gap-bar { display: flex; height: 32px; border-radius: var(--radius-sm); overflow: hidden; }
+.consent-gap-segment { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; transition: width 0.3s; }
+
+/* ── No-Send Behavior Badge ── */
+
+.badge-nosend-behavior { font-size: 10px; padding: 2px 6px; border-radius: var(--radius-sm); font-weight: 600; }
+.badge-nosend-behavior--suppress_all { background: var(--color-red-100); color: var(--color-red-600); }
+.badge-nosend-behavior--suppress_channel { background: var(--color-yellow-100); color: var(--color-yellow-600); }
+.badge-nosend-behavior--fallback_to_other { background: var(--color-green-100); color: var(--color-green-600); }

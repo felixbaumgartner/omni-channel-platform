@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { channelMetrics, dailySends, mockCampaigns } from "../data/mockData";
-import { CHANNEL_ICONS } from "../types";
+import { channelMetrics, dailySends, mockCampaigns, mockUnifiedGroups, omniChannelKPIs, channelOverlap } from "../data/mockData";
+import { CHANNEL_ICONS, ORCHESTRATION_LABELS, type MessageChannel } from "../types";
 
 function formatNum(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
@@ -9,10 +9,10 @@ function formatNum(n: number): string {
 }
 
 const maxSend = Math.max(...dailySends.flatMap(d => [d.email, d.push, d.sms, d.in_app]));
+const channelClass = (ch: MessageChannel) => ch === "in_app" ? "in_app" : ch;
 
 export default function Analytics() {
   const [period, setPeriod] = useState("7d");
-  const [channelFilter, setChannelFilter] = useState("all");
 
   const totalSent = channelMetrics.reduce((s, m) => s + m.sent, 0);
   const totalDelivered = channelMetrics.reduce((s, m) => s + m.delivered, 0);
@@ -41,6 +41,30 @@ export default function Analytics() {
         </div>
       </div>
 
+      {/* Omni-Channel Intelligence Metrics */}
+      <div className="omni-kpi-grid">
+        <div className="omni-kpi-card">
+          <div className="kpi-label">Routing Lift</div>
+          <div className="kpi-value">+{omniChannelKPIs.routingLift}%</div>
+          <div className="kpi-sub">open rate vs. random channel</div>
+        </div>
+        <div className="omni-kpi-card">
+          <div className="kpi-label">Dedup Savings</div>
+          <div className="kpi-value">{formatNum(omniChannelKPIs.dedupSavings)}</div>
+          <div className="kpi-sub">messages prevented</div>
+        </div>
+        <div className="omni-kpi-card">
+          <div className="kpi-label">Cross-Channel Lift</div>
+          <div className="kpi-value">+{omniChannelKPIs.crossChannelConversionLift}%</div>
+          <div className="kpi-sub">conversion vs single-channel</div>
+        </div>
+        <div className="omni-kpi-card">
+          <div className="kpi-label">Cannibalization</div>
+          <div className="kpi-value">{omniChannelKPIs.channelCannibalizationRate}%</div>
+          <div className="kpi-sub">channels competing for same conversion</div>
+        </div>
+      </div>
+
       {/* Summary KPIs */}
       <div className="kpi-grid">
         <div className="kpi-card">
@@ -61,6 +85,119 @@ export default function Analytics() {
           <div className="kpi-label">Total Clicked</div>
           <div className="kpi-value">{formatNum(totalClicked)}</div>
           <div className="kpi-sub">{((totalClicked / totalDelivered) * 100).toFixed(1)}% rate</div>
+        </div>
+      </div>
+
+      {/* Unified Campaign Group Performance */}
+      <div className="bui-box">
+        <div className="section-header">
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>Unified Campaign Group Performance</div>
+            <div className="text-muted">Aggregate metrics across linked channel campaigns</div>
+          </div>
+        </div>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Group</th>
+              <th>Channels</th>
+              <th>Orchestration</th>
+              <th style={{ textAlign: "right" }}>Total Reach</th>
+              <th style={{ textAlign: "right" }}>Unique Reach</th>
+              <th style={{ textAlign: "right" }}>Dedup Savings</th>
+              <th style={{ textAlign: "right" }}>Open %</th>
+              <th style={{ textAlign: "right" }}>Click %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mockUnifiedGroups.map(g => (
+              <tr key={g.id}>
+                <td>
+                  <strong>{g.name}</strong>
+                  <div style={{ fontSize: 11, color: "var(--color-gray-500)" }}>{g.id}</div>
+                </td>
+                <td>
+                  {g.channels.map(ch => (
+                    <span key={ch} className={`ucg-card-channel ucg-card-channel--${channelClass(ch)}`} style={{ display: "inline-flex", width: 24, height: 24, fontSize: 12 }}>
+                      {CHANNEL_ICONS[ch]}
+                    </span>
+                  ))}
+                </td>
+                <td>
+                  <span className={`badge-orchestration badge-orchestration--${g.orchestrationMode}`}>
+                    {ORCHESTRATION_LABELS[g.orchestrationMode]}
+                  </span>
+                </td>
+                <td style={{ textAlign: "right" }}>{formatNum(g.totalReach)}</td>
+                <td style={{ textAlign: "right" }}>{formatNum(g.uniqueReach)}</td>
+                <td style={{ textAlign: "right" }}>
+                  {g.deduplicationEnabled ? (
+                    <span className="badge badge-dedup">{formatNum(g.totalReach - g.uniqueReach)} saved</span>
+                  ) : <span className="text-muted">Off</span>}
+                </td>
+                <td style={{ textAlign: "right" }}>{g.aggregateOpenRate}%</td>
+                <td style={{ textAlign: "right" }}>{g.aggregateClickRate}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Channel Overlap Analysis */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        <div className="bui-box">
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Overlap</div>
+          <p className="text-muted mb-16">Subscriber reachability across channels</p>
+          <div className="channel-overlap-container">
+            <div className="overlap-circle overlap-circle--email" />
+            <div className="overlap-circle overlap-circle--push" />
+            <div className="overlap-circle overlap-circle--sms" />
+            <div className="overlap-circle overlap-circle--inapp" />
+            <div className="overlap-center-label">
+              {channelOverlap.allFour}%
+              <div className="overlap-center-sub">all 4 channels</div>
+            </div>
+          </div>
+          <div className="overlap-stats">
+            <div className="overlap-stat">
+              <div className="overlap-stat-value" style={{ color: "var(--color-email)" }}>{channelOverlap.emailAndPush}%</div>
+              <div className="overlap-stat-label">Email + Push</div>
+            </div>
+            <div className="overlap-stat">
+              <div className="overlap-stat-value" style={{ color: "var(--color-inapp)" }}>{channelOverlap.pushAndInApp}%</div>
+              <div className="overlap-stat-label">Push + In-App</div>
+            </div>
+            <div className="overlap-stat">
+              <div className="overlap-stat-value" style={{ color: "var(--color-sms)" }}>{channelOverlap.emailAndSms}%</div>
+              <div className="overlap-stat-label">Email + SMS</div>
+            </div>
+            <div className="overlap-stat">
+              <div className="overlap-stat-value">{channelOverlap.allFour}%</div>
+              <div className="overlap-stat-label">All 4 Channels</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Subscriber Reachability */}
+        <div className="bui-box">
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Subscriber Reachability</div>
+          <p className="text-muted mb-16">Distribution by number of reachable channels</p>
+          <div className="reachability-grid">
+            {channelOverlap.reachabilityTiers.map(t => (
+              <div key={t.channels} className="reachability-card">
+                <div className="reachability-channels">{t.channels}</div>
+                <div className="reachability-label">channel{t.channels > 1 ? "s" : ""}</div>
+                <div className="reachability-pct">{t.pct}%</div>
+                <div className="reachability-engagement">{formatNum(t.subscribers)}</div>
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ height: 4, background: "var(--color-gray-100)", borderRadius: 2 }}>
+                    <div style={{ height: 4, width: `${t.avgEngagement}%`, background: t.channels >= 3 ? "var(--color-green-600)" : "var(--color-blue-500)", borderRadius: 2 }} />
+                  </div>
+                  <div style={{ fontSize: 10, color: "var(--color-gray-500)", marginTop: 2 }}>{t.avgEngagement}% engagement</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -101,7 +238,7 @@ export default function Analytics() {
         </table>
       </div>
 
-      {/* Send Volume Chart */}
+      {/* Daily Send Volume */}
       <div className="bui-box">
         <div className="section-header">
           <div style={{ fontWeight: 700, fontSize: 16 }}>Daily Send Volume</div>
@@ -138,6 +275,7 @@ export default function Analytics() {
               <th>Campaign</th>
               <th>Channels</th>
               <th>Type</th>
+              <th>Group</th>
               <th style={{ textAlign: "right" }}>Sent</th>
               <th style={{ textAlign: "right" }}>Open Rate</th>
               <th style={{ textAlign: "right" }}>Click Rate</th>
@@ -149,6 +287,7 @@ export default function Analytics() {
                 <td><strong>{c.name}</strong></td>
                 <td>{c.channels.map(ch => <span key={ch} style={{ marginRight: 4 }}>{CHANNEL_ICONS[ch]}</span>)}</td>
                 <td><span className={`badge ${c.type === "transactional" ? "badge-constructive" : c.type === "marketing" ? "badge-marketing" : "badge-outline"}`}>{c.type}</span></td>
+                <td>{c.unifiedGroupId ? <span className="badge badge-brand" style={{ fontSize: 10 }}>{c.unifiedGroupId}</span> : <span className="text-muted">-</span>}</td>
                 <td style={{ textAlign: "right" }}>{formatNum(c.deliveryCount || 0)}</td>
                 <td style={{ textAlign: "right" }}>{c.openRate}%</td>
                 <td style={{ textAlign: "right" }}>{c.clickRate ? c.clickRate + "%" : "N/A"}</td>

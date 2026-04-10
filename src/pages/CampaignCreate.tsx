@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CHANNEL_LABELS, CHANNEL_ICONS, type MessageChannel } from "../types";
+import { CHANNEL_LABELS, CHANNEL_ICONS, FUNNEL_LABELS, VERTICAL_LABELS, RULE_ATTRIBUTES, type MessageChannel, type Funnel, type Vertical, type EligibilityRule, type RuleOperator } from "../types";
 import ClassificationQuestionnaire, { type Classification } from "../components/ClassificationQuestionnaire";
 import BaseContentSection from "../components/BaseContentSection";
 
-type DeliveryMode = "best_channel" | "multi_channel";
+type DeliveryMode = "best_channel" | "multi_channel" | "sequential";
 
 export default function CampaignCreate() {
   const navigate = useNavigate();
@@ -13,12 +13,20 @@ export default function CampaignCreate() {
   const [description, setDescription] = useState("");
   const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>(["email"]);
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("best_channel");
-  const [fallbackOrder, setFallbackOrder] = useState<MessageChannel[]>([]);
   const [fallbackTimeout, setFallbackTimeout] = useState("4");
   const [experimentEnabled, setExperimentEnabled] = useState(false);
   const [experimentTag, setExperimentTag] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // New omni-channel state
+  const [funnel, setFunnel] = useState<Funnel | "">("");
+  const [vertical, setVertical] = useState<Vertical | "">("");
+  const [purposeTag, setPurposeTag] = useState("");
+  const [rules, setRules] = useState<EligibilityRule[]>([]);
+  const [dedupEnabled, setDedupEnabled] = useState(true);
+  const [dedupWindow, setDedupWindow] = useState("24");
+  const [affiliateId, setAffiliateId] = useState("");
+  const [parentAffiliateId, setParentAffiliateId] = useState("");
 
   const isMarketingOrNonMarketing = classification && (classification.purpose === "marketing" || (classification.purpose === "non_marketing" && !classification.subPurpose));
   const isTransactional = classification?.subPurpose === "transactional";
@@ -34,6 +42,18 @@ export default function CampaignCreate() {
     setTimeout(() => setToast(null), 3000);
   }
 
+  function addRule() {
+    setRules(prev => [...prev, { id: `r${Date.now()}`, attribute: "genius_level", operator: "greater_than" as RuleOperator, value: 1, connector: "AND" }]);
+  }
+
+  function removeRule(id: string) {
+    setRules(prev => prev.filter(r => r.id !== id));
+  }
+
+  function updateRule(id: string, field: keyof EligibilityRule, value: string | number) {
+    setRules(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  }
+
   if (saved) {
     return (
       <div className="app-page">
@@ -42,7 +62,10 @@ export default function CampaignCreate() {
           <div style={{ fontSize: 48, marginBottom: 16 }}>&#10003;</div>
           <h2 style={{ marginBottom: 8 }}>Omni-Channel Campaign Created</h2>
           <p className="text-muted mb-16">"{campaignName}" has been saved as a {purposeLabel} campaign targeting {selectedChannels.map(ch => CHANNEL_LABELS[ch]).join(", ")}.</p>
-          <p className="text-muted mb-16">Delivery Mode: <strong>{deliveryMode === "best_channel" ? "Best Channel" : "Multi-Channel"}</strong></p>
+          <p className="text-muted mb-16">Delivery Mode: <strong>{deliveryMode === "best_channel" ? "Best Channel" : deliveryMode === "multi_channel" ? "Multi-Channel" : "Sequential"}</strong></p>
+          {selectedChannels.length > 1 && (
+            <p className="text-muted mb-16">Unified Campaign Group: <span className="badge badge-brand">UCG-2026-{String(Math.floor(Math.random() * 900) + 100)}</span></p>
+          )}
           <div className="btn-group" style={{ justifyContent: "center", marginTop: 24 }}>
             <button className="btn btn-secondary" onClick={() => navigate("/campaigns")}>View All Campaigns</button>
             <button className="btn btn-primary" onClick={() => window.location.reload()}>Create Another</button>
@@ -112,6 +135,36 @@ export default function CampaignCreate() {
             </div>
           </div>
 
+          {/* Campaign Metadata (PROD-aligned) */}
+          <div className="bui-box">
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Campaign Metadata</div>
+            <p className="text-muted mb-16">PROD-aligned campaign classification for targeting and analytics.</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              <div className="form-group">
+                <label className="form-label">Funnel</label>
+                <select className="form-select" value={funnel} onChange={e => setFunnel(e.target.value as Funnel)}>
+                  <option value="">Select funnel...</option>
+                  {(Object.keys(FUNNEL_LABELS) as Funnel[]).map(f => (
+                    <option key={f} value={f}>{FUNNEL_LABELS[f]}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Vertical</label>
+                <select className="form-select" value={vertical} onChange={e => setVertical(e.target.value as Vertical)}>
+                  <option value="">Select vertical...</option>
+                  {(Object.keys(VERTICAL_LABELS) as Vertical[]).map(v => (
+                    <option key={v} value={v}>{VERTICAL_LABELS[v]}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Purpose Tag</label>
+                <input className="form-input" placeholder="e.g., deal_discovery" value={purposeTag} onChange={e => setPurposeTag(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
           {/* Channel Selection (P0: Unified Campaign Object) */}
           <div className="bui-box">
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Selection</div>
@@ -125,6 +178,52 @@ export default function CampaignCreate() {
                 </div>
               ))}
             </div>
+            {selectedChannels.length > 1 && (
+              <div className="info-banner tier-selection-appear" style={{ marginTop: 16 }}>
+                <span className="info-banner-icon">&#128279;</span>
+                <span>
+                  <strong>Unified Campaign Group</strong> &mdash; In PROD, each channel is a separate campaign. Omni-Channel creates a unified campaign group spanning all {selectedChannels.length} selected channels with a single UCG ID.
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Eligibility Rules */}
+          <div className="bui-box">
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Eligibility Rules</div>
+            <p className="text-muted mb-16">Define audience targeting rules. Rules from PROD eligibility engine (AND/OR logic).</p>
+            <div className="rule-builder">
+              {rules.map((r, i) => (
+                <div key={r.id} className="rule-row">
+                  {i > 0 && (
+                    <select className="form-select" style={{ width: 70, flex: "none" }} value={r.connector} onChange={e => updateRule(r.id, "connector", e.target.value)}>
+                      <option value="AND">AND</option>
+                      <option value="OR">OR</option>
+                    </select>
+                  )}
+                  <select className="form-select" value={r.attribute} onChange={e => updateRule(r.id, "attribute", e.target.value)}>
+                    {RULE_ATTRIBUTES.map(a => (
+                      <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
+                    ))}
+                  </select>
+                  <select className="form-select" style={{ width: 140, flex: "none" }} value={r.operator} onChange={e => updateRule(r.id, "operator", e.target.value)}>
+                    <option value="equals">equals</option>
+                    <option value="not_equals">not equals</option>
+                    <option value="greater_than">greater than</option>
+                    <option value="less_than">less than</option>
+                    <option value="in">in</option>
+                  </select>
+                  <input className="form-input" style={{ width: 120, flex: "none" }} value={String(r.value)} onChange={e => updateRule(r.id, "value", e.target.value)} />
+                  <button className="rule-remove-btn" onClick={() => removeRule(r.id)}>&times;</button>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={addRule}>+ Add Rule</button>
+            {rules.length > 0 && (
+              <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
+                Preview: {rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute} ${r.operator.replace("_", " ")} ${r.value}`).join("")}
+              </div>
+            )}
           </div>
 
           {/* Delivery Mode (P0: Campaign Delivery Mode) */}
@@ -149,6 +248,15 @@ export default function CampaignCreate() {
                   </div>
                   <div className="radio-card-description">
                     Deliver across all selected channels simultaneously. Suited for high-priority campaigns, time-sensitive promotions, and re-engagement. Consent and frequency caps enforced per channel.
+                  </div>
+                </div>
+                <div className={`radio-card ${deliveryMode === "sequential" ? "selected" : ""}`} onClick={() => setDeliveryMode("sequential")}>
+                  <div className="radio-card-header">
+                    <div className="radio-card-radio" />
+                    <div className="radio-card-title">Sequential</div>
+                  </div>
+                  <div className="radio-card-description">
+                    Send to channels in priority order with configurable wait periods. Journey-like behavior within a single campaign. Ideal for progressive engagement.
                   </div>
                 </div>
               </div>
@@ -200,6 +308,58 @@ export default function CampaignCreate() {
 
           {/* Base Content */}
           <BaseContentSection selectedChannels={selectedChannels} />
+
+          {/* Cross-Channel Deduplication */}
+          {selectedChannels.length > 1 && (
+            <div className="bui-box">
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>Cross-Channel Deduplication</div>
+                  <p className="text-muted" style={{ marginTop: 4 }}>Prevent the same subscriber from receiving the same message on multiple channels.</p>
+                </div>
+                <label className="toggle-switch">
+                  <input type="checkbox" checked={dedupEnabled} onChange={e => setDedupEnabled(e.target.checked)} />
+                  <span className="toggle-slider" />
+                </label>
+              </div>
+              {dedupEnabled && (
+                <div className="tier-selection-appear" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div className="form-group">
+                    <label className="form-label">Deduplication Window (hours)</label>
+                    <input className="form-input" type="number" min="1" max="168" value={dedupWindow} onChange={e => setDedupWindow(e.target.value)} />
+                    <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Same message to same subscriber within {dedupWindow}h = deduplicated</div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Dedup Strategy</label>
+                    <select className="form-select">
+                      <option>Content similarity (recommended)</option>
+                      <option>Exact campaign match</option>
+                      <option>Category match</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Compliance & Reporting */}
+          <div className="bui-box">
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Compliance & Reporting</div>
+            <p className="text-muted mb-16">Required for campaign publishing (PROD validation).</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div className="form-group">
+                <label className="form-label">Affiliate ID</label>
+                <input className="form-input" type="number" placeholder="Required for publish" value={affiliateId} onChange={e => setAffiliateId(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Parent Affiliate ID</label>
+                <input className="form-input" type="number" placeholder="Required for publish" value={parentAffiliateId} onChange={e => setParentAffiliateId(e.target.value)} />
+              </div>
+            </div>
+            <div className="alert alert-info" style={{ marginTop: 8 }}>
+              <strong>Consent Summary:</strong> {selectedChannels.length} channel(s) selected. Subscriber consent will be validated per-channel at send time via Janet subscription API.
+            </div>
+          </div>
 
           {/* Experiment */}
           <div className="bui-box">

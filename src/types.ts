@@ -128,6 +128,127 @@ export const INPUT_TOPICS: Record<string, InputTopicConfig> = {
   },
 };
 
+/* ── Omni-Channel Types ── */
+
+export type OrchestrationMode = "best_channel" | "multi_channel" | "sequential";
+export type Funnel = "upper" | "mid" | "lower" | "retention";
+export type Vertical = "accommodation" | "flights" | "attractions" | "car_rental";
+
+export const FUNNEL_LABELS: Record<Funnel, string> = {
+  upper: "Upper Funnel", mid: "Mid Funnel", lower: "Lower Funnel", retention: "Retention",
+};
+
+export const VERTICAL_LABELS: Record<Vertical, string> = {
+  accommodation: "Accommodation", flights: "Flights", attractions: "Attractions", car_rental: "Car Rental",
+};
+
+export const ORCHESTRATION_LABELS: Record<OrchestrationMode, string> = {
+  best_channel: "Best Channel", multi_channel: "Multi-Channel", sequential: "Sequential",
+};
+
+/* ── Channel-Specific Message Categories (from PROD) ── */
+
+export const EMAIL_CATEGORIES = [
+  "deal_discovery", "upcoming_booking", "genius_programme", "post_stay",
+  "account", "direct_mail", "incentives", "refer_a_friend", "product_announcement",
+] as const;
+
+export const PUSH_CATEGORIES = [
+  "travel_ideas", "price_alerts", "booking_updates", "loyalty",
+  "status_updates", "reviews", "direct_messages",
+] as const;
+
+export const SMS_CATEGORIES = [
+  "verification", "booking_confirmation", "security", "trip_preparation",
+  "genius_offers", "surveys", "travel_inspiration",
+] as const;
+
+export const INAPP_CATEGORIES = [
+  "trip_enrichment", "offers", "onboarding", "engagement", "loyalty",
+] as const;
+
+export const CHANNEL_CATEGORIES: Record<MessageChannel, readonly string[]> = {
+  email: EMAIL_CATEGORIES,
+  push: PUSH_CATEGORIES,
+  sms: SMS_CATEGORIES,
+  in_app: INAPP_CATEGORIES,
+};
+
+/* ── Eligibility Rules ── */
+
+export type RuleOperator = "equals" | "not_equals" | "greater_than" | "less_than" | "in" | "not_in" | "between";
+export type RuleConnector = "AND" | "OR";
+
+export interface EligibilityRule {
+  id: string;
+  attribute: string;
+  operator: RuleOperator;
+  value: string | number | string[];
+  connector: RuleConnector;
+}
+
+export const RULE_ATTRIBUTES = [
+  "genius_level", "country", "language", "booking_count",
+  "days_since_last_booking", "device_type", "has_app_installed",
+  "lifetime_value", "is_new_user", "preferred_currency",
+] as const;
+
+/* ── Unified Campaign Group ── */
+
+export interface ChannelDelivery {
+  channel: MessageChannel;
+  contentId: number | null;
+  messageCategory: string;
+  status: "active" | "paused" | "no_send";
+  campaignId: number;
+}
+
+export interface UnifiedCampaignGroup {
+  id: string;
+  name: string;
+  description: string;
+  orchestrationMode: OrchestrationMode;
+  channels: MessageChannel[];
+  channelDeliveries: ChannelDelivery[];
+  deduplicationEnabled: boolean;
+  deduplicationWindowHours: number;
+  totalReach: number;
+  uniqueReach: number;
+  aggregateOpenRate: number;
+  aggregateClickRate: number;
+  status: CampaignStatus;
+  type: MessageType;
+}
+
+/* ── Subscriber Profile ── */
+
+export interface SubscriberChannelProfile {
+  channel: MessageChannel;
+  optedIn: boolean;
+  lastEngaged: string;
+  engagementScore: number;
+  openRate: number;
+}
+
+export interface SubscriberProfile {
+  id: string;
+  name: string;
+  preferredChannel: MessageChannel;
+  channels: SubscriberChannelProfile[];
+  reachableChannels: number;
+  deduplicatedCount: number;
+}
+
+/* ── Cross-Channel Config ── */
+
+export interface CrossChannelConfig {
+  deduplicationEnabled: boolean;
+  deduplicationWindowHours: number;
+  channelPriority: MessageChannel[];
+  respectFrequencyCaps: boolean;
+  frequencyCaps: Record<MessageChannel, number>;
+}
+
 /* ── Campaign interface ── */
 
 export interface Campaign {
@@ -144,11 +265,20 @@ export interface Campaign {
   deliveryCount?: number;
   openRate?: number;
   clickRate?: number;
+  unifiedGroupId?: string;
+  funnel?: Funnel;
+  vertical?: Vertical;
+  orchestrationMode?: OrchestrationMode;
 }
 
 /* ── Journey interface ── */
 
-export type JourneyStepType = "trigger" | "email" | "push" | "sms" | "in_app" | "delay" | "condition" | "split";
+export type JourneyStepType =
+  | "trigger" | "email" | "push" | "sms" | "in_app"
+  | "delay" | "condition" | "split"
+  | "cross_channel_eligibility" | "best_channel";
+
+export type JourneyOrchestrationType = "single_channel" | "cross_channel" | "omni_channel";
 
 export interface JourneyStep {
   id: string;
@@ -170,4 +300,7 @@ export interface Journey {
   updatedAt: string;
   audienceSize?: number;
   conversionRate?: number;
+  orchestrationType?: JourneyOrchestrationType;
+  crossChannelHandoffs?: number;
+  channelEffectiveness?: Record<MessageChannel, number>;
 }

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { mockCampaigns, mockJourneys, channelMetrics, dailySends } from "../data/mockData";
-import { CHANNEL_ICONS } from "../types";
+import { mockCampaigns, mockJourneys, channelMetrics, dailySends, mockUnifiedGroups, omniChannelKPIs } from "../data/mockData";
+import { CHANNEL_ICONS, ORCHESTRATION_LABELS, type MessageChannel } from "../types";
 
 function formatNum(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
@@ -9,6 +9,9 @@ function formatNum(n: number): string {
 }
 
 const maxSend = Math.max(...dailySends.flatMap(d => [d.email, d.push, d.sms, d.in_app]));
+
+const channelClass = (ch: MessageChannel) =>
+  ch === "in_app" ? "in_app" : ch;
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -32,7 +35,39 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Omni-Channel Intelligence Banner */}
+      <div className="info-banner">
+        <span className="info-banner-icon">&#9889;</span>
+        <span>
+          <strong>Omni-Channel Intelligence Active</strong> &mdash; {omniChannelKPIs.bestChannelRouting}% of sends use intelligent channel routing, {omniChannelKPIs.dedupRate}% deduplication savings ({formatNum(omniChannelKPIs.dedupSavings)} messages prevented)
+        </span>
+      </div>
+
+      {/* Omni-Channel KPIs */}
+      <div className="omni-kpi-grid">
+        <div className="omni-kpi-card">
+          <div className="kpi-label">Unified Campaign Groups</div>
+          <div className="kpi-value">{omniChannelKPIs.unifiedGroupCount}</div>
+          <div className="kpi-sub">spanning {mockCampaigns.filter(c => c.unifiedGroupId).length} channel campaigns</div>
+        </div>
+        <div className="omni-kpi-card">
+          <div className="kpi-label">Cross-Channel Dedup</div>
+          <div className="kpi-value">{omniChannelKPIs.dedupRate}%</div>
+          <div className="kpi-sub">{formatNum(omniChannelKPIs.dedupSavings)} prevented</div>
+        </div>
+        <div className="omni-kpi-card">
+          <div className="kpi-label">Best Channel Routing</div>
+          <div className="kpi-value">{omniChannelKPIs.bestChannelRouting}%</div>
+          <div className="kpi-sub">of sends via intelligent routing</div>
+        </div>
+        <div className="omni-kpi-card">
+          <div className="kpi-label">Multi-Channel Reach</div>
+          <div className="kpi-value">{omniChannelKPIs.multiChannelReachability}%</div>
+          <div className="kpi-sub">subscribers on 2+ channels</div>
+        </div>
+      </div>
+
+      {/* Standard KPI Cards */}
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-label">Total Sent</div>
@@ -63,6 +98,56 @@ export default function Dashboard() {
           <div className="kpi-label">Active Journeys</div>
           <div className="kpi-value">{activeJourneys.length}</div>
           <div className="kpi-sub">{mockJourneys.length} total</div>
+        </div>
+      </div>
+
+      {/* Unified Campaign Groups */}
+      <div className="bui-box">
+        <div className="section-header">
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>Unified Campaign Groups</div>
+            <div className="text-muted">Campaigns linked across channels with orchestration</div>
+          </div>
+          <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => navigate("/campaigns")}>View All</button>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {mockUnifiedGroups.map(g => (
+            <div key={g.id} className="ucg-card">
+              <div className="ucg-card-header">
+                <span className="badge badge-brand" style={{ fontSize: 11 }}>{g.id}</span>
+                <span className="ucg-card-title">{g.name}</span>
+                <span className={`badge-orchestration badge-orchestration--${g.orchestrationMode}`}>
+                  {ORCHESTRATION_LABELS[g.orchestrationMode]}
+                </span>
+                <div className="ucg-card-channels">
+                  {g.channels.map(ch => (
+                    <span key={ch} className={`ucg-card-channel ucg-card-channel--${channelClass(ch)}`}>
+                      {CHANNEL_ICONS[ch]}
+                    </span>
+                  ))}
+                </div>
+                {g.deduplicationEnabled && <span className="badge badge-dedup">Dedup</span>}
+              </div>
+              <div className="ucg-card-metrics">
+                <div className="ucg-card-metric">
+                  <div className="ucg-card-metric-value">{formatNum(g.totalReach)}</div>
+                  <div className="ucg-card-metric-label">Total Reach</div>
+                </div>
+                <div className="ucg-card-metric">
+                  <div className="ucg-card-metric-value">{formatNum(g.uniqueReach)}</div>
+                  <div className="ucg-card-metric-label">Unique Reach</div>
+                </div>
+                <div className="ucg-card-metric">
+                  <div className="ucg-card-metric-value">{g.aggregateOpenRate}%</div>
+                  <div className="ucg-card-metric-label">Open Rate</div>
+                </div>
+                <div className="ucg-card-metric">
+                  <div className="ucg-card-metric-value">{g.aggregateClickRate}%</div>
+                  <div className="ucg-card-metric-label">Click Rate</div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -102,7 +187,6 @@ export default function Dashboard() {
                   <span className="channel-stat-label">Clicked</span>
                 </div>
               </div>
-              {/* Mini bar */}
               <div className="channel-bar-container">
                 <div className="channel-bar channel-bar--delivered" style={{ width: `${m.deliveryRate}%` }} />
                 <div className="channel-bar channel-bar--opened" style={{ width: `${m.openRate}%` }} />
@@ -113,7 +197,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Send Volume Chart (CSS-only bar chart) */}
+      {/* Send Volume Chart */}
       <div className="bui-box">
         <div className="section-header">
           <div>
@@ -146,7 +230,6 @@ export default function Dashboard() {
 
       {/* Recent Activity */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-        {/* Live Campaigns */}
         <div className="bui-box">
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Live Campaigns</div>
           <div className="results-list">
@@ -155,6 +238,7 @@ export default function Dashboard() {
                 <div className="mini-card-title">
                   {c.name}
                   <span className="badge badge-constructive" style={{ fontSize: 10, padding: "1px 6px" }}>Live</span>
+                  {c.unifiedGroupId && <span className="badge badge-brand" style={{ fontSize: 10, padding: "1px 6px" }}>{c.unifiedGroupId}</span>}
                 </div>
                 <div className="mini-card-meta">
                   {c.channels.map(ch => (
@@ -172,7 +256,6 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Active Journeys */}
         <div className="bui-box">
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Active Journeys</div>
           <div className="results-list">
@@ -181,6 +264,11 @@ export default function Dashboard() {
                 <div className="mini-card-title">
                   {j.name}
                   <span className="badge badge-constructive" style={{ fontSize: 10, padding: "1px 6px" }}>Active</span>
+                  {j.orchestrationType && (
+                    <span className={`badge-journey-type badge-journey-type--${j.orchestrationType}`}>
+                      {j.orchestrationType === "single_channel" ? "Single" : j.orchestrationType === "cross_channel" ? "Cross-Channel" : "Omni"}
+                    </span>
+                  )}
                 </div>
                 <div className="mini-card-meta">
                   {j.channels.map(ch => (
@@ -188,8 +276,9 @@ export default function Dashboard() {
                       {CHANNEL_ICONS[ch]} {ch}
                     </span>
                   ))}
-                  {j.audienceSize && <span className="text-muted">{formatNum(j.audienceSize)} audience</span>}
+                  {j.audienceSize ? <span className="text-muted">{formatNum(j.audienceSize)} audience</span> : null}
                   {j.conversionRate ? <span className="text-muted">{j.conversionRate}% conv.</span> : null}
+                  {j.crossChannelHandoffs ? <span className="text-muted">{formatNum(j.crossChannelHandoffs)} handoffs</span> : null}
                 </div>
               </div>
             ))}

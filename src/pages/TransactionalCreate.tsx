@@ -76,6 +76,32 @@ export default function TransactionalCreate() {
         Routed through the priority transactional pipeline, bypassing Janeway. SLA: 99.9% delivery within 30 seconds.
       </div>
 
+      {/* SLA & Priority Tiers */}
+      <div className="bui-box">
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>SLA & Priority Tier</div>
+        <p className="text-muted mb-16">Transactional messages are routed by priority tier with guaranteed delivery SLAs.</p>
+        <div className="sla-tiers">
+          <div className="sla-tier selected">
+            <div className="sla-tier-label">P0 &mdash; Critical</div>
+            <div className="sla-tier-time">&lt; 5s</div>
+            <div className="sla-tier-desc">OTP, security alerts, verification codes</div>
+          </div>
+          <div className="sla-tier">
+            <div className="sla-tier-label">P1 &mdash; High</div>
+            <div className="sla-tier-time">&lt; 30s</div>
+            <div className="sla-tier-desc">Booking confirmations, modifications</div>
+          </div>
+          <div className="sla-tier">
+            <div className="sla-tier-label">P2 &mdash; Standard</div>
+            <div className="sla-tier-time">&lt; 60s</div>
+            <div className="sla-tier-desc">Payment receipts, invoices</div>
+          </div>
+        </div>
+        <div className="text-muted" style={{ marginTop: 12, fontSize: 12 }}>
+          Priority is auto-assigned based on the input topic. Retry policy: 3 automatic retries with exponential backoff.
+        </div>
+      </div>
+
       {/* Campaign Information */}
       <div className="bui-box">
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Campaign Information</div>
@@ -111,13 +137,37 @@ export default function TransactionalCreate() {
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Multi-Channel Delivery</div>
           <p className="text-muted mb-16">Transactional messages are delivered across all selected channels simultaneously for maximum reliability.</p>
 
+          {/* Fallback Chain */}
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Transactional Fallback Chain</div>
+          <p className="text-muted mb-8" style={{ fontSize: 13 }}>Unlike marketing best-channel, transactional fallback ensures delivery by escalating through channels.</p>
+          <div className="fallback-chain">
+            {selectedChannels.map((ch, i) => (
+              <div key={ch}>
+                <div className="fallback-chain-item">
+                  <span className="fallback-chain-number">{i + 1}</span>
+                  <span style={{ fontSize: 18 }}>{CHANNEL_ICONS[ch]}</span>
+                  <strong>{CHANNEL_LABELS[ch]}</strong>
+                  {i === 0 && <span className="badge badge-brand" style={{ fontSize: 10 }}>Primary</span>}
+                  {i > 0 && <span className="badge badge-callout" style={{ fontSize: 10 }}>Fallback</span>}
+                  <span className="fallback-chain-sla">SLA: {i === 0 ? "5s" : i === 1 ? "10s" : "30s"} | Retries: 3</span>
+                </div>
+                {i < selectedChannels.length - 1 && (
+                  <div className="fallback-chain-arrow">&#8595; if delivery fails within timeout</div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="divider" />
+
+          {/* Transactional Deduplication */}
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Transactional Deduplication</div>
           <div className="alert alert-info" style={{ marginBottom: 0 }}>
-            <div className="alert-title">Multi-Channel Delivery Active</div>
+            <div className="alert-title">Idempotency Protection Active</div>
             <ul style={{ margin: "8px 0 0 16px", padding: 0 }}>
-              <li>Transactional messages bypass marketing consent — delivered regardless of subscription preferences</li>
-              <li>All selected channels fire simultaneously for maximum reliability</li>
-              <li>Duplicate content de-duplication is handled per subscriber per campaign</li>
-              <li>Priority pipeline SLA applies to all channels independently</li>
+              <li>Same message to same subscriber within 5 minutes = deduplicated</li>
+              <li>Idempotency key: <code style={{ background: "rgba(0,0,0,0.05)", padding: "1px 4px", borderRadius: 3 }}>subscriber_id + campaign_id + timestamp_bucket</code></li>
+              <li>Prevents duplicate OTPs, double booking confirmations, etc.</li>
             </ul>
           </div>
         </div>

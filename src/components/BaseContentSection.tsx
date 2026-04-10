@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CHANNEL_ICONS, CHANNEL_LABELS, type MessageChannel } from "../types";
+import { CHANNEL_ICONS, CHANNEL_LABELS, CHANNEL_CATEGORIES, type MessageChannel } from "../types";
 
 /* ── Mock content items per channel ── */
 
@@ -160,21 +160,18 @@ function ChannelContentPanel({
         </div>
       )}
 
-      {/* Message Category (Janet) * */}
+      {/* Message Category (Janet) — channel-specific categories from PROD */}
       <div className="form-group">
         <label className="form-label">Message Category (Janet) <span style={{ color: "var(--color-red-600)" }}>*</span></label>
         <select className="form-select" value={messageCategory} onChange={e => onMessageCategoryChange(e.target.value)}>
-          <option value="">Select category...</option>
-          <option value="genius_membership">Genius Programme (was: genius_membership)</option>
-          <option value="booking">Booking</option>
-          <option value="payment">Payment</option>
-          <option value="identity">Identity &amp; Security</option>
-          <option value="promotional">Promotional</option>
-          <option value="informational">Informational</option>
-          <option value="loyalty">Loyalty &amp; Rewards</option>
-          <option value="trip_enrichment">Trip Enrichment</option>
-          <option value="review">Review &amp; UGC</option>
+          <option value="">Select category for {CHANNEL_LABELS[channel]}...</option>
+          {CHANNEL_CATEGORIES[channel].map(cat => (
+            <option key={cat} value={cat}>{cat.replace(/_/g, " ")}</option>
+          ))}
         </select>
+        <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
+          Categories are channel-specific (PROD alignment). {CHANNEL_CATEGORIES[channel].length} categories available for {CHANNEL_LABELS[channel]}.
+        </div>
       </div>
 
       {/* Tracking Label (Tableau) * */}

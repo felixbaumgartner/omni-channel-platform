@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { CHANNEL_ICONS } from "../types";
+import { CHANNEL_ICONS, CHANNEL_LABELS, type MessageChannel } from "../types";
+import { mockSubscriberProfiles, omniChannelKPIs } from "../data/mockData";
 
 interface PreferenceRule {
   id: number;
@@ -46,22 +47,37 @@ export default function ChannelPreferences() {
         </div>
       </div>
 
-      {/* Engine Status */}
-      <div className="kpi-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+      {/* Engine Status — Enhanced with omni KPIs */}
+      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(6, 1fr)" }}>
         <div className="kpi-card">
           <div className="kpi-label">Routing Mode</div>
-          <div className="kpi-value" style={{ fontSize: 20 }}>{mlEnabled ? "ML + Heuristics" : "Heuristics Only"}</div>
-          <div className="kpi-sub">{mlEnabled ? "ML model active, heuristics as fallback" : "Phase 1: Rule-based routing"}</div>
+          <div className="kpi-value" style={{ fontSize: 16 }}>{mlEnabled ? "ML + Heuristics" : "Heuristics Only"}</div>
+          <div className="kpi-sub">{mlEnabled ? "ML active" : "Phase 1"}</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-label">CDP Signal Coverage</div>
-          <div className="kpi-value">89.2%</div>
-          <div className="kpi-sub">of subscribers have resolvable preference signal</div>
+          <div className="kpi-label">CDP Coverage</div>
+          <div className="kpi-value" style={{ fontSize: 22 }}>89.2%</div>
+          <div className="kpi-sub">signal coverage</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Routing Accuracy</div>
-          <div className="kpi-value">73.8%</div>
-          <div className="kpi-sub">subscribers routed to highest-engagement channel</div>
+          <div className="kpi-value" style={{ fontSize: 22 }}>73.8%</div>
+          <div className="kpi-sub">to best channel</div>
+        </div>
+        <div className="kpi-card" style={{ background: "linear-gradient(135deg, #003580, #006ce4)", color: "#fff" }}>
+          <div className="kpi-label" style={{ color: "rgba(255,255,255,0.8)" }}>Dedup Rate</div>
+          <div className="kpi-value" style={{ fontSize: 22, color: "#fff" }}>{omniChannelKPIs.dedupRate}%</div>
+          <div className="kpi-sub" style={{ color: "rgba(255,255,255,0.7)" }}>sends prevented</div>
+        </div>
+        <div className="kpi-card" style={{ background: "linear-gradient(135deg, #003580, #006ce4)", color: "#fff" }}>
+          <div className="kpi-label" style={{ color: "rgba(255,255,255,0.8)" }}>Freq Cap Blocked</div>
+          <div className="kpi-value" style={{ fontSize: 22, color: "#fff" }}>3.2M</div>
+          <div className="kpi-sub" style={{ color: "rgba(255,255,255,0.7)" }}>violations prevented</div>
+        </div>
+        <div className="kpi-card" style={{ background: "linear-gradient(135deg, #003580, #006ce4)", color: "#fff" }}>
+          <div className="kpi-label" style={{ color: "rgba(255,255,255,0.8)" }}>Fatigue Score</div>
+          <div className="kpi-value" style={{ fontSize: 22, color: "#fff" }}>{omniChannelKPIs.channelFatigueScore}</div>
+          <div className="kpi-sub" style={{ color: "rgba(255,255,255,0.7)" }}>avg across subscribers</div>
         </div>
       </div>
 
@@ -179,6 +195,149 @@ export default function ChannelPreferences() {
               <div className="distribution-pct">{d.pct}%</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Subscriber Channel Profiles */}
+      <div className="bui-box">
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Subscriber Channel Profiles</div>
+        <p className="text-muted mb-16">Unified subscriber profiles showing channel preferences, engagement scores, and opt-in status</p>
+        <div className="subscriber-grid">
+          {mockSubscriberProfiles.map(sub => (
+            <div key={sub.id} className="subscriber-card">
+              <div className="subscriber-card-header">
+                <div className="subscriber-avatar">{sub.name.charAt(0)}</div>
+                <div>
+                  <div className="subscriber-name">{sub.name}</div>
+                  <div className="subscriber-preferred">
+                    Preferred: {CHANNEL_ICONS[sub.preferredChannel]} {CHANNEL_LABELS[sub.preferredChannel]}
+                    &nbsp;&middot;&nbsp;{sub.reachableChannels} channels &middot; {sub.deduplicatedCount} deduped
+                  </div>
+                </div>
+              </div>
+              <div className="subscriber-channels">
+                {sub.channels.map(ch => (
+                  <div key={ch.channel} className="subscriber-channel-row">
+                    <span className="subscriber-channel-icon">{CHANNEL_ICONS[ch.channel]}</span>
+                    <span className="subscriber-channel-name">{ch.channel === "in_app" ? "In-App" : ch.channel.charAt(0).toUpperCase() + ch.channel.slice(1)}</span>
+                    {ch.optedIn ? (
+                      <>
+                        <div className="subscriber-engagement-bar">
+                          <div className="subscriber-engagement-fill" style={{
+                            width: `${ch.engagementScore}%`,
+                            background: ch.engagementScore > 80 ? "var(--color-green-600)" : ch.engagementScore > 50 ? "var(--color-blue-500)" : "var(--callout-300)",
+                          }} />
+                        </div>
+                        <span className="subscriber-engagement-score">{ch.engagementScore}</span>
+                      </>
+                    ) : (
+                      <span className="subscriber-opted-out">opted out</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Deduplication Engine */}
+      <div className="bui-box">
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Deduplication Engine</div>
+        <p className="text-muted mb-16">Prevent subscribers from receiving the same or similar message across multiple channels</p>
+        <div className="dedup-metrics-grid">
+          <div className="dedup-metric-card">
+            <div className="dedup-metric-value">{omniChannelKPIs.dedupRate}%</div>
+            <div className="dedup-metric-label">Overall Dedup Rate</div>
+          </div>
+          <div className="dedup-metric-card">
+            <div className="dedup-metric-value">3.2M</div>
+            <div className="dedup-metric-label">Messages Prevented (7d)</div>
+          </div>
+          <div className="dedup-metric-card">
+            <div className="dedup-metric-value">$48K</div>
+            <div className="dedup-metric-label">Estimated Cost Savings</div>
+          </div>
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Dedup Rules</div>
+          <div className="rules-list">
+            <div className="rule-card">
+              <div className="rule-card-header">
+                <div className="rule-card-priority">1</div>
+                <div className="rule-card-info">
+                  <div style={{ fontWeight: 600 }}>Same Campaign Window</div>
+                  <div className="text-muted" style={{ fontSize: 12 }}>Same campaign to same subscriber within dedup window = deduplicated</div>
+                </div>
+                <label className="toggle-switch toggle-switch--sm">
+                  <input type="checkbox" defaultChecked />
+                  <span className="toggle-slider" />
+                </label>
+              </div>
+            </div>
+            <div className="rule-card">
+              <div className="rule-card-header">
+                <div className="rule-card-priority">2</div>
+                <div className="rule-card-info">
+                  <div style={{ fontWeight: 600 }}>Cross-Campaign Content Similarity</div>
+                  <div className="text-muted" style={{ fontSize: 12 }}>Different campaigns with &gt;80% similar content within 24h = deduplicated</div>
+                </div>
+                <label className="toggle-switch toggle-switch--sm">
+                  <input type="checkbox" defaultChecked />
+                  <span className="toggle-slider" />
+                </label>
+              </div>
+            </div>
+            <div className="rule-card">
+              <div className="rule-card-header">
+                <div className="rule-card-priority">3</div>
+                <div className="rule-card-info">
+                  <div style={{ fontWeight: 600 }}>Journey Topic Dedup</div>
+                  <div className="text-muted" style={{ fontSize: 12 }}>If subscriber is in an active journey for same topic, suppress standalone campaign</div>
+                </div>
+                <label className="toggle-switch toggle-switch--sm">
+                  <input type="checkbox" defaultChecked />
+                  <span className="toggle-slider" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Frequency Capping */}
+      <div className="bui-box">
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Frequency Capping</div>
+        <p className="text-muted mb-16">Global per-channel message limits to prevent channel fatigue</p>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Channel</th>
+              <th style={{ textAlign: "center" }}>Daily Cap</th>
+              <th style={{ textAlign: "center" }}>Weekly Cap</th>
+              <th style={{ textAlign: "center" }}>Monthly Cap</th>
+              <th style={{ textAlign: "right" }}>Violations Blocked (7d)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {([
+              { ch: "email" as MessageChannel, daily: 3, weekly: 10, monthly: 30, blocked: "1.2M" },
+              { ch: "push" as MessageChannel, daily: 5, weekly: 15, monthly: 40, blocked: "890K" },
+              { ch: "sms" as MessageChannel, daily: 2, weekly: 5, monthly: 12, blocked: "340K" },
+              { ch: "in_app" as MessageChannel, daily: 8, weekly: 25, monthly: 60, blocked: "210K" },
+            ]).map(row => (
+              <tr key={row.ch}>
+                <td><strong>{CHANNEL_ICONS[row.ch]} {CHANNEL_LABELS[row.ch]}</strong></td>
+                <td style={{ textAlign: "center" }}>{row.daily}/day</td>
+                <td style={{ textAlign: "center" }}>{row.weekly}/week</td>
+                <td style={{ textAlign: "center" }}>{row.monthly}/month</td>
+                <td style={{ textAlign: "right" }}><span className="badge badge-dedup">{row.blocked}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="alert alert-info" style={{ marginTop: 12 }}>
+          <strong>Cross-Channel Fatigue Rule:</strong> If subscriber received 5+ messages across all channels in the last 24 hours, all non-transactional sends are suppressed until the window resets.
         </div>
       </div>
     </div>
