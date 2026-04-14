@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { CHANNEL_ICONS, CHANNEL_LABELS, type MessageChannel } from "../types";
 import { mockTriggers } from "../data/mockData";
 
@@ -8,6 +9,7 @@ function formatNum(n: number): string {
 }
 
 export default function MessageTriggers() {
+  const navigate = useNavigate();
   const liveCount = mockTriggers.filter(t => t.status === "Live").length;
   const omniCount = mockTriggers.filter(t => t.omniChannelRouting).length;
   const totalVolume = mockTriggers.filter(t => t.status === "Live").reduce((s, t) => s + t.dailyVolume, 0);
@@ -20,7 +22,7 @@ export default function MessageTriggers() {
           <p className="page-subtitle">Event-driven trigger configuration with omni-channel routing</p>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-primary">+ New Trigger</button>
+          <button className="btn btn-primary" onClick={() => navigate("/trigger/new")}>+ New Trigger</button>
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import JourneyBuilder from "./pages/JourneyBuilder";
 import Analytics from "./pages/Analytics";
 import ChannelPreferences from "./pages/ChannelPreferences";
 import MessageTriggers from "./pages/MessageTriggers";
+import TriggerCreate from "./pages/TriggerCreate";
 import HoldoutManagement from "./pages/HoldoutManagement";
 import CampaignPriority from "./pages/CampaignPriority";
 import NoSendReasons from "./pages/NoSendReasons";
@@ -100,6 +101,7 @@ export default function App() {
             <Route path="/journeys" element={<JourneyList />} />
             <Route path="/journey/new" element={<JourneyBuilder />} />
             <Route path="/triggers" element={<MessageTriggers />} />
+            <Route path="/trigger/new" element={<TriggerCreate />} />
             <Route path="/campaign-priority" element={<CampaignPriority />} />
             <Route path="/holdouts" element={<HoldoutManagement />} />
             <Route path="/no-send" element={<NoSendReasons />} />
