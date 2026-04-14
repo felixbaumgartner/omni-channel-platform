@@ -30,9 +30,27 @@ const cdpSignals = [
   { signal: "Booking Recency", coverage: 91.6, freshness: "< 1 hour" },
 ];
 
+const DEFAULT_CHANNEL_ORDER: MessageChannel[] = ["email", "push", "sms", "in_app"];
+
 export default function ChannelPreferences() {
   const [rules, setRules] = useState(defaultRules);
   const [mlEnabled, setMlEnabled] = useState(false);
+  const [channelOrder, setChannelOrder] = useState<MessageChannel[]>(DEFAULT_CHANNEL_ORDER);
+  const [priorityDirty, setPriorityDirty] = useState(false);
+
+  function moveChannel(index: number, direction: "up" | "down") {
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= channelOrder.length) return;
+    const next = [...channelOrder];
+    [next[index], next[target]] = [next[target], next[index]];
+    setChannelOrder(next);
+    setPriorityDirty(true);
+  }
+
+  function resetPriority() {
+    setChannelOrder(DEFAULT_CHANNEL_ORDER);
+    setPriorityDirty(false);
+  }
 
   function toggleRule(id: number) {
     setRules(prev => prev.map(r => r.id === id ? { ...r, active: !r.active } : r));
@@ -118,6 +136,79 @@ export default function ChannelPreferences() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Default Channel Priority */}
+      <div className="bui-box">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Default Channel Priority</div>
+            <p className="text-muted mb-16">Platform-level fallback order when no CDP signal or marketer-specified channel pool is available. Configured by Operations — applies globally across all campaigns and journeys.</p>
+          </div>
+          {priorityDirty && (
+            <div style={{ display: "flex", gap: 8, flexShrink: 0, marginLeft: 16 }}>
+              <button className="btn btn-secondary" style={{ fontSize: 13, padding: "6px 12px" }} onClick={resetPriority}>Reset</button>
+              <button className="btn btn-primary" style={{ fontSize: 13, padding: "6px 12px" }} onClick={() => setPriorityDirty(false)}>Save Order</button>
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: 24, marginTop: 8 }}>
+          {/* Priority list */}
+          <div style={{ flex: 1 }}>
+            {channelOrder.map((ch, i) => (
+              <div key={ch} className="rule-card" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", marginBottom: 8 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                  background: i === 0 ? "#003580" : i === 1 ? "#006ce4" : i === 2 ? "#0896ff" : "#b3d4fc",
+                  color: i < 3 ? "#fff" : "#003580", fontWeight: 700, fontSize: 13,
+                }}>{i + 1}</div>
+                <span style={{ fontSize: 20 }}>{CHANNEL_ICONS[ch]}</span>
+                <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{CHANNEL_LABELS[ch]}</span>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === 0 ? 0.3 : 1 }}
+                    disabled={i === 0}
+                    onClick={() => moveChannel(i, "up")}
+                    title="Move up"
+                  >&#9650;</button>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === channelOrder.length - 1 ? 0.3 : 1 }}
+                    disabled={i === channelOrder.length - 1}
+                    onClick={() => moveChannel(i, "down")}
+                    title="Move down"
+                  >&#9660;</button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Explanation sidebar */}
+          <div style={{ flex: "0 0 320px" }}>
+            <div className="alert alert-info" style={{ margin: 0 }}>
+              <div className="alert-title">When does this apply?</div>
+              <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 13, lineHeight: 1.6 }}>
+                <li>Marketer did not specify a channel pool</li>
+                <li>CDP has no engagement signal for a subscriber</li>
+                <li>All heuristic rules evaluate to no result</li>
+                <li>ML model returns no confident prediction</li>
+              </ul>
+            </div>
+            <div style={{ marginTop: 12, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
+              The system walks this priority list top-to-bottom and selects the <strong>first channel the subscriber is opted in to</strong>. If no channel has consent, the message is suppressed.
+            </div>
+            <div style={{ marginTop: 12, padding: "10px 12px", background: "var(--neutral-100, #f5f5f5)", borderRadius: 8, fontSize: 12, lineHeight: 1.5 }}>
+              <strong>Current fallback path:</strong><br />
+              {channelOrder.map((ch, i) => (
+                <span key={ch}>
+                  {CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}{i < channelOrder.length - 1 ? " → " : ""}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Heuristic Rules */}
