@@ -517,30 +517,6 @@ export default function TriggerCreate() {
         </button>
       </div>
 
-      {/* Trigger Flow */}
-      <div className="bui-box">
-        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 8 }}>
-          TRIGGER PROCESSING FLOW
-        </div>
-        <div className="trigger-flow">
-          <span className="trigger-flow-node trigger-flow-node--event">
-            &#9889; {selectedTopicConfig?.label || "Event"}
-          </span>
-          <span className="trigger-flow-arrow">&rarr;</span>
-          <span className="trigger-flow-node trigger-flow-node--rules">Rules Engine</span>
-          <span className="trigger-flow-arrow">&rarr;</span>
-          <span className="trigger-flow-node" style={{ background: "var(--color-blue-100)", border: "1px solid var(--color-blue-300)", color: "var(--color-blue-700)" }}>
-            Extract {outputFields.length} field{outputFields.length !== 1 ? "s" : ""}
-          </span>
-          <span className="trigger-flow-arrow">&rarr;</span>
-          <span className="trigger-flow-node trigger-flow-node--router">Linked Campaigns</span>
-        </div>
-        <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
-          Identities in the output are automatically resolved via the identity graph.
-          Campaigns decide which channels to use.
-        </div>
-      </div>
-
       {/* Bottom Save */}
       <div className="btn-group">
         <button className="btn btn-secondary" onClick={() => navigate("/triggers")}>Cancel</button>
