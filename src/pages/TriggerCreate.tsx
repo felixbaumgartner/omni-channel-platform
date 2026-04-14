@@ -2,25 +2,30 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CHANNEL_LABELS,
-  CHANNEL_ICONS,
   RULE_ATTRIBUTES,
   INPUT_TOPICS,
-  type MessageChannel,
   type EligibilityRule,
   type RuleOperator,
   type RuleConnector,
   type TopicCategory,
 } from "../types";
-import BaseContentSection from "../components/BaseContentSection";
 
 type TriggerType = "GENERAL" | "SESSION";
-type DeliveryMode = "best_channel" | "multi_channel" | "sequential";
 
-interface ChannelRoutingRule {
-  channel: MessageChannel;
-  condition: string;
-  priority: number;
+interface IdentityField {
+  id: string;
+  type: "email_id" | "device_id" | "phone_id" | "user_id" | "custom";
+  source: string;
+  isPrimary: boolean;
 }
+
+const IDENTITY_TYPES = [
+  { value: "email_id", label: "Email ID (soylent_email_id)", description: "Resolves to email, push, in-app via identity graph" },
+  { value: "device_id", label: "Device ID", description: "Resolves to push, in-app channels" },
+  { value: "phone_id", label: "Phone ID (soylent_phone_id)", description: "Resolves to SMS channel" },
+  { value: "user_id", label: "User ID", description: "Resolves to all channels via identity graph" },
+  { value: "custom", label: "Custom", description: "Custom identity field" },
+] as const;
 
 const TOPIC_OPTIONS = Object.entries(INPUT_TOPICS).map(([key, cfg]) => ({
   key,
@@ -41,19 +46,16 @@ export default function TriggerCreate() {
 
   // Input configuration
   const [triggerType, setTriggerType] = useState<TriggerType>("GENERAL");
-  const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>(["email"]);
   const [inputTopic, setInputTopic] = useState("");
   const [additionalTopics, setAdditionalTopics] = useState<string[]>([]);
   const [consentCheck, setConsentCheck] = useState(true);
   const [joiningWindow, setJoiningWindow] = useState("300");
   const [delayMinutes, setDelayMinutes] = useState("0");
 
-  // Omni-channel routing
-  const [omniChannelRouting, setOmniChannelRouting] = useState(false);
-  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("best_channel");
-  const [channelRoutingRules, setChannelRoutingRules] = useState<ChannelRoutingRule[]>([]);
-  const [dedupEnabled, setDedupEnabled] = useState(true);
-  const [dedupWindow, setDedupWindow] = useState("24");
+  // Identity resolution
+  const [identityFields, setIdentityFields] = useState<IdentityField[]>([
+    { id: "id_1", type: "email_id", source: "event.soylent_email_id", isPrimary: true },
+  ]);
 
   // Rules
   const [advancedRuleMode, setAdvancedRuleMode] = useState(false);
@@ -72,6 +74,29 @@ export default function TriggerCreate() {
   // Derived
   const selectedTopicConfig = INPUT_TOPICS[inputTopic];
   const topicCategory: TopicCategory | null = selectedTopicConfig?.category ?? null;
+  const resolvedChannels = getResolvedChannels(identityFields);
+
+  function getResolvedChannels(fields: IdentityField[]): string[] {
+    const channels = new Set<string>();
+    for (const f of fields) {
+      if (f.type === "email_id" || f.type === "user_id") {
+        channels.add("Email");
+        channels.add("Push");
+        channels.add("In-App");
+      }
+      if (f.type === "device_id" || f.type === "user_id") {
+        channels.add("Push");
+        channels.add("In-App");
+      }
+      if (f.type === "phone_id" || f.type === "user_id") {
+        channels.add("SMS");
+      }
+      if (f.type === "custom") {
+        channels.add("Depends on resolution");
+      }
+    }
+    return Array.from(channels);
+  }
 
   // Auto-generate reporting label
   function handleNameChange(name: string) {
@@ -81,25 +106,7 @@ export default function TriggerCreate() {
     }
   }
 
-  function toggleChannel(ch: MessageChannel) {
-    const next = selectedChannels.includes(ch)
-      ? selectedChannels.filter(c => c !== ch)
-      : [...selectedChannels, ch];
-    setSelectedChannels(next);
-
-    // Update routing rules when channels change
-    if (omniChannelRouting) {
-      setChannelRoutingRules(prev => {
-        const existing = prev.filter(r => next.includes(r.channel));
-        const newChannels = next.filter(ch => !existing.some(r => r.channel === ch));
-        return [
-          ...existing,
-          ...newChannels.map((ch, i) => ({ channel: ch, condition: "", priority: existing.length + i + 1 })),
-        ];
-      });
-    }
-  }
-
+  // Topics
   function addTopic() {
     setAdditionalTopics(prev => [...prev, ""]);
   }
@@ -110,6 +117,31 @@ export default function TriggerCreate() {
 
   function updateTopic(index: number, value: string) {
     setAdditionalTopics(prev => prev.map((t, i) => (i === index ? value : t)));
+  }
+
+  // Identity fields
+  function addIdentityField() {
+    setIdentityFields(prev => [
+      ...prev,
+      { id: `id_${Date.now()}`, type: "device_id", source: "", isPrimary: false },
+    ]);
+  }
+
+  function removeIdentityField(id: string) {
+    setIdentityFields(prev => prev.filter(f => f.id !== id));
+  }
+
+  function updateIdentityField(id: string, field: Partial<IdentityField>) {
+    setIdentityFields(prev =>
+      prev.map(f => {
+        if (f.id !== id) {
+          // If we're setting a new primary, unset the old one
+          if (field.isPrimary) return { ...f, isPrimary: false };
+          return f;
+        }
+        return { ...f, ...field };
+      })
+    );
   }
 
   // Rules
@@ -141,22 +173,6 @@ export default function TriggerCreate() {
     setOutputFields(prev => prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)));
   }
 
-  // Channel routing rules
-  function updateRoutingRule(channel: MessageChannel, condition: string) {
-    setChannelRoutingRules(prev =>
-      prev.map(r => (r.channel === channel ? { ...r, condition } : r))
-    );
-  }
-
-  function enableOmniRouting(enabled: boolean) {
-    setOmniChannelRouting(enabled);
-    if (enabled && channelRoutingRules.length === 0) {
-      setChannelRoutingRules(
-        selectedChannels.map((ch, i) => ({ channel: ch, condition: "", priority: i + 1 }))
-      );
-    }
-  }
-
   // Save
   function handleSave() {
     setSaved(true);
@@ -171,6 +187,8 @@ export default function TriggerCreate() {
         .map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute} ${r.operator.replace("_", " ")} ${r.value}`)
         .join("");
 
+  const primaryIdentity = identityFields.find(f => f.isPrimary);
+
   // Success state
   if (saved) {
     return (
@@ -182,20 +200,20 @@ export default function TriggerCreate() {
         </div>
         <div className="bui-box" style={{ textAlign: "center", padding: 48 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>&#10003;</div>
-          <h2 style={{ marginBottom: 8 }}>Omni-Channel Trigger Created</h2>
+          <h2 style={{ marginBottom: 8 }}>Trigger Created</h2>
           <p className="text-muted mb-16">
             "{triggerName}" has been saved as a {triggerType} trigger on topic{" "}
             <code style={{ background: "rgba(0,0,0,0.05)", padding: "1px 6px", borderRadius: 3 }}>
               {selectedTopicConfig?.label || inputTopic}
-            </code>{" "}
-            targeting {selectedChannels.map(ch => CHANNEL_LABELS[ch]).join(", ")}.
+            </code>.
           </p>
-          {omniChannelRouting && (
-            <p className="text-muted mb-16">
-              Omni-Channel Routing: <strong>Enabled</strong> &middot; Mode:{" "}
-              <strong>{deliveryMode === "best_channel" ? "Best Channel" : deliveryMode === "multi_channel" ? "Multi-Channel" : "Sequential"}</strong>
-            </p>
-          )}
+          <p className="text-muted mb-16">
+            Primary identity: <strong>{primaryIdentity?.type || "none"}</strong>
+            {" "}&middot; Resolvable channels: <strong>{resolvedChannels.join(", ")}</strong>
+          </p>
+          <p className="text-muted mb-16" style={{ fontSize: 12 }}>
+            Channel routing will be determined at campaign creation time based on the identities this trigger provides.
+          </p>
           <div style={{ marginTop: 16 }}>
             <span className="badge badge-draft" style={{ fontSize: 13, padding: "6px 14px" }}>Status: Draft</span>
           </div>
@@ -213,16 +231,12 @@ export default function TriggerCreate() {
       {/* Header */}
       <div className="page-header">
         <div className="page-header-main">
-          <h1 className="page-title">New Omni-Channel Trigger</h1>
+          <h1 className="page-title">New Trigger</h1>
           <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
             <span className="badge badge-outline">{triggerType}</span>
-            {selectedChannels.map(ch => (
-              <span key={ch} className="badge badge-outline">
-                {CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}
-              </span>
-            ))}
-            {omniChannelRouting && (
-              <span className="badge-orchestration badge-orchestration--best_channel">Omni-Channel Routing</span>
+            {inputTopic && <span className="badge badge-media">{selectedTopicConfig?.label || inputTopic}</span>}
+            {primaryIdentity && (
+              <span className="badge badge-outline">{primaryIdentity.type.replace("_", " ")}</span>
             )}
             <span className="badge badge-draft">Draft</span>
           </div>
@@ -231,7 +245,7 @@ export default function TriggerCreate() {
           <button className="btn btn-secondary" onClick={() => navigate("/triggers")}>Cancel</button>
           <button
             className="btn btn-primary"
-            disabled={!triggerName || !inputTopic || selectedChannels.length === 0}
+            disabled={!triggerName || !inputTopic || identityFields.length === 0}
             onClick={handleSave}
           >
             Save Trigger
@@ -243,9 +257,9 @@ export default function TriggerCreate() {
       <div className="info-banner">
         <span className="info-banner-icon">&#9889;</span>
         <span>
-          <strong>Omni-Channel Triggers:</strong> In PROD, each trigger routes to a single channel.
-          Here, a single trigger event can route to multiple channels with per-channel conditions,
-          deduplication, and intelligent routing.
+          <strong>Channel-agnostic triggers:</strong> Triggers capture events and extract identities.
+          Channel routing happens at campaign creation time. As long as the trigger provides at least one identity
+          (e.g., email ID), the system can resolve all other identifiers via the identity graph.
         </span>
       </div>
 
@@ -301,7 +315,7 @@ export default function TriggerCreate() {
       {/* Input Configuration */}
       <div className="bui-box">
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Input Configuration</div>
-        <p className="text-muted mb-16">Configure the event source, channels, and timing for this trigger.</p>
+        <p className="text-muted mb-16">Configure the event source and timing for this trigger.</p>
 
         {/* Trigger Type */}
         <div className="form-group">
@@ -336,36 +350,6 @@ export default function TriggerCreate() {
           </div>
         </div>
 
-        {/* Channel Selection */}
-        <div className="form-group">
-          <label className="form-label">Channel Selection</label>
-          <p className="text-muted" style={{ marginBottom: 8, fontSize: 13 }}>
-            In PROD, triggers route to a single channel. With omni-channel, select multiple channels for intelligent routing.
-          </p>
-          <div className="channel-selector-grid">
-            {(["email", "push", "sms", "in_app"] as MessageChannel[]).map(ch => (
-              <div
-                key={ch}
-                className={`channel-selector-card ${selectedChannels.includes(ch) ? "selected" : ""}`}
-                onClick={() => toggleChannel(ch)}
-              >
-                <div className="channel-selector-check">{selectedChannels.includes(ch) ? "\u2713" : ""}</div>
-                <div className="channel-selector-icon">{CHANNEL_ICONS[ch]}</div>
-                <div className="channel-selector-label">{CHANNEL_LABELS[ch]}</div>
-              </div>
-            ))}
-          </div>
-          {selectedChannels.length > 1 && (
-            <div className="info-banner tier-selection-appear" style={{ marginTop: 12 }}>
-              <span className="info-banner-icon">&#128279;</span>
-              <span>
-                <strong>Multi-Channel Trigger</strong> &mdash; This trigger will route events to {selectedChannels.length} channels.
-                Enable Omni-Channel Routing below to configure per-channel conditions.
-              </span>
-            </div>
-          )}
-        </div>
-
         {/* Input Topic */}
         <div className="form-group">
           <label className="form-label">Input Topic</label>
@@ -388,8 +372,7 @@ export default function TriggerCreate() {
           </select>
           {selectedTopicConfig && (
             <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
-              Category: {topicCategory === "state_change" ? "State Change" : "Behavioral"} &middot;
-              Available channels: {selectedTopicConfig.channels.map(ch => CHANNEL_LABELS[ch]).join(", ")}
+              Category: {topicCategory === "state_change" ? "State Change" : "Behavioral"}
             </div>
           )}
         </div>
@@ -430,7 +413,7 @@ export default function TriggerCreate() {
             Enable direct marketing consent check
           </label>
           <div className="text-muted" style={{ marginTop: 4, fontSize: 12, marginLeft: 24 }}>
-            When enabled, the trigger will validate subscriber consent via Janet subscription API before routing.
+            When enabled, consent will be validated at delivery time via Janet subscription API per channel.
           </div>
         </div>
 
@@ -467,6 +450,133 @@ export default function TriggerCreate() {
             <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
               Delay before evaluating the trigger. 0 = no delay. Max 360 minutes (6 hours).
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Identity Resolution */}
+      <div className="bui-box">
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Identity Resolution</div>
+        <p className="text-muted mb-16">
+          Define which identifiers the trigger extracts from events. At least one identity is required.
+          The system uses the identity graph to resolve all reachable channels at campaign delivery time.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {identityFields.map(field => (
+            <div
+              key={field.id}
+              style={{
+                padding: "14px 16px",
+                background: field.isPrimary ? "var(--color-blue-50)" : "var(--color-gray-50)",
+                borderRadius: "var(--radius-md)",
+                border: field.isPrimary ? "1px solid var(--color-blue-200)" : "1px solid var(--border-color)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}>
+                  <input
+                    type="radio"
+                    name="primary-identity"
+                    checked={field.isPrimary}
+                    onChange={() => updateIdentityField(field.id, { isPrimary: true })}
+                  />
+                  Primary
+                </label>
+                {field.isPrimary && (
+                  <span className="badge badge-brand" style={{ fontSize: 10 }}>Primary identifier for resolution</span>
+                )}
+                <div style={{ flex: 1 }} />
+                {identityFields.length > 1 && (
+                  <button
+                    className="rule-remove-btn"
+                    onClick={() => removeIdentityField(field.id)}
+                  >
+                    &times;
+                  </button>
+                )}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label className="form-label" style={{ fontSize: 12 }}>Identity Type</label>
+                  <select
+                    className="form-select"
+                    value={field.type}
+                    onChange={e => updateIdentityField(field.id, { type: e.target.value as IdentityField["type"] })}
+                  >
+                    {IDENTITY_TYPES.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                  <div className="text-muted" style={{ marginTop: 4, fontSize: 11 }}>
+                    {IDENTITY_TYPES.find(t => t.value === field.type)?.description}
+                  </div>
+                </div>
+                <div>
+                  <label className="form-label" style={{ fontSize: 12 }}>Source Field</label>
+                  <input
+                    className="form-input"
+                    placeholder="e.g., event.soylent_email_id"
+                    value={field.source}
+                    onChange={e => updateIdentityField(field.id, { source: e.target.value })}
+                  />
+                  <div className="text-muted" style={{ marginTop: 4, fontSize: 11 }}>
+                    Field path in the input event payload
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={addIdentityField}>
+          + Add Identity Field
+        </button>
+
+        {/* Resolved channels preview */}
+        {identityFields.length > 0 && (
+          <div style={{ marginTop: 16, padding: "12px 16px", background: "var(--color-gray-50)", borderRadius: "var(--radius-md)" }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 8 }}>
+              RESOLVABLE CHANNELS (at campaign time)
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {resolvedChannels.map(ch => (
+                <span key={ch} className="badge badge-outline">{ch}</span>
+              ))}
+            </div>
+            <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
+              Based on the identity types above, linked campaigns can target these channels.
+              The actual channel selection and routing mode (best channel, multi-channel, sequential) is configured
+              when creating a campaign that links to this trigger.
+            </div>
+          </div>
+        )}
+
+        {/* Identity graph flow */}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 6 }}>
+            IDENTITY RESOLUTION FLOW
+          </div>
+          <div className="trigger-flow">
+            <span className="trigger-flow-node trigger-flow-node--event">
+              &#9889; {selectedTopicConfig?.label || "Event"}
+            </span>
+            <span className="trigger-flow-arrow">&rarr;</span>
+            <span className="trigger-flow-node trigger-flow-node--rules">Rules Engine</span>
+            <span className="trigger-flow-arrow">&rarr;</span>
+            <span className="trigger-flow-node" style={{ background: "var(--color-blue-100)", border: "1px solid var(--color-blue-300)", color: "var(--color-blue-700)" }}>
+              Extract {identityFields.length} {identityFields.length === 1 ? "identity" : "identities"}
+            </span>
+            <span className="trigger-flow-arrow">&rarr;</span>
+            <span className="trigger-flow-node trigger-flow-node--router">Identity Graph</span>
+            <span className="trigger-flow-arrow">&rarr;</span>
+            <span className="trigger-flow-node" style={{ background: "var(--color-green-100)", border: "1px solid var(--color-green-300)", color: "var(--color-green-700)" }}>
+              Resolve all IDs
+            </span>
+            <span className="trigger-flow-arrow">&rarr;</span>
+            <span className="trigger-flow-node" style={{ background: "var(--color-gray-100)", border: "1px solid var(--color-gray-300)", color: "var(--color-gray-600)" }}>
+              Campaign decides channel
+            </span>
           </div>
         </div>
       </div>
@@ -574,209 +684,12 @@ export default function TriggerCreate() {
         )}
       </div>
 
-      {/* Omni-Channel Routing */}
-      {selectedChannels.length > 1 && (
-        <div className="bui-box tier-selection-appear">
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>Omni-Channel Routing</div>
-              <p className="text-muted" style={{ marginTop: 4 }}>
-                Configure how events are routed across the {selectedChannels.length} selected channels.
-              </p>
-            </div>
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={omniChannelRouting}
-                onChange={e => enableOmniRouting(e.target.checked)}
-              />
-              <span className="toggle-slider" />
-            </label>
-          </div>
-
-          {omniChannelRouting && (
-            <div className="tier-selection-appear">
-              {/* Delivery Mode */}
-              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Delivery Mode</div>
-              <div className="radio-card-group" style={{ marginBottom: 20 }}>
-                <div
-                  className={`radio-card ${deliveryMode === "best_channel" ? "selected" : ""}`}
-                  onClick={() => setDeliveryMode("best_channel")}
-                >
-                  <div className="radio-card-header">
-                    <div className="radio-card-radio" />
-                    <div className="radio-card-title">Best Channel</div>
-                  </div>
-                  <div className="radio-card-description">
-                    Route each event to the single best channel per subscriber based on engagement history, app
-                    install status, and channel preferences. Fallback if primary fails.
-                  </div>
-                </div>
-                <div
-                  className={`radio-card ${deliveryMode === "multi_channel" ? "selected" : ""}`}
-                  onClick={() => setDeliveryMode("multi_channel")}
-                >
-                  <div className="radio-card-header">
-                    <div className="radio-card-radio" />
-                    <div className="radio-card-title">Multi-Channel</div>
-                  </div>
-                  <div className="radio-card-description">
-                    Route events to all eligible channels simultaneously. Per-channel conditions determine
-                    which channels activate. Deduplication prevents redundant messages.
-                  </div>
-                </div>
-                <div
-                  className={`radio-card ${deliveryMode === "sequential" ? "selected" : ""}`}
-                  onClick={() => setDeliveryMode("sequential")}
-                >
-                  <div className="radio-card-header">
-                    <div className="radio-card-radio" />
-                    <div className="radio-card-title">Sequential</div>
-                  </div>
-                  <div className="radio-card-description">
-                    Route events through channels in priority order with configurable wait periods.
-                    Move to next channel if previous fails or goes unopened.
-                  </div>
-                </div>
-              </div>
-
-              {/* Per-Channel Routing Rules */}
-              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Per-Channel Routing Conditions</div>
-              <p className="text-muted" style={{ marginBottom: 12, fontSize: 13 }}>
-                Define conditions for when each channel should receive the event. Leave empty for "always route".
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {channelRoutingRules.map(rule => (
-                  <div
-                    key={rule.channel}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "160px 1fr",
-                      gap: 12,
-                      alignItems: "center",
-                      padding: "10px 14px",
-                      background: "var(--color-gray-50)",
-                      borderRadius: "var(--radius-md)",
-                      borderLeft: `3px solid var(--color-${rule.channel === "in_app" ? "inapp" : rule.channel})`,
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 18 }}>{CHANNEL_ICONS[rule.channel]}</span>
-                      <strong style={{ fontSize: 13 }}>{CHANNEL_LABELS[rule.channel]}</strong>
-                      <span className="badge badge-outline" style={{ fontSize: 10 }}>P{rule.priority}</span>
-                    </div>
-                    <input
-                      className="form-input"
-                      style={{ margin: 0 }}
-                      placeholder={`e.g., subscriber.has_app == true`}
-                      value={rule.condition}
-                      onChange={e => updateRoutingRule(rule.channel, e.target.value)}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* Routing Flow Preview */}
-              <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 6 }}>
-                  ROUTING FLOW PREVIEW
-                </div>
-                <div className="trigger-flow">
-                  <span className="trigger-flow-node trigger-flow-node--event">
-                    &#9889; {selectedTopicConfig?.label || "Event"}
-                  </span>
-                  <span className="trigger-flow-arrow">&rarr;</span>
-                  <span className="trigger-flow-node trigger-flow-node--rules">Rules Engine</span>
-                  <span className="trigger-flow-arrow">&rarr;</span>
-                  <span className="trigger-flow-node trigger-flow-node--router">Channel Router</span>
-                  <span className="trigger-flow-arrow">&rarr;</span>
-                  {channelRoutingRules.map((cr, i) => (
-                    <span key={cr.channel}>
-                      {i > 0 && <span style={{ color: "var(--color-gray-300)", margin: "0 2px" }}>|</span>}
-                      <span
-                        className="trigger-flow-node trigger-flow-node--channel"
-                        style={{
-                          background: `var(--color-${cr.channel === "in_app" ? "inapp" : cr.channel})`,
-                          color: "#fff",
-                          border: "none",
-                        }}
-                      >
-                        {CHANNEL_ICONS[cr.channel]} {cr.condition || "always"}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Multi-channel warning */}
-              {deliveryMode === "multi_channel" && (
-                <div className="alert alert-warning tier-selection-appear" style={{ marginTop: 16 }}>
-                  <div className="alert-title">Multi-Channel Guardrails Active</div>
-                  <ul style={{ margin: "8px 0 0 16px", padding: 0 }}>
-                    <li>Subscriber consent validated per-channel before delivery</li>
-                    <li>Frequency caps respected across all channels</li>
-                    <li>Deduplication active to prevent redundant messages</li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Cross-Channel Deduplication */}
-      {selectedChannels.length > 1 && omniChannelRouting && (
-        <div className="bui-box tier-selection-appear">
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>Cross-Channel Deduplication</div>
-              <p className="text-muted" style={{ marginTop: 4 }}>
-                Prevent the same subscriber from receiving duplicate trigger-fired messages across channels.
-              </p>
-            </div>
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={dedupEnabled}
-                onChange={e => setDedupEnabled(e.target.checked)}
-              />
-              <span className="toggle-slider" />
-            </label>
-          </div>
-          {dedupEnabled && (
-            <div className="tier-selection-appear" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div className="form-group">
-                <label className="form-label">Deduplication Window (hours)</label>
-                <input
-                  className="form-input"
-                  type="number"
-                  min="1"
-                  max="168"
-                  value={dedupWindow}
-                  onChange={e => setDedupWindow(e.target.value)}
-                />
-                <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
-                  Same trigger event to same subscriber within {dedupWindow}h = deduplicated
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Dedup Strategy</label>
-                <select className="form-select">
-                  <option>Event ID match (recommended)</option>
-                  <option>Subscriber + topic match</option>
-                  <option>Content similarity</option>
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Output Configuration */}
       <div className="bui-box">
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Output Configuration</div>
         <p className="text-muted mb-16">
-          Map fields from the input event to the trigger output. These fields are passed to linked campaigns.
+          Map additional fields from the input event to the trigger output. These fields are passed to linked campaigns
+          alongside the resolved identities.
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {outputFields.map((field, i) => (
@@ -790,7 +703,7 @@ export default function TriggerCreate() {
               />
               <input
                 className="form-input"
-                placeholder="Source expression (e.g., event.user_id)"
+                placeholder="Source expression (e.g., event.booking_id)"
                 value={field.source}
                 onChange={e => updateOutputField(i, "source", e.target.value)}
                 style={{ margin: 0 }}
@@ -810,15 +723,12 @@ export default function TriggerCreate() {
         </button>
       </div>
 
-      {/* Base Content per channel */}
-      <BaseContentSection selectedChannels={selectedChannels} />
-
       {/* Bottom Save */}
       <div className="btn-group">
         <button className="btn btn-secondary" onClick={() => navigate("/triggers")}>Cancel</button>
         <button
           className="btn btn-primary"
-          disabled={!triggerName || !inputTopic || selectedChannels.length === 0}
+          disabled={!triggerName || !inputTopic || identityFields.length === 0}
           onClick={handleSave}
         >
           Save Trigger
