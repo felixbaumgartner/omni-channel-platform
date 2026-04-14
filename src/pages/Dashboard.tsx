@@ -39,7 +39,7 @@ export default function Dashboard() {
       <div className="info-banner">
         <span className="info-banner-icon">&#9889;</span>
         <span>
-          <strong>Omni-Channel Intelligence Active</strong> &mdash; {omniChannelKPIs.bestChannelRouting}% of sends use intelligent channel routing, {omniChannelKPIs.dedupRate}% deduplication savings ({formatNum(omniChannelKPIs.dedupSavings)} messages prevented)
+          <strong>Omni-Channel Intelligence Active</strong> &mdash; {omniChannelKPIs.bestChannelRouting}% of sends use intelligent channel routing
         </span>
       </div>
 
@@ -49,11 +49,6 @@ export default function Dashboard() {
           <div className="kpi-label">Unified Campaign Groups</div>
           <div className="kpi-value">{omniChannelKPIs.unifiedGroupCount}</div>
           <div className="kpi-sub">spanning {mockCampaigns.filter(c => c.unifiedGroupId).length} channel campaigns</div>
-        </div>
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Cross-Channel Dedup</div>
-          <div className="kpi-value">{omniChannelKPIs.dedupRate}%</div>
-          <div className="kpi-sub">{formatNum(omniChannelKPIs.dedupSavings)} prevented</div>
         </div>
         <div className="omni-kpi-card">
           <div className="kpi-label">Best Channel Routing</div>
