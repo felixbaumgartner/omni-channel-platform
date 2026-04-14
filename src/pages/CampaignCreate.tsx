@@ -178,6 +178,14 @@ export default function CampaignCreate() {
                 </div>
               ))}
             </div>
+            {selectedChannels.length === 1 && (
+              <div className="info-banner tier-selection-appear" style={{ marginTop: 16 }}>
+                <span className="info-banner-icon">&#9881;</span>
+                <span>
+                  <strong>Default channel priority will apply.</strong> Since only {CHANNEL_LABELS[selectedChannels[0]]} is selected, the system will use the configured default priority order (<strong>Email &rarr; Push &rarr; SMS &rarr; In-App</strong>) to route to additional channels if the subscriber is unreachable on {CHANNEL_LABELS[selectedChannels[0]]}. You can adjust the default priority in <a href="/channel-preferences" style={{ color: "var(--color-blue-600)", textDecoration: "underline" }}>Channel Preferences</a>.
+                </span>
+              </div>
+            )}
             {selectedChannels.length > 1 && (
               <div className="info-banner tier-selection-appear" style={{ marginTop: 16 }}>
                 <span className="info-banner-icon">&#128279;</span>
