@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  CHANNEL_LABELS,
   RULE_ATTRIBUTES,
   INPUT_TOPICS,
   type EligibilityRule,
@@ -12,27 +11,11 @@ import {
 
 type TriggerType = "GENERAL" | "SESSION";
 
-interface IdentityField {
-  id: string;
-  type: "email_id" | "device_id" | "phone_id" | "user_id" | "custom";
-  source: string;
-  isPrimary: boolean;
-}
-
-const IDENTITY_TYPES = [
-  { value: "email_id", label: "Email ID (soylent_email_id)", description: "Resolves to email, push, in-app via identity graph" },
-  { value: "device_id", label: "Device ID", description: "Resolves to push, in-app channels" },
-  { value: "phone_id", label: "Phone ID (soylent_phone_id)", description: "Resolves to SMS channel" },
-  { value: "user_id", label: "User ID", description: "Resolves to all channels via identity graph" },
-  { value: "custom", label: "Custom", description: "Custom identity field" },
-] as const;
-
 const TOPIC_OPTIONS = Object.entries(INPUT_TOPICS).map(([key, cfg]) => ({
   key,
   label: cfg.label,
   category: cfg.category,
   description: cfg.description,
-  channels: cfg.channels,
 }));
 
 export default function TriggerCreate() {
@@ -52,11 +35,6 @@ export default function TriggerCreate() {
   const [joiningWindow, setJoiningWindow] = useState("300");
   const [delayMinutes, setDelayMinutes] = useState("0");
 
-  // Identity resolution
-  const [identityFields, setIdentityFields] = useState<IdentityField[]>([
-    { id: "id_1", type: "email_id", source: "event.soylent_email_id", isPrimary: true },
-  ]);
-
   // Rules
   const [advancedRuleMode, setAdvancedRuleMode] = useState(false);
   const [handcraftedRule, setHandcraftedRule] = useState("");
@@ -74,29 +52,6 @@ export default function TriggerCreate() {
   // Derived
   const selectedTopicConfig = INPUT_TOPICS[inputTopic];
   const topicCategory: TopicCategory | null = selectedTopicConfig?.category ?? null;
-  const resolvedChannels = getResolvedChannels(identityFields);
-
-  function getResolvedChannels(fields: IdentityField[]): string[] {
-    const channels = new Set<string>();
-    for (const f of fields) {
-      if (f.type === "email_id" || f.type === "user_id") {
-        channels.add("Email");
-        channels.add("Push");
-        channels.add("In-App");
-      }
-      if (f.type === "device_id" || f.type === "user_id") {
-        channels.add("Push");
-        channels.add("In-App");
-      }
-      if (f.type === "phone_id" || f.type === "user_id") {
-        channels.add("SMS");
-      }
-      if (f.type === "custom") {
-        channels.add("Depends on resolution");
-      }
-    }
-    return Array.from(channels);
-  }
 
   // Auto-generate reporting label
   function handleNameChange(name: string) {
@@ -117,31 +72,6 @@ export default function TriggerCreate() {
 
   function updateTopic(index: number, value: string) {
     setAdditionalTopics(prev => prev.map((t, i) => (i === index ? value : t)));
-  }
-
-  // Identity fields
-  function addIdentityField() {
-    setIdentityFields(prev => [
-      ...prev,
-      { id: `id_${Date.now()}`, type: "device_id", source: "", isPrimary: false },
-    ]);
-  }
-
-  function removeIdentityField(id: string) {
-    setIdentityFields(prev => prev.filter(f => f.id !== id));
-  }
-
-  function updateIdentityField(id: string, field: Partial<IdentityField>) {
-    setIdentityFields(prev =>
-      prev.map(f => {
-        if (f.id !== id) {
-          // If we're setting a new primary, unset the old one
-          if (field.isPrimary) return { ...f, isPrimary: false };
-          return f;
-        }
-        return { ...f, ...field };
-      })
-    );
   }
 
   // Rules
@@ -187,8 +117,6 @@ export default function TriggerCreate() {
         .map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute} ${r.operator.replace("_", " ")} ${r.value}`)
         .join("");
 
-  const primaryIdentity = identityFields.find(f => f.isPrimary);
-
   // Success state
   if (saved) {
     return (
@@ -207,12 +135,9 @@ export default function TriggerCreate() {
               {selectedTopicConfig?.label || inputTopic}
             </code>.
           </p>
-          <p className="text-muted mb-16">
-            Primary identity: <strong>{primaryIdentity?.type || "none"}</strong>
-            {" "}&middot; Resolvable channels: <strong>{resolvedChannels.join(", ")}</strong>
-          </p>
-          <p className="text-muted mb-16" style={{ fontSize: 12 }}>
-            Channel routing will be determined at campaign creation time based on the identities this trigger provides.
+          <p className="text-muted mb-16" style={{ fontSize: 13 }}>
+            {outputFields.length} output field{outputFields.length !== 1 ? "s" : ""} configured.
+            Channel routing will be determined when a campaign links to this trigger.
           </p>
           <div style={{ marginTop: 16 }}>
             <span className="badge badge-draft" style={{ fontSize: 13, padding: "6px 14px" }}>Status: Draft</span>
@@ -235,9 +160,6 @@ export default function TriggerCreate() {
           <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
             <span className="badge badge-outline">{triggerType}</span>
             {inputTopic && <span className="badge badge-media">{selectedTopicConfig?.label || inputTopic}</span>}
-            {primaryIdentity && (
-              <span className="badge badge-outline">{primaryIdentity.type.replace("_", " ")}</span>
-            )}
             <span className="badge badge-draft">Draft</span>
           </div>
         </div>
@@ -245,7 +167,7 @@ export default function TriggerCreate() {
           <button className="btn btn-secondary" onClick={() => navigate("/triggers")}>Cancel</button>
           <button
             className="btn btn-primary"
-            disabled={!triggerName || !inputTopic || identityFields.length === 0}
+            disabled={!triggerName || !inputTopic}
             onClick={handleSave}
           >
             Save Trigger
@@ -257,9 +179,8 @@ export default function TriggerCreate() {
       <div className="info-banner">
         <span className="info-banner-icon">&#9889;</span>
         <span>
-          <strong>Channel-agnostic triggers:</strong> Triggers capture events and extract identities.
-          Channel routing happens at campaign creation time. As long as the trigger provides at least one identity
-          (e.g., email ID), the system can resolve all other identifiers via the identity graph.
+          Triggers are channel-agnostic event processors. Define the event source, rules, and output fields.
+          The system automatically resolves identities from the event payload &mdash; channel routing is handled at campaign creation time.
         </span>
       </div>
 
@@ -454,133 +375,6 @@ export default function TriggerCreate() {
         </div>
       </div>
 
-      {/* Identity Resolution */}
-      <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Identity Resolution</div>
-        <p className="text-muted mb-16">
-          Define which identifiers the trigger extracts from events. At least one identity is required.
-          The system uses the identity graph to resolve all reachable channels at campaign delivery time.
-        </p>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {identityFields.map(field => (
-            <div
-              key={field.id}
-              style={{
-                padding: "14px 16px",
-                background: field.isPrimary ? "var(--color-blue-50)" : "var(--color-gray-50)",
-                borderRadius: "var(--radius-md)",
-                border: field.isPrimary ? "1px solid var(--color-blue-200)" : "1px solid var(--border-color)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}>
-                  <input
-                    type="radio"
-                    name="primary-identity"
-                    checked={field.isPrimary}
-                    onChange={() => updateIdentityField(field.id, { isPrimary: true })}
-                  />
-                  Primary
-                </label>
-                {field.isPrimary && (
-                  <span className="badge badge-brand" style={{ fontSize: 10 }}>Primary identifier for resolution</span>
-                )}
-                <div style={{ flex: 1 }} />
-                {identityFields.length > 1 && (
-                  <button
-                    className="rule-remove-btn"
-                    onClick={() => removeIdentityField(field.id)}
-                  >
-                    &times;
-                  </button>
-                )}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label className="form-label" style={{ fontSize: 12 }}>Identity Type</label>
-                  <select
-                    className="form-select"
-                    value={field.type}
-                    onChange={e => updateIdentityField(field.id, { type: e.target.value as IdentityField["type"] })}
-                  >
-                    {IDENTITY_TYPES.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                  <div className="text-muted" style={{ marginTop: 4, fontSize: 11 }}>
-                    {IDENTITY_TYPES.find(t => t.value === field.type)?.description}
-                  </div>
-                </div>
-                <div>
-                  <label className="form-label" style={{ fontSize: 12 }}>Source Field</label>
-                  <input
-                    className="form-input"
-                    placeholder="e.g., event.soylent_email_id"
-                    value={field.source}
-                    onChange={e => updateIdentityField(field.id, { source: e.target.value })}
-                  />
-                  <div className="text-muted" style={{ marginTop: 4, fontSize: 11 }}>
-                    Field path in the input event payload
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={addIdentityField}>
-          + Add Identity Field
-        </button>
-
-        {/* Resolved channels preview */}
-        {identityFields.length > 0 && (
-          <div style={{ marginTop: 16, padding: "12px 16px", background: "var(--color-gray-50)", borderRadius: "var(--radius-md)" }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 8 }}>
-              RESOLVABLE CHANNELS (at campaign time)
-            </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {resolvedChannels.map(ch => (
-                <span key={ch} className="badge badge-outline">{ch}</span>
-              ))}
-            </div>
-            <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
-              Based on the identity types above, linked campaigns can target these channels.
-              The actual channel selection and routing mode (best channel, multi-channel, sequential) is configured
-              when creating a campaign that links to this trigger.
-            </div>
-          </div>
-        )}
-
-        {/* Identity graph flow */}
-        <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 6 }}>
-            IDENTITY RESOLUTION FLOW
-          </div>
-          <div className="trigger-flow">
-            <span className="trigger-flow-node trigger-flow-node--event">
-              &#9889; {selectedTopicConfig?.label || "Event"}
-            </span>
-            <span className="trigger-flow-arrow">&rarr;</span>
-            <span className="trigger-flow-node trigger-flow-node--rules">Rules Engine</span>
-            <span className="trigger-flow-arrow">&rarr;</span>
-            <span className="trigger-flow-node" style={{ background: "var(--color-blue-100)", border: "1px solid var(--color-blue-300)", color: "var(--color-blue-700)" }}>
-              Extract {identityFields.length} {identityFields.length === 1 ? "identity" : "identities"}
-            </span>
-            <span className="trigger-flow-arrow">&rarr;</span>
-            <span className="trigger-flow-node trigger-flow-node--router">Identity Graph</span>
-            <span className="trigger-flow-arrow">&rarr;</span>
-            <span className="trigger-flow-node" style={{ background: "var(--color-green-100)", border: "1px solid var(--color-green-300)", color: "var(--color-green-700)" }}>
-              Resolve all IDs
-            </span>
-            <span className="trigger-flow-arrow">&rarr;</span>
-            <span className="trigger-flow-node" style={{ background: "var(--color-gray-100)", border: "1px solid var(--color-gray-300)", color: "var(--color-gray-600)" }}>
-              Campaign decides channel
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Trigger Rules */}
       <div className="bui-box">
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Trigger Rules</div>
@@ -688,8 +482,8 @@ export default function TriggerCreate() {
       <div className="bui-box">
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Output Configuration</div>
         <p className="text-muted mb-16">
-          Map additional fields from the input event to the trigger output. These fields are passed to linked campaigns
-          alongside the resolved identities.
+          Map fields from the input event to the trigger output. These fields are passed to linked campaigns.
+          Identity fields (e.g., user_id, email) are automatically detected and resolved to all reachable channels.
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {outputFields.map((field, i) => (
@@ -723,12 +517,36 @@ export default function TriggerCreate() {
         </button>
       </div>
 
+      {/* Trigger Flow */}
+      <div className="bui-box">
+        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 8 }}>
+          TRIGGER PROCESSING FLOW
+        </div>
+        <div className="trigger-flow">
+          <span className="trigger-flow-node trigger-flow-node--event">
+            &#9889; {selectedTopicConfig?.label || "Event"}
+          </span>
+          <span className="trigger-flow-arrow">&rarr;</span>
+          <span className="trigger-flow-node trigger-flow-node--rules">Rules Engine</span>
+          <span className="trigger-flow-arrow">&rarr;</span>
+          <span className="trigger-flow-node" style={{ background: "var(--color-blue-100)", border: "1px solid var(--color-blue-300)", color: "var(--color-blue-700)" }}>
+            Extract {outputFields.length} field{outputFields.length !== 1 ? "s" : ""}
+          </span>
+          <span className="trigger-flow-arrow">&rarr;</span>
+          <span className="trigger-flow-node trigger-flow-node--router">Linked Campaigns</span>
+        </div>
+        <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
+          Identities in the output are automatically resolved via the identity graph.
+          Campaigns decide which channels to use.
+        </div>
+      </div>
+
       {/* Bottom Save */}
       <div className="btn-group">
         <button className="btn btn-secondary" onClick={() => navigate("/triggers")}>Cancel</button>
         <button
           className="btn btn-primary"
-          disabled={!triggerName || !inputTopic || identityFields.length === 0}
+          disabled={!triggerName || !inputTopic}
           onClick={handleSave}
         >
           Save Trigger
