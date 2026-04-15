@@ -3,15 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, FUNNEL_LABELS, VERTICAL_LABELS, RULE_ATTRIBUTES, type MessageChannel, type Funnel, type Vertical, type EligibilityRule, type RuleOperator } from "../types";
 import ClassificationQuestionnaire, { type Classification } from "../components/ClassificationQuestionnaire";
 import BaseContentSection from "../components/BaseContentSection";
+import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER } from "../data/mockData";
 
-type DeliveryMode = "best_channel" | "multi_channel" | "sequential";
+type DeliveryMode = "best_channel" | "multi_channel";
 
 export default function CampaignCreate() {
   const navigate = useNavigate();
   const [classification, setClassification] = useState<Classification | null>(null);
   const [campaignName, setCampaignName] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>(["email"]);
+  const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>([]);
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("best_channel");
   const [fallbackTimeout, setFallbackTimeout] = useState("4");
   const [experimentEnabled, setExperimentEnabled] = useState(false);
@@ -59,8 +60,8 @@ export default function CampaignCreate() {
         <div className="bui-box" style={{ textAlign: "center", padding: 48 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>&#10003;</div>
           <h2 style={{ marginBottom: 8 }}>Omni-Channel Campaign Created</h2>
-          <p className="text-muted mb-16">"{campaignName}" has been saved as a {purposeLabel} campaign targeting {selectedChannels.map(ch => CHANNEL_LABELS[ch]).join(", ")}.</p>
-          <p className="text-muted mb-16">Delivery Mode: <strong>{deliveryMode === "best_channel" ? "Best Channel" : deliveryMode === "multi_channel" ? "Multi-Channel" : "Sequential"}</strong></p>
+          <p className="text-muted mb-16">"{campaignName}" has been saved as a {purposeLabel} campaign{selectedChannels.length > 0 ? ` targeting ${selectedChannels.map(ch => CHANNEL_LABELS[ch]).join(", ")}` : " with system-decided channel routing"}.</p>
+          <p className="text-muted mb-16">Delivery Mode: <strong>{selectedChannels.length === 0 ? "Best Channel (System Decides)" : selectedChannels.length === 1 ? "Fixed Channel" : deliveryMode === "best_channel" ? "Best Channel" : "Multi-Channel"}</strong></p>
           {selectedChannels.length > 1 && (
             <p className="text-muted mb-16">Unified Campaign Group: <span className="badge badge-brand">UCG-2026-{String(Math.floor(Math.random() * 900) + 100)}</span></p>
           )}
@@ -92,7 +93,7 @@ export default function CampaignCreate() {
         </div>
         <div className="page-header-actions">
           <button className="btn btn-secondary" onClick={() => navigate("/campaigns")}>Cancel</button>
-          {isMarketingOrNonMarketing && <button className="btn btn-primary" disabled={!campaignName || selectedChannels.length === 0} onClick={handleSave}>Save Campaign</button>}
+          {isMarketingOrNonMarketing && <button className="btn btn-primary" disabled={!campaignName} onClick={handleSave}>Save Campaign</button>}
         </div>
       </div>
 
@@ -176,11 +177,30 @@ export default function CampaignCreate() {
                 </div>
               ))}
             </div>
+            {selectedChannels.length === 0 && (
+              <div className="info-banner tier-selection-appear" style={{ marginTop: 16 }}>
+                <span className="info-banner-icon">&#9889;</span>
+                <span>
+                  <strong>The system will automatically select the best channel per subscriber</strong> using heuristic routing rules:
+                </span>
+                <ol style={{ margin: "8px 0 4px 18px", padding: 0, fontSize: 13, lineHeight: 1.7 }}>
+                  {defaultHeuristicRules.filter(r => r.active).map(r => (
+                    <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
+                  ))}
+                </ol>
+                <div style={{ fontSize: 13, marginTop: 8 }}>
+                  If no heuristic matches, the platform default priority order is used: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" \u2192 ")}</strong>. If delivery fails, the system retries the next channel in order. All channels exhausted = suppressed.
+                </div>
+                <div style={{ fontSize: 12, marginTop: 6 }}>
+                  <a href="/channel-preferences" style={{ color: "var(--color-blue-600)", textDecoration: "underline" }}>Customize rules and fallback order in Channel Preferences</a>
+                </div>
+              </div>
+            )}
             {selectedChannels.length === 1 && (
               <div className="info-banner tier-selection-appear" style={{ marginTop: 16 }}>
-                <span className="info-banner-icon">&#9881;</span>
+                <span className="info-banner-icon">&#128274;</span>
                 <span>
-                  <strong>Default channel priority will apply.</strong> Since only {CHANNEL_LABELS[selectedChannels[0]]} is selected, the system will use the configured default priority order (<strong>Email &rarr; Push &rarr; SMS &rarr; In-App</strong>) to route to additional channels if the subscriber is unreachable on {CHANNEL_LABELS[selectedChannels[0]]}. You can adjust the default priority in <a href="/channel-preferences" style={{ color: "var(--color-blue-600)", textDecoration: "underline" }}>Channel Preferences</a>.
+                  <strong>Fixed Channel &mdash; {CHANNEL_LABELS[selectedChannels[0]]} only.</strong> The message will be sent exclusively on {CHANNEL_LABELS[selectedChannels[0]]}. No routing or fallback. Subscribers who are unreachable or have not consented to {CHANNEL_LABELS[selectedChannels[0]]} will be suppressed.
                 </span>
               </div>
             )}
@@ -206,7 +226,7 @@ export default function CampaignCreate() {
                     <div className="radio-card-title">Best Channel</div>
                   </div>
                   <div className="radio-card-description">
-                    System selects one optimal channel per subscriber based on CDP behavioral signals and heuristic rules. Fallback to secondary channel if primary fails or goes unopened. Optimized for reducing channel fatigue.
+                    Heuristics select the optimal channel per subscriber from your selected pool. If no heuristic matches, the campaign's channel priority order is used. If delivery fails or goes unopened, the system retries the next channel in order.
                   </div>
                 </div>
                 <div className={`radio-card ${deliveryMode === "multi_channel" ? "selected" : ""}`} onClick={() => setDeliveryMode("multi_channel")}>
@@ -216,15 +236,6 @@ export default function CampaignCreate() {
                   </div>
                   <div className="radio-card-description">
                     Deliver across all selected channels simultaneously. Suited for high-priority campaigns, time-sensitive promotions, and re-engagement. Consent and frequency caps enforced per channel.
-                  </div>
-                </div>
-                <div className={`radio-card ${deliveryMode === "sequential" ? "selected" : ""}`} onClick={() => setDeliveryMode("sequential")}>
-                  <div className="radio-card-header">
-                    <div className="radio-card-radio" />
-                    <div className="radio-card-title">Sequential</div>
-                  </div>
-                  <div className="radio-card-description">
-                    Send to channels in priority order with configurable wait periods. Journey-like behavior within a single campaign. Ideal for progressive engagement.
                   </div>
                 </div>
               </div>
@@ -241,11 +252,11 @@ export default function CampaignCreate() {
                 </div>
               )}
 
-              {/* Fallback Logic — Best Channel Mode Only (P0) */}
+              {/* Channel Priority & Retry — Best Channel Mode Only (P0) */}
               {deliveryMode === "best_channel" && (
                 <div className="tier-selection-appear" style={{ marginTop: 16 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Fallback Configuration</div>
-                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>Define the fallback sequence when the primary channel fails delivery or goes unopened.</p>
+                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Priority & Retry</div>
+                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>Set the priority order for initial channel selection (when heuristics have no answer) and delivery retry (when the chosen channel fails or goes unopened).</p>
                   <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
                     <div className="form-group">
                       <label className="form-label">Fallback Channel Order</label>
@@ -267,7 +278,7 @@ export default function CampaignCreate() {
                     </div>
                   </div>
                   <div className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>
-                    Fallback triggers: non-delivery, unopened within {fallbackTimeout}h, channel opt-out. Duplicate delivery prevention is enforced.
+                    Retry triggers: non-delivery, unopened within {fallbackTimeout}h, channel opt-out. All channels exhausted = suppressed.
                   </div>
                 </div>
               )}
@@ -356,7 +367,7 @@ export default function CampaignCreate() {
           {/* Bottom Save */}
           <div className="btn-group">
             <button className="btn btn-secondary" onClick={() => navigate("/campaigns")}>Cancel</button>
-            <button className="btn btn-primary" disabled={!campaignName || selectedChannels.length === 0} onClick={handleSave}>Save Campaign</button>
+            <button className="btn btn-primary" disabled={!campaignName} onClick={handleSave}>Save Campaign</button>
           </div>
         </div>
       )}
