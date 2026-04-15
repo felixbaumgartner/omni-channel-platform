@@ -196,44 +196,6 @@ export default function CampaignCreate() {
             )}
           </div>
 
-          {/* Eligibility Rules */}
-          <div className="bui-box">
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Eligibility Rules</div>
-            <p className="text-muted mb-16">Define audience targeting rules. Rules from PROD eligibility engine (AND/OR logic).</p>
-            <div className="rule-builder">
-              {rules.map((r, i) => (
-                <div key={r.id} className="rule-row">
-                  {i > 0 && (
-                    <select className="form-select" style={{ width: 70, flex: "none" }} value={r.connector} onChange={e => updateRule(r.id, "connector", e.target.value)}>
-                      <option value="AND">AND</option>
-                      <option value="OR">OR</option>
-                    </select>
-                  )}
-                  <select className="form-select" value={r.attribute} onChange={e => updateRule(r.id, "attribute", e.target.value)}>
-                    {RULE_ATTRIBUTES.map(a => (
-                      <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
-                    ))}
-                  </select>
-                  <select className="form-select" style={{ width: 140, flex: "none" }} value={r.operator} onChange={e => updateRule(r.id, "operator", e.target.value)}>
-                    <option value="equals">equals</option>
-                    <option value="not_equals">not equals</option>
-                    <option value="greater_than">greater than</option>
-                    <option value="less_than">less than</option>
-                    <option value="in">in</option>
-                  </select>
-                  <input className="form-input" style={{ width: 120, flex: "none" }} value={String(r.value)} onChange={e => updateRule(r.id, "value", e.target.value)} />
-                  <button className="rule-remove-btn" onClick={() => removeRule(r.id)}>&times;</button>
-                </div>
-              ))}
-            </div>
-            <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={addRule}>+ Add Rule</button>
-            {rules.length > 0 && (
-              <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
-                Preview: {rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute} ${r.operator.replace("_", " ")} ${r.value}`).join("")}
-              </div>
-            )}
-          </div>
-
           {/* Delivery Mode (P0: Campaign Delivery Mode) */}
           {selectedChannels.length > 1 && (
             <div className="bui-box tier-selection-appear">
@@ -313,6 +275,44 @@ export default function CampaignCreate() {
               )}
             </div>
           )}
+
+          {/* Eligibility Rules */}
+          <div className="bui-box">
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Eligibility Rules</div>
+            <p className="text-muted mb-16">Define audience targeting rules. Rules from PROD eligibility engine (AND/OR logic).</p>
+            <div className="rule-builder">
+              {rules.map((r, i) => (
+                <div key={r.id} className="rule-row">
+                  {i > 0 && (
+                    <select className="form-select" style={{ width: 70, flex: "none" }} value={r.connector} onChange={e => updateRule(r.id, "connector", e.target.value)}>
+                      <option value="AND">AND</option>
+                      <option value="OR">OR</option>
+                    </select>
+                  )}
+                  <select className="form-select" value={r.attribute} onChange={e => updateRule(r.id, "attribute", e.target.value)}>
+                    {RULE_ATTRIBUTES.map(a => (
+                      <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
+                    ))}
+                  </select>
+                  <select className="form-select" style={{ width: 140, flex: "none" }} value={r.operator} onChange={e => updateRule(r.id, "operator", e.target.value)}>
+                    <option value="equals">equals</option>
+                    <option value="not_equals">not equals</option>
+                    <option value="greater_than">greater than</option>
+                    <option value="less_than">less than</option>
+                    <option value="in">in</option>
+                  </select>
+                  <input className="form-input" style={{ width: 120, flex: "none" }} value={String(r.value)} onChange={e => updateRule(r.id, "value", e.target.value)} />
+                  <button className="rule-remove-btn" onClick={() => removeRule(r.id)}>&times;</button>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={addRule}>+ Add Rule</button>
+            {rules.length > 0 && (
+              <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
+                Preview: {rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute} ${r.operator.replace("_", " ")} ${r.value}`).join("")}
+              </div>
+            )}
+          </div>
 
           {/* Base Content */}
           <BaseContentSection selectedChannels={selectedChannels} />
