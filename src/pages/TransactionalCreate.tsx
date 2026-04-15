@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, type MessageChannel } from "../types";
 import BaseContentSection from "../components/BaseContentSection";
+import { DEFAULT_CHANNEL_ORDER } from "../data/mockData";
 
 export default function TransactionalCreate() {
   const navigate = useNavigate();
   const [campaignName, setCampaignName] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>(["email"]);
+  const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>([]);
+  const [useDefaultPriority, setUseDefaultPriority] = useState(false);
   const [experimentEnabled, setExperimentEnabled] = useState(false);
   const [experimentTag, setExperimentTag] = useState("");
   const [affiliateId, setAffiliateId] = useState("");
@@ -17,7 +19,10 @@ export default function TransactionalCreate() {
 
   function toggleChannel(ch: MessageChannel) {
     setSelectedChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
+    setUseDefaultPriority(false);
   }
+
+  const effectiveChannels: MessageChannel[] = useDefaultPriority ? DEFAULT_CHANNEL_ORDER : selectedChannels;
 
   function handleSave() {
     setSaved(true);
@@ -33,7 +38,8 @@ export default function TransactionalCreate() {
           <div style={{ fontSize: 48, marginBottom: 16 }}>&#10003;</div>
           <h2 style={{ marginBottom: 8 }}>Omni-Channel Transactional Campaign Created</h2>
           <p className="text-muted mb-16">
-            "{campaignName}" saved as a Transactional campaign targeting {selectedChannels.map(ch => CHANNEL_LABELS[ch]).join(", ")}.
+            "{campaignName}" saved as a Transactional campaign targeting {effectiveChannels.map(ch => CHANNEL_LABELS[ch]).join(", ")}.
+            {useDefaultPriority && " Using default platform priority order."}
           </p>
           <p className="text-muted mb-16">
             Delivery Mode: <strong>Multi-Channel</strong> &middot; Priority Pipeline &middot; Bypasses Janeway
@@ -54,19 +60,20 @@ export default function TransactionalCreate() {
         <div className="page-header-main">
           <h1 className="page-title">New Transactional Campaign</h1>
           <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-            {selectedChannels.map(ch => (
+            {effectiveChannels.map(ch => (
               <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
             ))}
             <span className="badge badge-constructive">Transactional</span>
             <span className="badge badge-draft">Draft</span>
-            {selectedChannels.length > 1 && (
+            {useDefaultPriority && <span className="badge badge-brand">Default Platform Priority</span>}
+            {effectiveChannels.length > 1 && (
               <span className="badge badge-brand">Multi-Channel</span>
             )}
           </div>
         </div>
         <div className="page-header-actions">
           <button className="btn btn-secondary" onClick={() => navigate("/campaigns")}>Cancel</button>
-          <button className="btn btn-primary" disabled={!campaignName || selectedChannels.length === 0} onClick={handleSave}>Save</button>
+          <button className="btn btn-primary" disabled={!campaignName || (selectedChannels.length === 0 && !useDefaultPriority)} onClick={handleSave}>Save</button>
         </div>
       </div>
 
@@ -129,10 +136,75 @@ export default function TransactionalCreate() {
             </div>
           ))}
         </div>
+
+        {/* Default Platform Priority — shown when no channels explicitly selected */}
+        {selectedChannels.length === 0 && (
+          <div style={{ marginTop: 16 }} className="tier-selection-appear">
+            <div style={{
+              padding: 16,
+              background: "linear-gradient(135deg, #eff6ff, #e0f2fe)",
+              border: "1px solid #93c5fd",
+              borderRadius: "var(--radius-md)",
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "var(--color-blue-600)", marginBottom: 8 }}>
+                Default Platform Priority Order
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                {DEFAULT_CHANNEL_ORDER.map((ch, i) => (
+                  <div key={ch} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "6px 12px", background: "#fff", borderRadius: 6,
+                      border: "1px solid #dbeafe", fontSize: 13, fontWeight: 600,
+                    }}>
+                      <span style={{
+                        width: 20, height: 20, borderRadius: "50%", display: "inline-flex",
+                        alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700,
+                        background: i === 0 ? "#003580" : i === 1 ? "#006ce4" : i === 2 ? "#0896ff" : "#b3d4fc",
+                        color: i < 3 ? "#fff" : "#003580",
+                      }}>{i + 1}</span>
+                      <span>{CHANNEL_ICONS[ch]}</span>
+                      <span>{CHANNEL_LABELS[ch]}</span>
+                    </div>
+                    {i < DEFAULT_CHANNEL_ORDER.length - 1 && (
+                      <span style={{ color: "#93c5fd", fontSize: 16, fontWeight: 700 }}>&rarr;</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="text-muted" style={{ marginTop: 10, fontSize: 12 }}>
+                The system routes through channels in this order. If delivery fails on one channel, it escalates to the next. Customize this order in <a href="/channel-preferences" style={{ color: "var(--color-blue-600)", textDecoration: "underline" }}>Channel Preferences</a>.
+              </div>
+
+              {/* Checkbox to opt into default priority */}
+              <label style={{
+                display: "flex", alignItems: "center", gap: 10, marginTop: 14,
+                padding: "10px 14px", background: "#fff", borderRadius: 6,
+                border: useDefaultPriority ? "2px solid #003580" : "1px solid #dbeafe",
+                cursor: "pointer", transition: "border-color 0.15s",
+              }}>
+                <input
+                  type="checkbox"
+                  checked={useDefaultPriority}
+                  onChange={e => setUseDefaultPriority(e.target.checked)}
+                  style={{ width: 18, height: 18, accentColor: "#003580" }}
+                />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: useDefaultPriority ? "#003580" : "var(--text-primary)" }}>
+                    Use default platform priority
+                  </div>
+                  <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>
+                    Prepare content for all 4 channels. The system will deliver using the priority order above.
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Multi-Channel Delivery — shown when multiple channels selected */}
-      {selectedChannels.length > 1 && (
+      {effectiveChannels.length > 1 && (
         <div className="bui-box tier-selection-appear">
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Multi-Channel Delivery</div>
           <p className="text-muted mb-16">Transactional messages are delivered across all selected channels simultaneously for maximum reliability.</p>
@@ -141,7 +213,7 @@ export default function TransactionalCreate() {
           <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Transactional Fallback Chain</div>
           <p className="text-muted mb-8" style={{ fontSize: 13 }}>Unlike marketing best-channel, transactional fallback ensures delivery by escalating through channels.</p>
           <div className="fallback-chain">
-            {selectedChannels.map((ch, i) => (
+            {effectiveChannels.map((ch, i) => (
               <div key={ch}>
                 <div className="fallback-chain-item">
                   <span className="fallback-chain-number">{i + 1}</span>
@@ -174,7 +246,7 @@ export default function TransactionalCreate() {
       )}
 
       {/* Base Content */}
-      <BaseContentSection selectedChannels={selectedChannels} />
+      <BaseContentSection selectedChannels={effectiveChannels} />
 
       {/* Experiment */}
       <div className="bui-box">
@@ -215,7 +287,7 @@ export default function TransactionalCreate() {
       {/* Bottom Save */}
       <div className="btn-group">
         <button className="btn btn-secondary" onClick={() => navigate("/campaigns")}>Cancel</button>
-        <button className="btn btn-primary" disabled={!campaignName || selectedChannels.length === 0} onClick={handleSave}>Save Campaign</button>
+        <button className="btn btn-primary" disabled={!campaignName || (selectedChannels.length === 0 && !useDefaultPriority)} onClick={handleSave}>Save Campaign</button>
       </div>
 
       {toast && <div className="toast">{toast}</div>}
