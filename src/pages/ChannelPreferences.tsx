@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CHANNEL_ICONS, CHANNEL_LABELS, type MessageChannel } from "../types";
-import { mockSubscriberProfiles, omniChannelKPIs } from "../data/mockData";
+import { omniChannelKPIs } from "../data/mockData";
 
 interface PreferenceRule {
   id: number;
@@ -17,17 +17,6 @@ const defaultRules: PreferenceRule[] = [
   { id: 3, name: "Device Type Preference", description: "Mobile-primary users default to Push; desktop-primary users default to Email", logic: "if(device_primary == 'mobile', 'push', 'email')", priority: 3, active: true },
   { id: 4, name: "Time-of-Day Engagement", description: "Route based on subscriber's engagement patterns by time of day", logic: "best_channel_by_time(current_hour, engagement_history)", priority: 4, active: false },
   { id: 5, name: "Market/Locale Default", description: "Use market-specific default channel (e.g., SMS-heavy markets route to SMS first)", logic: "market_default_channel(subscriber.locale)", priority: 5, active: true },
-];
-
-const cdpSignals = [
-  { signal: "Last Email Open", coverage: 94.2, freshness: "< 1 day" },
-  { signal: "Last Push Click", coverage: 78.5, freshness: "< 1 day" },
-  { signal: "Last SMS Delivery", coverage: 62.1, freshness: "< 2 days" },
-  { signal: "Device Type", coverage: 99.1, freshness: "Real-time" },
-  { signal: "Preferred Language", coverage: 97.8, freshness: "< 1 day" },
-  { signal: "Channel Opt-in Status", coverage: 100.0, freshness: "Real-time" },
-  { signal: "Engagement Score (30d)", coverage: 88.3, freshness: "Daily batch" },
-  { signal: "Booking Recency", coverage: 91.6, freshness: "< 1 hour" },
 ];
 
 const DEFAULT_CHANNEL_ORDER: MessageChannel[] = ["email", "push", "sms", "in_app"];
@@ -231,101 +220,6 @@ export default function ChannelPreferences() {
               </div>
               <div className="rule-card-logic">
                 <code>{rule.logic}</code>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* CDP Signal Availability */}
-      <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>CDP Signal Availability</div>
-        <p className="text-muted mb-16">Subscriber preference signals pulled from the Customer Data Platform</p>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Signal</th>
-              <th style={{ textAlign: "right" }}>Coverage</th>
-              <th style={{ textAlign: "right" }}>Freshness</th>
-              <th style={{ textAlign: "center" }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cdpSignals.map(s => (
-              <tr key={s.signal}>
-                <td><strong>{s.signal}</strong></td>
-                <td style={{ textAlign: "right" }}>{s.coverage}%</td>
-                <td style={{ textAlign: "right" }}>{s.freshness}</td>
-                <td style={{ textAlign: "center" }}>
-                  <span className={`badge ${s.coverage > 90 ? "badge-constructive" : s.coverage > 70 ? "badge-callout" : "badge-destructive"}`}>
-                    {s.coverage > 90 ? "Healthy" : s.coverage > 70 ? "Partial" : "Low"}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Channel Distribution Preview */}
-      <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Current Channel Distribution</div>
-        <p className="text-muted mb-16">How subscribers are currently distributed across preferred channels</p>
-        <div className="distribution-bars">
-          {[
-            { channel: "Email", pct: 42, icon: CHANNEL_ICONS.email },
-            { channel: "Push", pct: 31, icon: CHANNEL_ICONS.push },
-            { channel: "SMS", pct: 18, icon: CHANNEL_ICONS.sms },
-            { channel: "In-App", pct: 9, icon: CHANNEL_ICONS.in_app },
-          ].map(d => (
-            <div key={d.channel} className="distribution-row">
-              <div className="distribution-label">{d.icon} {d.channel}</div>
-              <div className="distribution-bar-track">
-                <div className="distribution-bar-fill" style={{ width: `${d.pct}%` }} />
-              </div>
-              <div className="distribution-pct">{d.pct}%</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Subscriber Channel Profiles */}
-      <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Subscriber Channel Profiles</div>
-        <p className="text-muted mb-16">Unified subscriber profiles showing channel preferences, engagement scores, and opt-in status</p>
-        <div className="subscriber-grid">
-          {mockSubscriberProfiles.map(sub => (
-            <div key={sub.id} className="subscriber-card">
-              <div className="subscriber-card-header">
-                <div className="subscriber-avatar">{sub.name.charAt(0)}</div>
-                <div>
-                  <div className="subscriber-name">{sub.name}</div>
-                  <div className="subscriber-preferred">
-                    Preferred: {CHANNEL_ICONS[sub.preferredChannel]} {CHANNEL_LABELS[sub.preferredChannel]}
-                    &nbsp;&middot;&nbsp;{sub.reachableChannels} channels &middot; {sub.deduplicatedCount} deduped
-                  </div>
-                </div>
-              </div>
-              <div className="subscriber-channels">
-                {sub.channels.map(ch => (
-                  <div key={ch.channel} className="subscriber-channel-row">
-                    <span className="subscriber-channel-icon">{CHANNEL_ICONS[ch.channel]}</span>
-                    <span className="subscriber-channel-name">{ch.channel === "in_app" ? "In-App" : ch.channel.charAt(0).toUpperCase() + ch.channel.slice(1)}</span>
-                    {ch.optedIn ? (
-                      <>
-                        <div className="subscriber-engagement-bar">
-                          <div className="subscriber-engagement-fill" style={{
-                            width: `${ch.engagementScore}%`,
-                            background: ch.engagementScore > 80 ? "var(--color-green-600)" : ch.engagementScore > 50 ? "var(--color-blue-500)" : "var(--callout-300)",
-                          }} />
-                        </div>
-                        <span className="subscriber-engagement-score">{ch.engagementScore}</span>
-                      </>
-                    ) : (
-                      <span className="subscriber-opted-out">opted out</span>
-                    )}
-                  </div>
-                ))}
               </div>
             </div>
           ))}
