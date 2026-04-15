@@ -13,10 +13,6 @@ export interface PreferenceRule {
 
 export const defaultHeuristicRules: PreferenceRule[] = [
   { id: 1, name: "Last Engaged Channel", description: "Route to the channel the subscriber last engaged with (opened/clicked) within the last 30 days", logic: "last_engagement_channel(30d)", priority: 1, active: true },
-  { id: 2, name: "Highest Open Rate Channel", description: "Route to the channel with the highest open rate for this subscriber over 60-day window", logic: "max(open_rate_per_channel, 60d)", priority: 2, active: true },
-  { id: 3, name: "Device Type Preference", description: "Mobile-primary users default to Push; desktop-primary users default to Email", logic: "if(device_primary == 'mobile', 'push', 'email')", priority: 3, active: true },
-  { id: 4, name: "Time-of-Day Engagement", description: "Route based on subscriber's engagement patterns by time of day", logic: "best_channel_by_time(current_hour, engagement_history)", priority: 4, active: false },
-  { id: 5, name: "Market/Locale Default", description: "Use market-specific default channel (e.g., SMS-heavy markets route to SMS first)", logic: "market_default_channel(subscriber.locale)", priority: 5, active: true },
 ];
 
 export const DEFAULT_CHANNEL_ORDER: MessageChannel[] = ["email", "push", "sms", "in_app"];
