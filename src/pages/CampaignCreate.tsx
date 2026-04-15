@@ -178,21 +178,24 @@ export default function CampaignCreate() {
               ))}
             </div>
             {selectedChannels.length === 0 && (
-              <div className="info-banner tier-selection-appear" style={{ marginTop: 16 }}>
-                <span className="info-banner-icon">&#9889;</span>
-                <span>
-                  <strong>The system will automatically select the best channel per subscriber</strong> using heuristic routing rules:
-                </span>
-                <ol style={{ margin: "8px 0 4px 18px", padding: 0, fontSize: 13, lineHeight: 1.7 }}>
-                  {defaultHeuristicRules.filter(r => r.active).map(r => (
-                    <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
-                  ))}
-                </ol>
-                <div style={{ fontSize: 13, marginTop: 8 }}>
-                  If no heuristic matches, the platform default priority order is used: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" \u2192 ")}</strong>. If delivery fails, the system retries the next channel in order. All channels exhausted = suppressed.
+              <div className="info-banner tier-selection-appear" style={{ marginTop: 16, flexDirection: "column", alignItems: "flex-start" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span className="info-banner-icon">&#9889;</span>
+                  <strong>The system will automatically select the best channel per subscriber</strong>
                 </div>
-                <div style={{ fontSize: 12, marginTop: 6 }}>
-                  <a href="/channel-preferences" style={{ color: "var(--color-blue-600)", textDecoration: "underline" }}>Customize rules and fallback order in Channel Preferences</a>
+                <div style={{ paddingLeft: 32 }}>
+                  <div style={{ fontSize: 13, marginTop: 8, marginBottom: 4 }}>Heuristic routing rules (evaluated in order):</div>
+                  <ol style={{ margin: "4px 0 4px 18px", padding: 0, fontSize: 13, lineHeight: 1.7 }}>
+                    {defaultHeuristicRules.filter(r => r.active).map(r => (
+                      <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
+                    ))}
+                  </ol>
+                  <div style={{ fontSize: 13, marginTop: 10, padding: "8px 12px", background: "rgba(0,53,128,0.06)", borderRadius: 6 }}>
+                    If no heuristic matches, the platform default priority order is used: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" \u2192 ")}</strong>. If delivery fails, the system retries the next channel in order. All channels exhausted = suppressed.
+                  </div>
+                  <div style={{ fontSize: 12, marginTop: 8 }}>
+                    <a href="/channel-preferences" style={{ color: "var(--color-blue-600)", textDecoration: "underline" }}>Customize rules and fallback order in Channel Preferences</a>
+                  </div>
                 </div>
               </div>
             )}
