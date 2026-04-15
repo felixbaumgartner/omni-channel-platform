@@ -13,6 +13,7 @@ export default function CampaignCreate() {
   const [campaignName, setCampaignName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>([]);
+  const [channelPriority, setChannelPriority] = useState<MessageChannel[]>([]);
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("best_channel");
   const [fallbackTimeout, setFallbackTimeout] = useState("4");
   const [experimentEnabled, setExperimentEnabled] = useState(false);
@@ -32,7 +33,22 @@ export default function CampaignCreate() {
   const purposeLabel = classification?.purpose === "marketing" ? "Marketing" : isTransactional ? "Transactional" : "Non-marketing";
 
   function toggleChannel(ch: MessageChannel) {
-    setSelectedChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
+    setSelectedChannels(prev => {
+      const next = prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch];
+      setChannelPriority(p => {
+        if (next.includes(ch)) return [...p, ch];
+        return p.filter(c => c !== ch);
+      });
+      return next;
+    });
+  }
+
+  function moveChannelPriority(index: number, direction: "up" | "down") {
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= channelPriority.length) return;
+    const next = [...channelPriority];
+    [next[index], next[target]] = [next[target], next[index]];
+    setChannelPriority(next);
   }
 
   function handleSave() {
@@ -264,12 +280,28 @@ export default function CampaignCreate() {
                     <div className="form-group">
                       <label className="form-label">Fallback Channel Order</label>
                       <div className="fallback-sequence">
-                        {selectedChannels.map((ch, i) => (
-                          <div key={ch} className="fallback-item">
+                        {channelPriority.map((ch, i) => (
+                          <div key={ch} className="fallback-item" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <span className="fallback-number">{i + 1}</span>
                             <span>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
                             {i === 0 && <span className="badge badge-brand" style={{ fontSize: 10 }}>Primary</span>}
                             {i > 0 && <span className="badge badge-outline" style={{ fontSize: 10 }}>Fallback</span>}
+                            <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+                              <button
+                                className="btn btn-secondary"
+                                style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === 0 ? 0.3 : 1 }}
+                                disabled={i === 0}
+                                onClick={() => moveChannelPriority(i, "up")}
+                                title="Move up"
+                              >&#9650;</button>
+                              <button
+                                className="btn btn-secondary"
+                                style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === channelPriority.length - 1 ? 0.3 : 1 }}
+                                disabled={i === channelPriority.length - 1}
+                                onClick={() => moveChannelPriority(i, "down")}
+                                title="Move down"
+                              >&#9660;</button>
+                            </div>
                           </div>
                         ))}
                       </div>
