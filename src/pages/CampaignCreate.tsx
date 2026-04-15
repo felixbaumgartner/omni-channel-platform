@@ -23,8 +23,6 @@ export default function CampaignCreate() {
   const [vertical, setVertical] = useState<Vertical | "">("");
   const [purposeTag, setPurposeTag] = useState("");
   const [rules, setRules] = useState<EligibilityRule[]>([]);
-  const [dedupEnabled, setDedupEnabled] = useState(true);
-  const [dedupWindow, setDedupWindow] = useState("24");
   const [affiliateId, setAffiliateId] = useState("");
   const [parentAffiliateId, setParentAffiliateId] = useState("");
 
@@ -317,38 +315,24 @@ export default function CampaignCreate() {
           {/* Base Content */}
           <BaseContentSection selectedChannels={selectedChannels} />
 
-          {/* Cross-Channel Deduplication */}
-          {selectedChannels.length > 1 && (
-            <div className="bui-box">
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 16 }}>Cross-Channel Deduplication</div>
-                  <p className="text-muted" style={{ marginTop: 4 }}>Prevent the same subscriber from receiving the same message on multiple channels.</p>
-                </div>
-                <label className="toggle-switch">
-                  <input type="checkbox" checked={dedupEnabled} onChange={e => setDedupEnabled(e.target.checked)} />
-                  <span className="toggle-slider" />
-                </label>
+          {/* Experiment */}
+          <div className="bui-box">
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Experiment</div>
+            {!experimentEnabled ? (
+              <div style={{ padding: 24, border: "1px dashed var(--border-color)", borderRadius: "var(--radius-md)", textAlign: "center" }}>
+                <p className="text-muted" style={{ marginBottom: 12 }}>No experiment configured. Set up an A/B test to compare content variants.</p>
+                <button className="btn btn-secondary" onClick={() => setExperimentEnabled(true)}>Setup Experiment</button>
               </div>
-              {dedupEnabled && (
-                <div className="tier-selection-appear" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <div className="form-group">
-                    <label className="form-label">Deduplication Window (hours)</label>
-                    <input className="form-input" type="number" min="1" max="168" value={dedupWindow} onChange={e => setDedupWindow(e.target.value)} />
-                    <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Same message to same subscriber within {dedupWindow}h = deduplicated</div>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Dedup Strategy</label>
-                    <select className="form-select">
-                      <option>Content similarity (recommended)</option>
-                      <option>Exact campaign match</option>
-                      <option>Category match</option>
-                    </select>
-                  </div>
+            ) : (
+              <div className="tier-selection-appear">
+                <div className="form-group">
+                  <label className="form-label">Experiment Tag</label>
+                  <input className="form-input" placeholder="e.g., emk_summer_deals_experiment" value={experimentTag} onChange={e => setExperimentTag(e.target.value)} />
                 </div>
-              )}
-            </div>
-          )}
+                <button className="btn btn-secondary btn-destructive" onClick={() => { setExperimentEnabled(false); setExperimentTag(""); }}>Remove Experiment</button>
+              </div>
+            )}
+          </div>
 
           {/* Compliance & Reporting */}
           <div className="bui-box">
@@ -367,25 +351,6 @@ export default function CampaignCreate() {
             <div className="alert alert-info" style={{ marginTop: 8 }}>
               <strong>Consent Summary:</strong> {selectedChannels.length} channel(s) selected. Subscriber consent will be validated per-channel at send time via Janet subscription API.
             </div>
-          </div>
-
-          {/* Experiment */}
-          <div className="bui-box">
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Experiment</div>
-            {!experimentEnabled ? (
-              <div style={{ padding: 24, border: "1px dashed var(--border-color)", borderRadius: "var(--radius-md)", textAlign: "center" }}>
-                <p className="text-muted" style={{ marginBottom: 12 }}>No experiment configured. Set up an A/B test to compare content variants.</p>
-                <button className="btn btn-secondary" onClick={() => setExperimentEnabled(true)}>Setup Experiment</button>
-              </div>
-            ) : (
-              <div className="tier-selection-appear">
-                <div className="form-group">
-                  <label className="form-label">Experiment Tag</label>
-                  <input className="form-input" placeholder="e.g., emk_summer_deals_experiment" value={experimentTag} onChange={e => setExperimentTag(e.target.value)} />
-                </div>
-                <button className="btn btn-secondary btn-destructive" onClick={() => { setExperimentEnabled(false); setExperimentTag(""); }}>Remove Experiment</button>
-              </div>
-            )}
           </div>
 
           {/* Bottom Save */}
