@@ -14,7 +14,7 @@ const STEP_OPTIONS: { type: JourneyStepType; label: string; icon: string; descri
   { type: "email", label: "Send Email", icon: "\u2709", description: "Send an email message" },
   { type: "push", label: "Send Push", icon: "\uD83D\uDD14", description: "Send a push notification" },
   { type: "sms", label: "Send SMS", icon: "\uD83D\uDCF1", description: "Send an SMS message" },
-  { type: "in_app", label: "In-App Message", icon: "\uD83D\uDCE8", description: "Show an in-app card" },
+  { type: "whatsapp", label: "WhatsApp Message", icon: "\uD83D\uDCE8", description: "Show an WhatsApp card" },
   { type: "best_channel", label: "Best Channel Send", icon: "\u2728", description: "AI-routed: picks optimal channel per subscriber" },
   { type: "cross_channel_eligibility", label: "Cross-Channel Eligibility", icon: "\uD83D\uDD00", description: "Branch by subscriber channel eligibility" },
   { type: "delay", label: "Wait / Delay", icon: "\u23F3", description: "Wait before next step" },
@@ -78,7 +78,7 @@ export default function JourneyBuilder() {
       case "email": return "\u2709";
       case "push": return "\uD83D\uDD14";
       case "sms": return "\uD83D\uDCF1";
-      case "in_app": return "\uD83D\uDCE8";
+      case "whatsapp": return "\uD83D\uDCE8";
       case "delay": return "\u23F3";
       case "condition": return "\u2753";
       case "split": return "\u2194\uFE0F";
@@ -134,7 +134,7 @@ export default function JourneyBuilder() {
             </div>
             <div className="journey-settings-row">
               <span className="journey-settings-label">Channel Priority</span>
-              <span className="text-muted" style={{ fontSize: 12 }}>Email &gt; Push &gt; SMS &gt; In-App</span>
+              <span className="text-muted" style={{ fontSize: 12 }}>Email &gt; Push &gt; SMS &gt; WhatsApp</span>
             </div>
           </div>
 
@@ -207,7 +207,7 @@ export default function JourneyBuilder() {
                       <label className="form-label">Step Label</label>
                       <input className="form-input" value={step.label} onChange={e => setSteps(prev => prev.map(s => s.id === step.id ? { ...s, label: e.target.value } : s))} />
                     </div>
-                    {(step.type === "email" || step.type === "push" || step.type === "sms" || step.type === "in_app") && (
+                    {(step.type === "email" || step.type === "push" || step.type === "sms" || step.type === "whatsapp") && (
                       <>
                         <div className="form-group">
                           <label className="form-label">Content Template</label>
@@ -276,7 +276,7 @@ export default function JourneyBuilder() {
                         <div className="form-group">
                           <label className="form-label">Eligible Channels</label>
                           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                            {(["email", "push", "sms", "in_app"] as MessageChannel[]).map(ch => (
+                            {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
                               <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
                             ))}
                           </div>

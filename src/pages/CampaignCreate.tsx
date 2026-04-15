@@ -185,7 +185,7 @@ export default function CampaignCreate() {
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Selection</div>
             <p className="text-muted mb-16">Select channels for this campaign. A single campaign can target all channels.</p>
             <div className="channel-selector-grid">
-              {(["email", "push", "sms", "in_app"] as MessageChannel[]).map(ch => (
+              {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
                 <div key={ch} className={`channel-selector-card ${selectedChannels.includes(ch) ? "selected" : ""}`} onClick={() => toggleChannel(ch)}>
                   <div className="channel-selector-check">{selectedChannels.includes(ch) ? "\u2713" : ""}</div>
                   <div className="channel-selector-icon">{CHANNEL_ICONS[ch]}</div>

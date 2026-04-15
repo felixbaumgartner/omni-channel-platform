@@ -77,7 +77,7 @@ export default function MessageTriggers() {
                 </div>
                 <div className="list-card-meta" style={{ marginTop: 4 }}>
                   {t.channels.map(ch => (
-                    <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {ch === "in_app" ? "In-App" : ch.charAt(0).toUpperCase() + ch.slice(1)}</span>
+                    <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {ch === "whatsapp" ? "WhatsApp" : ch.charAt(0).toUpperCase() + ch.slice(1)}</span>
                   ))}
                   <span className="badge badge-media">Topic: {t.inputTopic}</span>
                   <span className="badge badge-media">Window: {t.joiningWindowSec}s</span>
@@ -105,7 +105,7 @@ export default function MessageTriggers() {
                       {t.channelRoutingRules.map((cr, i) => (
                         <span key={cr.channel}>
                           {i > 0 && <span style={{ color: "var(--color-gray-300)", margin: "0 2px" }}>|</span>}
-                          <span className={`trigger-flow-node trigger-flow-node--channel`} style={{ background: `var(--color-${cr.channel === "in_app" ? "inapp" : cr.channel})`, color: "#fff", border: "none" }}>
+                          <span className={`trigger-flow-node trigger-flow-node--channel`} style={{ background: `var(--color-${cr.channel === "whatsapp" ? "inapp" : cr.channel})`, color: "#fff", border: "none" }}>
                             {CHANNEL_ICONS[cr.channel]} {cr.condition}
                           </span>
                         </span>

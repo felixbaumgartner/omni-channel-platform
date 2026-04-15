@@ -2,7 +2,7 @@
    Types & Constants for the Omni-Channel Messaging Platform
    ──────────────────────────────────────────────────────────── */
 
-export type MessageChannel = "email" | "push" | "sms" | "in_app";
+export type MessageChannel = "email" | "push" | "sms" | "whatsapp";
 export type MessageType = "marketing" | "non_marketing" | "transactional";
 export type CampaignStatus = "Draft" | "Published" | "Live" | "Stopped" | "Archived";
 export type JourneyStatus = "Draft" | "Active" | "Paused" | "Completed";
@@ -11,14 +11,14 @@ export const CHANNEL_LABELS: Record<MessageChannel, string> = {
   email: "Email",
   push: "Push Notification",
   sms: "SMS",
-  in_app: "In-App",
+  whatsapp: "WhatsApp",
 };
 
 export const CHANNEL_ICONS: Record<MessageChannel, string> = {
   email: "\u2709",
   push: "\uD83D\uDD14",
   sms: "\uD83D\uDCF1",
-  in_app: "\uD83D\uDCE8",
+  whatsapp: "\uD83D\uDCE8",
 };
 
 export const TYPE_LABELS: Record<MessageType, string> = {
@@ -100,7 +100,7 @@ export const INPUT_TOPICS: Record<string, InputTopicConfig> = {
     label: "Browsing Events",
     category: "behavioral",
     description: "Page views, search results, property views",
-    channels: ["push", "email", "in_app"],
+    channels: ["push", "email", "whatsapp"],
   },
   trip_reminder_events: {
     label: "Trip Reminder Events",
@@ -112,13 +112,13 @@ export const INPUT_TOPICS: Record<string, InputTopicConfig> = {
     label: "Engagement Events",
     category: "behavioral",
     description: "Cart abandonment, wishlist updates, price alerts",
-    channels: ["push", "email", "in_app"],
+    channels: ["push", "email", "whatsapp"],
   },
   loyalty_events: {
     label: "Loyalty & Rewards Events",
     category: "behavioral",
     description: "Status changes, points earned, reward expiry",
-    channels: ["push", "email", "in_app"],
+    channels: ["push", "email", "whatsapp"],
   },
   review_events: {
     label: "Review Events",
@@ -163,7 +163,7 @@ export const SMS_CATEGORIES = [
   "genius_offers", "surveys", "travel_inspiration",
 ] as const;
 
-export const INAPP_CATEGORIES = [
+export const WHATSAPP_CATEGORIES = [
   "trip_enrichment", "offers", "onboarding", "engagement", "loyalty",
 ] as const;
 
@@ -171,7 +171,7 @@ export const CHANNEL_CATEGORIES: Record<MessageChannel, readonly string[]> = {
   email: EMAIL_CATEGORIES,
   push: PUSH_CATEGORIES,
   sms: SMS_CATEGORIES,
-  in_app: INAPP_CATEGORIES,
+  whatsapp: WHATSAPP_CATEGORIES,
 };
 
 /* ── Eligibility Rules ── */
@@ -274,7 +274,7 @@ export interface Campaign {
 /* ── Journey interface ── */
 
 export type JourneyStepType =
-  | "trigger" | "email" | "push" | "sms" | "in_app"
+  | "trigger" | "email" | "push" | "sms" | "whatsapp"
   | "delay" | "condition" | "split"
   | "cross_channel_eligibility" | "best_channel";
 

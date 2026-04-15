@@ -27,10 +27,10 @@ const MOCK_CONTENT: Record<string, ContentItem[]> = {
     { id: 702, name: "Booking Modification Alert SMS", creator: "trip-comms", type: "SMS Template" },
     { id: 703, name: "Security Alert SMS", creator: "security-team", type: "SMS Template" },
   ],
-  in_app: [
-    { id: 801, name: "Trip Checklist In-App Card", creator: "trip-enrichment", type: "In-App Card" },
-    { id: 802, name: "Genius Badge Unlocked Banner", creator: "loyalty-team", type: "In-App Banner" },
-    { id: 803, name: "Rate Your Stay Card", creator: "ugc-team", type: "In-App Card" },
+  whatsapp: [
+    { id: 801, name: "Trip Checklist WhatsApp Card", creator: "trip-enrichment", type: "WhatsApp Card" },
+    { id: 802, name: "Genius Badge Unlocked Banner", creator: "loyalty-team", type: "WhatsApp Banner" },
+    { id: 803, name: "Rate Your Stay Card", creator: "ugc-team", type: "WhatsApp Card" },
   ],
 };
 
@@ -39,7 +39,7 @@ const CHANNEL_COLORS: Record<string, string> = {
   email: "#003580",
   push: "#f89249",
   sms: "#008009",
-  in_app: "#7c3aed",
+  whatsapp: "#7c3aed",
 };
 
 /* ── Per-channel content section matching the Targeting (PROD) UI ── */

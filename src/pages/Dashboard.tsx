@@ -8,10 +8,10 @@ function formatNum(n: number): string {
   return n.toString();
 }
 
-const maxSend = Math.max(...dailySends.flatMap(d => [d.email, d.push, d.sms, d.in_app]));
+const maxSend = Math.max(...dailySends.flatMap(d => [d.email, d.push, d.sms, d.whatsapp]));
 
 const channelClass = (ch: MessageChannel) =>
-  ch === "in_app" ? "in_app" : ch;
+  ch === "whatsapp" ? "whatsapp" : ch;
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -160,7 +160,7 @@ export default function Dashboard() {
             <div key={m.channel} className="channel-metric-card">
               <div className="channel-metric-header">
                 <span className="channel-metric-icon">
-                  {CHANNEL_ICONS[m.channel.toLowerCase() === "push" ? "push" : m.channel.toLowerCase() === "in-app" ? "in_app" : m.channel.toLowerCase() as "email" | "sms"]}
+                  {CHANNEL_ICONS[m.channel.toLowerCase() === "push" ? "push" : m.channel.toLowerCase() === "in-app" ? "whatsapp" : m.channel.toLowerCase() as "email" | "sms"]}
                 </span>
                 <span className="channel-metric-name">{m.channel}</span>
               </div>
@@ -205,7 +205,7 @@ export default function Dashboard() {
             <span className="chart-legend-item"><span className="dot dot--email" /> Email</span>
             <span className="chart-legend-item"><span className="dot dot--push" /> Push</span>
             <span className="chart-legend-item"><span className="dot dot--sms" /> SMS</span>
-            <span className="chart-legend-item"><span className="dot dot--inapp" /> In-App</span>
+            <span className="chart-legend-item"><span className="dot dot--whatsapp" /> WhatsApp</span>
           </div>
           <div className="bar-chart">
             {dailySends.map(d => (
@@ -214,7 +214,7 @@ export default function Dashboard() {
                   <div className="bar bar--email" style={{ height: `${(d.email / maxSend) * 100}%` }} title={`Email: ${formatNum(d.email)}`} />
                   <div className="bar bar--push" style={{ height: `${(d.push / maxSend) * 100}%` }} title={`Push: ${formatNum(d.push)}`} />
                   <div className="bar bar--sms" style={{ height: `${(d.sms / maxSend) * 100}%` }} title={`SMS: ${formatNum(d.sms)}`} />
-                  <div className="bar bar--inapp" style={{ height: `${(d.in_app / maxSend) * 100}%` }} title={`In-App: ${formatNum(d.in_app)}`} />
+                  <div className="bar bar--whatsapp" style={{ height: `${(d.whatsapp / maxSend) * 100}%` }} title={`WhatsApp: ${formatNum(d.whatsapp)}`} />
                 </div>
                 <div className="bar-chart-label">{d.date}</div>
               </div>

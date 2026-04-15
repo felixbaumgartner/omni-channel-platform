@@ -117,7 +117,7 @@ export default function JourneyList() {
                          step.type === "email" ? "\u2709" :
                          step.type === "push" ? "\uD83D\uDD14" :
                          step.type === "sms" ? "\uD83D\uDCF1" :
-                         step.type === "in_app" ? "\uD83D\uDCE8" :
+                         step.type === "whatsapp" ? "\uD83D\uDCE8" :
                          step.type === "delay" ? "\u23F3" :
                          step.type === "condition" ? "\u2753" :
                          step.type === "best_channel" ? "\u2728" :

@@ -8,8 +8,8 @@ function formatNum(n: number): string {
   return n.toString();
 }
 
-const maxSend = Math.max(...dailySends.flatMap(d => [d.email, d.push, d.sms, d.in_app]));
-const channelClass = (ch: MessageChannel) => ch === "in_app" ? "in_app" : ch;
+const maxSend = Math.max(...dailySends.flatMap(d => [d.email, d.push, d.sms, d.whatsapp]));
+const channelClass = (ch: MessageChannel) => ch === "whatsapp" ? "whatsapp" : ch;
 
 export default function Analytics() {
   const [period, setPeriod] = useState("7d");
@@ -152,7 +152,7 @@ export default function Analytics() {
             <div className="overlap-circle overlap-circle--email" />
             <div className="overlap-circle overlap-circle--push" />
             <div className="overlap-circle overlap-circle--sms" />
-            <div className="overlap-circle overlap-circle--inapp" />
+            <div className="overlap-circle overlap-circle--whatsapp" />
             <div className="overlap-center-label">
               {channelOverlap.allFour}%
               <div className="overlap-center-sub">all 4 channels</div>
@@ -164,8 +164,8 @@ export default function Analytics() {
               <div className="overlap-stat-label">Email + Push</div>
             </div>
             <div className="overlap-stat">
-              <div className="overlap-stat-value" style={{ color: "var(--color-inapp)" }}>{channelOverlap.pushAndInApp}%</div>
-              <div className="overlap-stat-label">Push + In-App</div>
+              <div className="overlap-stat-value" style={{ color: "var(--color-whatsapp)" }}>{channelOverlap.pushAndInApp}%</div>
+              <div className="overlap-stat-label">Push + WhatsApp</div>
             </div>
             <div className="overlap-stat">
               <div className="overlap-stat-value" style={{ color: "var(--color-sms)" }}>{channelOverlap.emailAndSms}%</div>
@@ -248,7 +248,7 @@ export default function Analytics() {
             <span className="chart-legend-item"><span className="dot dot--email" /> Email</span>
             <span className="chart-legend-item"><span className="dot dot--push" /> Push</span>
             <span className="chart-legend-item"><span className="dot dot--sms" /> SMS</span>
-            <span className="chart-legend-item"><span className="dot dot--inapp" /> In-App</span>
+            <span className="chart-legend-item"><span className="dot dot--whatsapp" /> WhatsApp</span>
           </div>
           <div className="bar-chart">
             {dailySends.map(d => (
@@ -257,7 +257,7 @@ export default function Analytics() {
                   <div className="bar bar--email" style={{ height: `${(d.email / maxSend) * 100}%` }} title={`Email: ${formatNum(d.email)}`} />
                   <div className="bar bar--push" style={{ height: `${(d.push / maxSend) * 100}%` }} title={`Push: ${formatNum(d.push)}`} />
                   <div className="bar bar--sms" style={{ height: `${(d.sms / maxSend) * 100}%` }} title={`SMS: ${formatNum(d.sms)}`} />
-                  <div className="bar bar--inapp" style={{ height: `${(d.in_app / maxSend) * 100}%` }} title={`In-App: ${formatNum(d.in_app)}`} />
+                  <div className="bar bar--whatsapp" style={{ height: `${(d.whatsapp / maxSend) * 100}%` }} title={`WhatsApp: ${formatNum(d.whatsapp)}`} />
                 </div>
                 <div className="bar-chart-label">{d.date}</div>
               </div>
@@ -319,7 +319,7 @@ export default function Analytics() {
             <div className="attribution-path">
               <span className="attribution-node">{CHANNEL_ICONS.email} Email</span>
               <span className="attribution-arrow">&rarr;</span>
-              <span className="attribution-node">{CHANNEL_ICONS.in_app} In-App</span>
+              <span className="attribution-node">{CHANNEL_ICONS.whatsapp} WhatsApp</span>
               <span className="attribution-arrow">&rarr;</span>
               <span className="attribution-node attribution-node--convert">Booking</span>
             </div>

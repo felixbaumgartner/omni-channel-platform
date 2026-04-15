@@ -9,10 +9,10 @@ function formatNum(n: number): string {
 }
 
 const HASH_COLORS: Record<string, string> = {
-  email: "var(--color-email)", push: "var(--color-push)", sms: "var(--color-sms)", in_app: "var(--color-inapp)",
+  email: "var(--color-email)", push: "var(--color-push)", sms: "var(--color-sms)", whatsapp: "var(--color-whatsapp)",
 };
 
-const ALL_CHANNELS: MessageChannel[] = ["email", "push", "sms", "in_app"];
+const ALL_CHANNELS: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
 const ALL_FUNNELS = ["pre_book", "post_book", "post_trip", "reactivation"] as const;
 const ALL_VERTICALS = ["accommodation", "flights", "attractions", "car_rental"] as const;
 
@@ -212,7 +212,7 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
             left: `${Number(hashStart)}%`,
             width: `${hashPct}%`,
             background: channels.length > 1 && crossChannelCoordinated
-              ? "linear-gradient(90deg, var(--color-email), var(--color-push), var(--color-sms), var(--color-inapp))"
+              ? "linear-gradient(90deg, var(--color-email), var(--color-push), var(--color-sms), var(--color-whatsapp))"
               : "var(--color-blue-500)",
           }}>
             <span className="holdout-hash-label" style={{ fontSize: 12 }}>{hashPct}%</span>
@@ -229,7 +229,7 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>Cross-Channel Holdout Coordination</div>
-              <p className="text-muted" style={{ marginTop: 4 }}>When enabled, the same hash range applies to all selected channels. A subscriber held out on email is also held out on push/SMS/in-app.</p>
+              <p className="text-muted" style={{ marginTop: 4 }}>When enabled, the same hash range applies to all selected channels. A subscriber held out on email is also held out on push/SMS/WhatsApp.</p>
             </div>
             <label className="toggle-switch">
               <input type="checkbox" checked={crossChannelCoordinated} onChange={e => setCrossChannelCoordinated(e.target.checked)} />
@@ -471,7 +471,7 @@ export default function HoldoutManagement() {
                             </div>
                           ))}
                           <div className="text-muted" style={{ fontSize: 11, marginTop: 2 }}>
-                            Same hash range across all channels ensures a subscriber held out on email is also held out on push/SMS/in-app.
+                            Same hash range across all channels ensures a subscriber held out on email is also held out on push/SMS/WhatsApp.
                           </div>
                         </div>
                       )}

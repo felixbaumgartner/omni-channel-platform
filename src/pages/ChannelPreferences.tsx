@@ -290,7 +290,7 @@ export default function ChannelPreferences() {
               { ch: "email" as MessageChannel, daily: 3, weekly: 10, monthly: 30, blocked: "1.2M" },
               { ch: "push" as MessageChannel, daily: 5, weekly: 15, monthly: 40, blocked: "890K" },
               { ch: "sms" as MessageChannel, daily: 2, weekly: 5, monthly: 12, blocked: "340K" },
-              { ch: "in_app" as MessageChannel, daily: 8, weekly: 25, monthly: 60, blocked: "210K" },
+              { ch: "whatsapp" as MessageChannel, daily: 8, weekly: 25, monthly: 60, blocked: "210K" },
             ]).map(row => (
               <tr key={row.ch}>
                 <td><strong>{CHANNEL_ICONS[row.ch]} {CHANNEL_LABELS[row.ch]}</strong></td>

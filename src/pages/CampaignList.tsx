@@ -19,7 +19,7 @@ function formatNum(n: number): string {
   return n.toString();
 }
 
-const channelClass = (ch: MessageChannel) => ch === "in_app" ? "in_app" : ch;
+const channelClass = (ch: MessageChannel) => ch === "whatsapp" ? "whatsapp" : ch;
 
 export default function CampaignList() {
   const navigate = useNavigate();
@@ -62,7 +62,7 @@ export default function CampaignList() {
       <div className="page-header">
         <div className="page-header-main">
           <h1 className="page-title">Campaigns</h1>
-          <p className="page-subtitle">Manage omni-channel campaigns across Email, Push, SMS, and In-App</p>
+          <p className="page-subtitle">Manage omni-channel campaigns across Email, Push, SMS, and WhatsApp</p>
         </div>
         <div className="page-header-actions">
           <button className="btn btn-primary" onClick={() => navigate("/campaign/new")}>+ New Campaign</button>
@@ -113,7 +113,7 @@ export default function CampaignList() {
               <option value="email">Email</option>
               <option value="push">Push</option>
               <option value="sms">SMS</option>
-              <option value="in_app">In-App</option>
+              <option value="whatsapp">WhatsApp</option>
             </select>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
@@ -204,7 +204,7 @@ export default function CampaignList() {
                           <span className={`ucg-card-channel ucg-card-channel--${channelClass(cd.channel)}`}>
                             {CHANNEL_ICONS[cd.channel]}
                           </span>
-                          <strong>{cd.channel === "in_app" ? "In-App" : cd.channel.charAt(0).toUpperCase() + cd.channel.slice(1)}</strong>
+                          <strong>{cd.channel === "whatsapp" ? "WhatsApp" : cd.channel.charAt(0).toUpperCase() + cd.channel.slice(1)}</strong>
                           <span className="badge badge-outline" style={{ fontSize: 11 }}>{cd.messageCategory}</span>
                           <span className={`badge ${cd.status === "active" ? "badge-constructive" : "badge-stopped"}`} style={{ fontSize: 11 }}>
                             {cd.status}
@@ -235,7 +235,7 @@ export default function CampaignList() {
                       <div className="list-card-subtitle">{m.description}</div>
                       <div className="list-card-meta">
                         {m.channels.map(ch => (
-                          <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {ch === "in_app" ? "In-App" : ch === "push" ? "Push" : ch.charAt(0).toUpperCase() + ch.slice(1)}</span>
+                          <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {ch === "whatsapp" ? "WhatsApp" : ch === "push" ? "Push" : ch.charAt(0).toUpperCase() + ch.slice(1)}</span>
                         ))}
                         <span className="badge badge-media">{m.pipeline}</span>
                         {m.deliveryCount && <span className="badge badge-media">{formatNum(m.deliveryCount)} sent</span>}
@@ -276,7 +276,7 @@ export default function CampaignList() {
                   <div className="list-card-subtitle">{m.description}</div>
                   <div className="list-card-meta">
                     {m.channels.map(ch => (
-                      <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {ch === "in_app" ? "In-App" : ch === "push" ? "Push" : ch.charAt(0).toUpperCase() + ch.slice(1)}</span>
+                      <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {ch === "whatsapp" ? "WhatsApp" : ch === "push" ? "Push" : ch.charAt(0).toUpperCase() + ch.slice(1)}</span>
                     ))}
                     <span className="badge badge-media">{m.pipeline}</span>
                     {m.deliveryCount && <span className="badge badge-media">{formatNum(m.deliveryCount)} sent</span>}

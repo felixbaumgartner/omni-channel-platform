@@ -15,7 +15,7 @@ export const defaultHeuristicRules: PreferenceRule[] = [
   { id: 1, name: "Last Engaged Channel", description: "Route to the channel the subscriber last engaged with (opened/clicked) within the last 30 days", logic: "last_engagement_channel(30d)", priority: 1, active: true },
 ];
 
-export const DEFAULT_CHANNEL_ORDER: MessageChannel[] = ["email", "push", "sms", "in_app"];
+export const DEFAULT_CHANNEL_ORDER: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
 
 /* ── Mock Campaigns ── */
 
@@ -79,7 +79,7 @@ export const mockCampaigns: Campaign[] = [
   {
     id: 1008, name: "cart_abandonment_omni",
     description: "Cross-channel cart abandonment: push then email fallback",
-    channels: ["push", "email", "in_app"], status: "Live", type: "marketing",
+    channels: ["push", "email", "whatsapp"], status: "Live", type: "marketing",
     pipeline: "Trigger: cart_abandon",
     createdAt: "10 Feb 2026", updatedAt: "5 Mar 2026", updatedBy: "convert-team",
     deliveryCount: 3100000, openRate: 41.8, clickRate: 12.3,
@@ -96,7 +96,7 @@ export const mockCampaigns: Campaign[] = [
   {
     id: 1010, name: "loyalty_upgrade_notification",
     description: "Cross-channel notification for Genius level upgrades",
-    channels: ["email", "push", "in_app"], status: "Live", type: "non_marketing",
+    channels: ["email", "push", "whatsapp"], status: "Live", type: "non_marketing",
     pipeline: "Trigger: loyalty_status_change",
     createdAt: "28 Feb 2026", updatedAt: "1 Mar 2026", updatedBy: "loyalty-team",
     deliveryCount: 620000, openRate: 72.1, clickRate: 35.6,
@@ -105,7 +105,7 @@ export const mockCampaigns: Campaign[] = [
   {
     id: 1011, name: "price_alert_push",
     description: "Real-time price drop alerts for wishlisted properties",
-    channels: ["push", "in_app"], status: "Live", type: "marketing",
+    channels: ["push", "whatsapp"], status: "Live", type: "marketing",
     pipeline: "Trigger: price_change",
     createdAt: "25 Feb 2026", updatedAt: "4 Mar 2026", updatedBy: "pricing-team",
     deliveryCount: 1500000, openRate: 48.9, clickRate: 18.4,
@@ -129,7 +129,7 @@ export const mockJourneys: Journey[] = [
     description: "Multi-channel welcome sequence after first booking",
     status: "Active",
     entryChannel: "email",
-    channels: ["email", "push", "in_app"],
+    channels: ["email", "push", "whatsapp"],
     steps: [
       { id: "s1", type: "trigger", label: "Booking Confirmed" },
       { id: "s2", type: "email", label: "Welcome Email", children: ["s3"] },
@@ -137,13 +137,13 @@ export const mockJourneys: Journey[] = [
       { id: "s4", type: "push", label: "App Download Prompt", children: ["s5"] },
       { id: "s5", type: "delay", label: "Wait 1 day", config: { duration: "1d" }, children: ["s6"] },
       { id: "s6", type: "condition", label: "Opened Email?", children: ["s7", "s8"] },
-      { id: "s7", type: "in_app", label: "Trip Checklist Card" },
+      { id: "s7", type: "whatsapp", label: "Trip Checklist Card" },
       { id: "s8", type: "email", label: "Reminder: Complete Profile" },
     ],
     createdAt: "1 Mar 2026", updatedAt: "6 Mar 2026",
     audienceSize: 340000, conversionRate: 62.4,
     orchestrationType: "cross_channel", crossChannelHandoffs: 89000,
-    channelEffectiveness: { email: 45, push: 35, sms: 0, in_app: 20 },
+    channelEffectiveness: { email: 45, push: 35, sms: 0, whatsapp: 20 },
   },
   {
     id: 2002,
@@ -163,7 +163,7 @@ export const mockJourneys: Journey[] = [
     createdAt: "15 Feb 2026", updatedAt: "5 Mar 2026",
     audienceSize: 890000, conversionRate: 18.7,
     orchestrationType: "omni_channel", crossChannelHandoffs: 234000,
-    channelEffectiveness: { email: 30, push: 50, sms: 10, in_app: 10 },
+    channelEffectiveness: { email: 30, push: 50, sms: 10, whatsapp: 10 },
   },
   {
     id: 2003,
@@ -183,7 +183,7 @@ export const mockJourneys: Journey[] = [
     createdAt: "20 Feb 2026", updatedAt: "3 Mar 2026",
     audienceSize: 540000, conversionRate: 45.2,
     orchestrationType: "cross_channel", crossChannelHandoffs: 67000,
-    channelEffectiveness: { email: 40, push: 30, sms: 30, in_app: 0 },
+    channelEffectiveness: { email: 40, push: 30, sms: 30, whatsapp: 0 },
   },
   {
     id: 2004,
@@ -191,12 +191,12 @@ export const mockJourneys: Journey[] = [
     description: "Cross-channel celebration when user reaches new Genius level",
     status: "Draft",
     entryChannel: "email",
-    channels: ["email", "push", "in_app"],
+    channels: ["email", "push", "whatsapp"],
     steps: [
       { id: "s1", type: "trigger", label: "Genius Level Changed" },
       { id: "s2", type: "email", label: "Congratulations Email", children: ["s3"] },
       { id: "s3", type: "push", label: "Badge Unlocked Push", children: ["s4"] },
-      { id: "s4", type: "in_app", label: "In-App Celebration Banner" },
+      { id: "s4", type: "whatsapp", label: "WhatsApp Celebration Banner" },
     ],
     createdAt: "8 Mar 2026", updatedAt: "8 Mar 2026",
     audienceSize: 0, conversionRate: 0,
@@ -223,7 +223,7 @@ export const channelMetrics: ChannelMetrics[] = [
   { channel: "Email", sent: 12400000, delivered: 11900000, opened: 4280000, clicked: 1190000, bounced: 500000, deliveryRate: 95.9, openRate: 36.0, clickRate: 10.0, bounceRate: 4.1 },
   { channel: "Push", sent: 8900000, delivered: 8500000, opened: 3740000, clicked: 1020000, bounced: 400000, deliveryRate: 95.5, openRate: 44.0, clickRate: 12.0, bounceRate: 4.5 },
   { channel: "SMS", sent: 3200000, delivered: 3100000, opened: 2976000, clicked: 0, bounced: 100000, deliveryRate: 96.9, openRate: 96.0, clickRate: 0, bounceRate: 3.1 },
-  { channel: "In-App", sent: 2100000, delivered: 2100000, opened: 1470000, clicked: 630000, bounced: 0, deliveryRate: 100.0, openRate: 70.0, clickRate: 30.0, bounceRate: 0 },
+  { channel: "WhatsApp", sent: 2100000, delivered: 2100000, opened: 1470000, clicked: 630000, bounced: 0, deliveryRate: 100.0, openRate: 70.0, clickRate: 30.0, bounceRate: 0 },
 ];
 
 export interface DailyMetric {
@@ -231,17 +231,17 @@ export interface DailyMetric {
   email: number;
   push: number;
   sms: number;
-  in_app: number;
+  whatsapp: number;
 }
 
 export const dailySends: DailyMetric[] = [
-  { date: "Mar 1", email: 420000, push: 310000, sms: 95000, in_app: 78000 },
-  { date: "Mar 2", email: 380000, push: 290000, sms: 102000, in_app: 65000 },
-  { date: "Mar 3", email: 510000, push: 380000, sms: 88000, in_app: 92000 },
-  { date: "Mar 4", email: 460000, push: 340000, sms: 110000, in_app: 71000 },
-  { date: "Mar 5", email: 550000, push: 410000, sms: 97000, in_app: 85000 },
-  { date: "Mar 6", email: 490000, push: 360000, sms: 105000, in_app: 88000 },
-  { date: "Mar 7", email: 530000, push: 395000, sms: 92000, in_app: 79000 },
+  { date: "Mar 1", email: 420000, push: 310000, sms: 95000, whatsapp: 78000 },
+  { date: "Mar 2", email: 380000, push: 290000, sms: 102000, whatsapp: 65000 },
+  { date: "Mar 3", email: 510000, push: 380000, sms: 88000, whatsapp: 92000 },
+  { date: "Mar 4", email: 460000, push: 340000, sms: 110000, whatsapp: 71000 },
+  { date: "Mar 5", email: 550000, push: 410000, sms: 97000, whatsapp: 85000 },
+  { date: "Mar 6", email: 490000, push: 360000, sms: 105000, whatsapp: 88000 },
+  { date: "Mar 7", email: 530000, push: 395000, sms: 92000, whatsapp: 79000 },
 ];
 
 /* ── Unified Campaign Groups ── */
@@ -278,13 +278,13 @@ export const mockUnifiedGroups: UnifiedCampaignGroup[] = [
   },
   {
     id: "UCG-2026-003", name: "Cart Abandonment Recovery",
-    description: "Sequential cross-channel recovery: push first, email fallback, in-app reminder",
+    description: "Sequential cross-channel recovery: push first, email fallback, WhatsApp reminder",
     orchestrationMode: "sequential",
-    channels: ["push", "email", "in_app"],
+    channels: ["push", "email", "whatsapp"],
     channelDeliveries: [
       { channel: "push", contentId: 5506, messageCategory: "price_alerts", status: "active", campaignId: 1008 },
       { channel: "email", contentId: 5507, messageCategory: "deal_discovery", status: "active", campaignId: 1008 },
-      { channel: "in_app", contentId: 5508, messageCategory: "offers", status: "active", campaignId: 1008 },
+      { channel: "whatsapp", contentId: 5508, messageCategory: "offers", status: "active", campaignId: 1008 },
     ],
     deduplicationEnabled: true, deduplicationWindowHours: 12,
     totalReach: 3100000, uniqueReach: 2480000,
@@ -295,11 +295,11 @@ export const mockUnifiedGroups: UnifiedCampaignGroup[] = [
     id: "UCG-2026-004", name: "Loyalty Upgrade Notification",
     description: "Cross-channel Genius level upgrade celebration",
     orchestrationMode: "multi_channel",
-    channels: ["email", "push", "in_app"],
+    channels: ["email", "push", "whatsapp"],
     channelDeliveries: [
       { channel: "email", contentId: 5509, messageCategory: "genius_programme", status: "active", campaignId: 1010 },
       { channel: "push", contentId: 5510, messageCategory: "loyalty", status: "active", campaignId: 1010 },
-      { channel: "in_app", contentId: 5511, messageCategory: "loyalty", status: "active", campaignId: 1010 },
+      { channel: "whatsapp", contentId: 5511, messageCategory: "loyalty", status: "active", campaignId: 1010 },
     ],
     deduplicationEnabled: false, deduplicationWindowHours: 0,
     totalReach: 620000, uniqueReach: 620000,
@@ -318,7 +318,7 @@ export const mockSubscriberProfiles: SubscriberProfile[] = [
       { channel: "email", optedIn: true, lastEngaged: "2 hours ago", engagementScore: 92, openRate: 68.4 },
       { channel: "push", optedIn: true, lastEngaged: "1 day ago", engagementScore: 71, openRate: 45.2 },
       { channel: "sms", optedIn: false, lastEngaged: "never", engagementScore: 0, openRate: 0 },
-      { channel: "in_app", optedIn: true, lastEngaged: "3 hours ago", engagementScore: 85, openRate: 72.1 },
+      { channel: "whatsapp", optedIn: true, lastEngaged: "3 hours ago", engagementScore: 85, openRate: 72.1 },
     ],
     reachableChannels: 3, deduplicatedCount: 4,
   },
@@ -329,18 +329,18 @@ export const mockSubscriberProfiles: SubscriberProfile[] = [
       { channel: "email", optedIn: true, lastEngaged: "3 days ago", engagementScore: 45, openRate: 22.1 },
       { channel: "push", optedIn: true, lastEngaged: "30 min ago", engagementScore: 96, openRate: 78.3 },
       { channel: "sms", optedIn: true, lastEngaged: "5 days ago", engagementScore: 38, openRate: 95.0 },
-      { channel: "in_app", optedIn: true, lastEngaged: "1 hour ago", engagementScore: 88, openRate: 65.7 },
+      { channel: "whatsapp", optedIn: true, lastEngaged: "1 hour ago", engagementScore: 88, openRate: 65.7 },
     ],
     reachableChannels: 4, deduplicatedCount: 7,
   },
   {
     id: "SUB-003", name: "Yuki S. (JP)",
-    preferredChannel: "in_app",
+    preferredChannel: "whatsapp",
     channels: [
       { channel: "email", optedIn: true, lastEngaged: "1 week ago", engagementScore: 28, openRate: 12.5 },
       { channel: "push", optedIn: false, lastEngaged: "never", engagementScore: 0, openRate: 0 },
       { channel: "sms", optedIn: false, lastEngaged: "never", engagementScore: 0, openRate: 0 },
-      { channel: "in_app", optedIn: true, lastEngaged: "15 min ago", engagementScore: 98, openRate: 91.2 },
+      { channel: "whatsapp", optedIn: true, lastEngaged: "15 min ago", engagementScore: 98, openRate: 91.2 },
     ],
     reachableChannels: 2, deduplicatedCount: 2,
   },
@@ -351,7 +351,7 @@ export const mockSubscriberProfiles: SubscriberProfile[] = [
       { channel: "email", optedIn: true, lastEngaged: "2 days ago", engagementScore: 55, openRate: 31.8 },
       { channel: "push", optedIn: true, lastEngaged: "1 day ago", engagementScore: 62, openRate: 42.0 },
       { channel: "sms", optedIn: true, lastEngaged: "4 hours ago", engagementScore: 89, openRate: 97.5 },
-      { channel: "in_app", optedIn: false, lastEngaged: "never", engagementScore: 0, openRate: 0 },
+      { channel: "whatsapp", optedIn: false, lastEngaged: "never", engagementScore: 0, openRate: 0 },
     ],
     reachableChannels: 3, deduplicatedCount: 5,
   },
@@ -434,7 +434,7 @@ export const mockTriggers: MockTrigger[] = [
   },
   {
     id: 3002, name: "cart_abandon_trigger", reportingLabel: "cart_abandon_omni",
-    status: "Live", triggerType: "SESSION", channels: ["push", "email", "in_app"],
+    status: "Live", triggerType: "SESSION", channels: ["push", "email", "whatsapp"],
     inputTopic: "browsing.cart_events", joiningWindowSec: 1800, delayMinutes: 30,
     linkedCampaigns: 2, dailyVolume: 310000,
     ruleExpression: "event.type == 'CART_ABANDON' AND event.cart_value > 50",
@@ -442,7 +442,7 @@ export const mockTriggers: MockTrigger[] = [
     channelRoutingRules: [
       { channel: "push", condition: "subscriber.has_app == true" },
       { channel: "email", condition: "fallback OR subscriber.has_app == false" },
-      { channel: "in_app", condition: "subscriber.active_session == true" },
+      { channel: "whatsapp", condition: "subscriber.active_session == true" },
     ],
   },
   {
@@ -455,7 +455,7 @@ export const mockTriggers: MockTrigger[] = [
   },
   {
     id: 3004, name: "genius_level_change", reportingLabel: "genius_upgrade_omni",
-    status: "Live", triggerType: "GENERAL", channels: ["email", "push", "in_app"],
+    status: "Live", triggerType: "GENERAL", channels: ["email", "push", "whatsapp"],
     inputTopic: "loyalty.status_change", joiningWindowSec: 600, delayMinutes: 5,
     linkedCampaigns: 2, dailyVolume: 45000,
     ruleExpression: "event.new_level > event.old_level",
@@ -463,7 +463,7 @@ export const mockTriggers: MockTrigger[] = [
     channelRoutingRules: [
       { channel: "email", condition: "always" },
       { channel: "push", condition: "subscriber.has_app == true" },
-      { channel: "in_app", condition: "subscriber.has_app == true" },
+      { channel: "whatsapp", condition: "subscriber.has_app == true" },
     ],
   },
   {
@@ -504,13 +504,13 @@ export const mockHoldouts: MockHoldout[] = [
     id: 4001, name: "global_marketing_holdout_5pct",
     description: "5% global marketing holdout across all channels for incrementality measurement",
     purpose: "marketing", status: "Live",
-    channels: ["email", "push", "sms", "in_app"],
+    channels: ["email", "push", "sms", "whatsapp"],
     funnels: ["pre_book", "post_book", "post_trip", "reactivation"],
     verticals: ["accommodation"],
     hashRange: { start: 0, end: 5 }, salt: "mktg_holdout_2026",
     matchedCampaigns: 42, subscribersHeldOut: 650000,
     crossChannelCoordinated: true,
-    perChannelRanges: { email: { start: 0, end: 5 }, push: { start: 0, end: 5 }, sms: { start: 0, end: 5 }, in_app: { start: 0, end: 5 } },
+    perChannelRanges: { email: { start: 0, end: 5 }, push: { start: 0, end: 5 }, sms: { start: 0, end: 5 }, whatsapp: { start: 0, end: 5 } },
   },
   {
     id: 4002, name: "email_incrementality_10pct",
@@ -536,15 +536,15 @@ export const mockHoldouts: MockHoldout[] = [
   },
   {
     id: 4004, name: "omni_rewards_holdout",
-    description: "Cross-channel rewards holdout — coordinated across email + push + in-app",
+    description: "Cross-channel rewards holdout — coordinated across email + push + WhatsApp",
     purpose: "marketing", status: "Draft",
-    channels: ["email", "push", "in_app"],
+    channels: ["email", "push", "whatsapp"],
     funnels: ["post_book", "post_trip"],
     verticals: ["accommodation"],
     hashRange: { start: 0, end: 8 }, salt: "omni_rewards_2026",
     matchedCampaigns: 0, subscribersHeldOut: 0,
     crossChannelCoordinated: true,
-    perChannelRanges: { email: { start: 0, end: 8 }, push: { start: 0, end: 8 }, in_app: { start: 0, end: 8 } },
+    perChannelRanges: { email: { start: 0, end: 8 }, push: { start: 0, end: 8 }, whatsapp: { start: 0, end: 8 } },
   },
 ];
 
@@ -656,11 +656,11 @@ export interface MockSubscriptionCategory {
 
 export const mockSubscriptionCategories: MockSubscriptionCategory[] = [
   { id: "cat_deals", name: "Deals & Offers", channels: ["email", "push", "sms"], optInRate: 72.3, totalSubscribers: 9400000, description: "Promotional deals, discounts, and special offers" },
-  { id: "cat_travel", name: "Travel Inspiration", channels: ["email", "push", "in_app"], optInRate: 65.1, totalSubscribers: 8500000, description: "Destination ideas, travel guides, and recommendations" },
-  { id: "cat_genius", name: "Genius Programme", channels: ["email", "push", "in_app"], optInRate: 88.7, totalSubscribers: 5200000, description: "Genius level updates, rewards, and exclusive benefits" },
+  { id: "cat_travel", name: "Travel Inspiration", channels: ["email", "push", "whatsapp"], optInRate: 65.1, totalSubscribers: 8500000, description: "Destination ideas, travel guides, and recommendations" },
+  { id: "cat_genius", name: "Genius Programme", channels: ["email", "push", "whatsapp"], optInRate: 88.7, totalSubscribers: 5200000, description: "Genius level updates, rewards, and exclusive benefits" },
   { id: "cat_reviews", name: "Reviews & Ratings", channels: ["email", "push"], optInRate: 58.4, totalSubscribers: 7600000, description: "Post-stay review requests and community updates" },
   { id: "cat_price_alert", name: "Price Alerts", channels: ["push", "email", "sms"], optInRate: 45.2, totalSubscribers: 5900000, description: "Price drop notifications for wishlisted properties" },
-  { id: "cat_trip_info", name: "Trip Information", channels: ["email", "push", "sms", "in_app"], optInRate: 94.1, totalSubscribers: 12300000, description: "Check-in reminders, trip updates, and local info" },
+  { id: "cat_trip_info", name: "Trip Information", channels: ["email", "push", "sms", "whatsapp"], optInRate: 94.1, totalSubscribers: 12300000, description: "Check-in reminders, trip updates, and local info" },
 ];
 
 export const consentGapAnalysis = {

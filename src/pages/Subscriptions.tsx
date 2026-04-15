@@ -7,7 +7,7 @@ function formatNum(n: number): string {
   return n.toString();
 }
 
-const ALL_CHANNELS: MessageChannel[] = ["email", "push", "sms", "in_app"];
+const ALL_CHANNELS: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
 
 export default function Subscriptions() {
   const totalSubs = mockSubscriptionCategories.reduce((s, c) => s + c.totalSubscribers, 0);
@@ -154,7 +154,7 @@ export default function Subscriptions() {
               <td style={{ textAlign: "right" }}>{consentGapAnalysis.emailAndPush.pct}%</td>
               <td>
                 <span className="badge badge-callout" style={{ fontSize: 10 }}>{consentGapAnalysis.emailAndPush.missingSms}% missing SMS</span>
-                <span className="badge badge-callout" style={{ fontSize: 10, marginLeft: 4 }}>{consentGapAnalysis.emailAndPush.missingInApp}% missing In-App</span>
+                <span className="badge badge-callout" style={{ fontSize: 10, marginLeft: 4 }}>{consentGapAnalysis.emailAndPush.missingInApp}% missing WhatsApp</span>
               </td>
               <td><span className="badge badge-brand" style={{ fontSize: 10 }}>SMS opt-in during booking</span></td>
             </tr>
@@ -196,7 +196,7 @@ export default function Subscriptions() {
                 {sub.channels.map(ch => (
                   <div key={ch.channel} className="subscriber-channel-row">
                     <span className="subscriber-channel-icon">{CHANNEL_ICONS[ch.channel]}</span>
-                    <span className="subscriber-channel-name">{ch.channel === "in_app" ? "In-App" : ch.channel.charAt(0).toUpperCase() + ch.channel.slice(1)}</span>
+                    <span className="subscriber-channel-name">{ch.channel === "whatsapp" ? "WhatsApp" : ch.channel.charAt(0).toUpperCase() + ch.channel.slice(1)}</span>
                     {ch.optedIn ? (
                       <>
                         <span className="badge badge-constructive" style={{ fontSize: 9, padding: "0 4px" }}>Opted In</span>
@@ -240,7 +240,7 @@ export default function Subscriptions() {
               { ch: "email" as MessageChannel, endpoint: "b-janet-subscription-api/email", status: "healthy", latency: "12ms", lastSync: "< 1 min" },
               { ch: "push" as MessageChannel, endpoint: "b-janet-subscription-api/device", status: "healthy", latency: "8ms", lastSync: "< 1 min" },
               { ch: "sms" as MessageChannel, endpoint: "b-janet-subscription-api/phone", status: "healthy", latency: "15ms", lastSync: "< 1 min" },
-              { ch: "in_app" as MessageChannel, endpoint: "neeti-opt-in-service/preferences", status: "degraded", latency: "245ms", lastSync: "5 min" },
+              { ch: "whatsapp" as MessageChannel, endpoint: "neeti-opt-in-service/preferences", status: "degraded", latency: "245ms", lastSync: "5 min" },
             ]).map(row => (
               <tr key={row.ch}>
                 <td><strong>{CHANNEL_ICONS[row.ch]} {CHANNEL_LABELS[row.ch]}</strong></td>

@@ -43,7 +43,7 @@
   --color-email: #006ce4;
   --color-push: #f89249;
   --color-sms: #008009;
-  --color-inapp: #7c3aed;
+  --color-whatsapp: #7c3aed;
 }
 
 *,*:after,*:before { box-sizing: border-box; }
@@ -242,7 +242,7 @@ body {
 .dot--email { background: var(--color-email); }
 .dot--push { background: var(--color-push); }
 .dot--sms { background: var(--color-sms); }
-.dot--inapp { background: var(--color-inapp); }
+.dot--whatsapp { background: var(--color-whatsapp); }
 .bar-chart { display: flex; gap: 16px; align-items: flex-end; height: 180px; padding-top: 8px; }
 .bar-chart-group { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
 .bar-chart-bars { display: flex; gap: 3px; align-items: flex-end; flex: 1; width: 100%; justify-content: center; }
@@ -251,7 +251,7 @@ body {
 .bar--email { background: var(--color-email); }
 .bar--push { background: var(--color-push); }
 .bar--sms { background: var(--color-sms); }
-.bar--inapp { background: var(--color-inapp); }
+.bar--whatsapp { background: var(--color-whatsapp); }
 .bar-chart-label { font-size: 11px; color: var(--color-gray-500); margin-top: 8px; }
 
 /* ── Channel Selector ── */
@@ -310,7 +310,7 @@ body {
 .journey-mini-step--email { background: #dbeafe; }
 .journey-mini-step--push { background: #fef3c7; }
 .journey-mini-step--sms { background: var(--color-green-100); }
-.journey-mini-step--in_app { background: #ede9fe; }
+.journey-mini-step--whatsapp { background: #ede9fe; }
 .journey-mini-step--delay { background: var(--color-gray-100); }
 .journey-mini-step--condition { background: var(--color-blue-100); }
 .journey-mini-step--split { background: var(--callout-200); }
@@ -326,7 +326,7 @@ body {
 .journey-step--email { border-left: 4px solid var(--color-email); }
 .journey-step--push { border-left: 4px solid var(--color-push); }
 .journey-step--sms { border-left: 4px solid var(--color-sms); }
-.journey-step--in_app { border-left: 4px solid var(--color-inapp); }
+.journey-step--whatsapp { border-left: 4px solid var(--color-whatsapp); }
 .journey-step--delay { border-left: 4px solid var(--color-gray-300); }
 .journey-step--condition { border-left: 4px solid var(--color-blue-500); }
 .journey-step--split { border-left: 4px solid var(--callout-300); }
@@ -454,7 +454,7 @@ body {
 .ucg-card-channel--email { background: #dbeafe; }
 .ucg-card-channel--push { background: #fef3c7; }
 .ucg-card-channel--sms { background: var(--color-green-100); }
-.ucg-card-channel--in_app { background: #ede9fe; }
+.ucg-card-channel--whatsapp { background: #ede9fe; }
 .ucg-card-metrics { padding: 0 20px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .ucg-card-metric { text-align: center; }
 .ucg-card-metric-value { font-weight: 700; font-size: 16px; }
@@ -516,7 +516,7 @@ body {
 .overlap-circle--email { width: 180px; height: 180px; border-color: var(--color-email); background: var(--color-email); left: calc(50% - 120px); top: 20px; }
 .overlap-circle--push { width: 160px; height: 160px; border-color: var(--color-push); background: var(--color-push); left: calc(50% - 20px); top: 10px; }
 .overlap-circle--sms { width: 140px; height: 140px; border-color: var(--color-sms); background: var(--color-sms); left: calc(50% - 110px); top: 90px; }
-.overlap-circle--inapp { width: 120px; height: 120px; border-color: var(--color-inapp); background: var(--color-inapp); left: calc(50% + 20px); top: 80px; }
+.overlap-circle--whatsapp { width: 120px; height: 120px; border-color: var(--color-whatsapp); background: var(--color-whatsapp); left: calc(50% + 20px); top: 80px; }
 .overlap-center-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card-bg); padding: 8px 14px; border-radius: var(--radius-md); box-shadow: var(--shadow-md); font-weight: 700; font-size: 18px; color: var(--color-blue-600); z-index: 2; text-align: center; }
 .overlap-center-sub { font-size: 11px; font-weight: 500; color: var(--color-gray-500); }
 .overlap-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 16px; }
@@ -549,7 +549,7 @@ body {
 /* ── Journey Builder — new node types ── */
 
 .journey-step--cross_channel_eligibility { border-left: 4px solid #8b5cf6; }
-.journey-step--best_channel { border-left: 4px solid transparent; border-image: linear-gradient(180deg, var(--color-email), var(--color-push), var(--color-sms), var(--color-inapp)) 1; border-image-slice: 1; }
+.journey-step--best_channel { border-left: 4px solid transparent; border-image: linear-gradient(180deg, var(--color-email), var(--color-push), var(--color-sms), var(--color-whatsapp)) 1; border-image-slice: 1; }
 .journey-mini-step--cross_channel_eligibility { background: #ede9fe; }
 .journey-mini-step--best_channel { background: linear-gradient(135deg, #dbeafe, #d1fae5, #fef3c7); }
 
@@ -582,7 +582,7 @@ body {
 .effectiveness-bar--email { background: var(--color-email); }
 .effectiveness-bar--push { background: var(--color-push); }
 .effectiveness-bar--sms { background: var(--color-sms); }
-.effectiveness-bar--in_app { background: var(--color-inapp); }
+.effectiveness-bar--whatsapp { background: var(--color-whatsapp); }
 
 /* ── Info Banner ── */
 
