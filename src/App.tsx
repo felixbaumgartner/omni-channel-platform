@@ -12,7 +12,6 @@ import TriggerCreate from "./pages/TriggerCreate";
 import HoldoutManagement from "./pages/HoldoutManagement";
 import CampaignPriority from "./pages/CampaignPriority";
 import NoSendReasons from "./pages/NoSendReasons";
-import Subscriptions from "./pages/Subscriptions";
 
 const nav = ({ isActive }: { isActive: boolean }) => (isActive ? "active" : "");
 
@@ -65,9 +64,6 @@ export default function App() {
             <div className="app-nav-link">
               <NavLink to="/no-send" className={nav}>No-Send Reasons</NavLink>
             </div>
-            <div className="app-nav-link">
-              <NavLink to="/subscriptions" className={nav}>Subscriptions</NavLink>
-            </div>
           </div>
 
           <div className="app-nav-section">
@@ -105,7 +101,6 @@ export default function App() {
             <Route path="/campaign-priority" element={<CampaignPriority />} />
             <Route path="/holdouts" element={<HoldoutManagement />} />
             <Route path="/no-send" element={<NoSendReasons />} />
-            <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/channel-preferences" element={<ChannelPreferences />} />
             <Route path="/analytics" element={<Analytics />} />
           </Routes>
