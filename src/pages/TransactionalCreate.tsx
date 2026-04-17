@@ -137,16 +137,6 @@ export default function TransactionalCreate() {
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Multi-Channel Delivery</div>
           <p className="text-muted mb-16">All selected channels fire within a single send event for maximum reliability.</p>
 
-          {/* Guardrails */}
-          <div className="alert alert-warning" style={{ marginBottom: 16 }}>
-            <div className="alert-title">Multi-Channel Guardrails Active</div>
-            <ul style={{ margin: "8px 0 0 16px", padding: 0 }}>
-              <li>Subscriber must have valid consent for every selected channel</li>
-              <li>Campaign-level frequency caps are respected across all channels</li>
-              <li>Subscribers lacking consent for one or more channels will be flagged</li>
-            </ul>
-          </div>
-
           {/* Channel Send Spacing */}
           <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Send Spacing</div>
           <p className="text-muted mb-8" style={{ fontSize: 13 }}>A platform-level minimum spacing of <strong>5 minutes</strong> is enforced between successive channel dispatches to the same subscriber.</p>
