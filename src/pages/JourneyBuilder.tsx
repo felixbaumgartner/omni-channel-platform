@@ -471,51 +471,50 @@ export default function JourneyBuilder() {
                         {/* Per-Channel Content */}
                         <div className="form-group">
                           <label className="form-label">Content Per Channel</label>
-                          <div className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Assign a content template for each channel in the pool. The heuristic picks the channel; the system delivers the corresponding content.</div>
+                          <div className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Assign content for each channel. The heuristic picks the channel; the system delivers the corresponding content.</div>
+
+                          {/* Experiment toggle */}
+                          {!bestChannelExperiment ? (
+                            <button className="btn btn-secondary" style={{ fontSize: 11, padding: "3px 10px", marginBottom: 10 }} onClick={() => setBestChannelExperiment(true)}>+ Setup Experiment</button>
+                          ) : (
+                            <div className="tier-selection-appear" style={{ marginBottom: 10 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                                <input className="form-input" style={{ flex: 1, fontSize: 11 }} placeholder="Experiment tag..." value={bestChannelExpTag} onChange={e => setBestChannelExpTag(e.target.value)} />
+                                <button className="btn btn-tertiary btn-destructive" style={{ fontSize: 10, padding: "2px 6px", whiteSpace: "nowrap" }} onClick={() => { setBestChannelExperiment(false); setBestChannelExpTag(""); }}>Remove</button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Column headers */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                            <span style={{ width: 82 }} />
+                            <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: "var(--color-gray-500)", textTransform: "uppercase" }}>Base</span>
+                            {bestChannelExperiment && (
+                              <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: "var(--color-gray-500)", textTransform: "uppercase" }}>Variant</span>
+                            )}
+                          </div>
+
+                          {/* Per-channel rows */}
                           {bestChannelPool.map(ch => (
-                            <div key={ch} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                              <span style={{ fontSize: 16, width: 24, textAlign: "center" }}>{CHANNEL_ICONS[ch]}</span>
-                              <span style={{ fontWeight: 600, fontSize: 12, width: 60 }}>{CHANNEL_LABELS[ch]}</span>
-                              <select className="form-select" style={{ flex: 1, fontSize: 12 }}>
-                                <option value="">Select template...</option>
+                            <div key={ch} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                              <span style={{ fontSize: 14, width: 22, textAlign: "center" }}>{CHANNEL_ICONS[ch]}</span>
+                              <span style={{ fontWeight: 600, fontSize: 11, width: 54 }}>{CHANNEL_LABELS[ch]}</span>
+                              <select className="form-select" style={{ flex: 1, fontSize: 11 }}>
+                                <option value="">Select base...</option>
                                 <option>Welcome Template</option>
                                 <option>Reminder Template</option>
                                 <option>Promotional Template</option>
                               </select>
+                              {bestChannelExperiment && (
+                                <select className="form-select" style={{ flex: 1, fontSize: 11 }}>
+                                  <option value="">Select variant...</option>
+                                  <option>Welcome Template (V2)</option>
+                                  <option>Reminder Template (V2)</option>
+                                  <option>Promotional Template (V2)</option>
+                                </select>
+                              )}
                             </div>
                           ))}
-                        </div>
-
-                        {/* Experiment */}
-                        <div className="form-group">
-                          <label className="form-label">Experiment</label>
-                          {!bestChannelExperiment ? (
-                            <div className="content-empty-state" style={{ padding: 12 }}>
-                              <p className="text-muted" style={{ margin: "4px 0", fontSize: 11 }}>No experiment configured. Set up an A/B test to compare content variants.</p>
-                              <button className="btn btn-secondary" style={{ fontSize: 12, padding: "4px 12px" }} onClick={() => setBestChannelExperiment(true)}>Setup Experiment</button>
-                            </div>
-                          ) : (
-                            <div className="tier-selection-appear">
-                              <div className="form-group" style={{ marginBottom: 8 }}>
-                                <input className="form-input" style={{ fontSize: 12 }} placeholder="e.g., emk_best_channel_experiment" value={bestChannelExpTag} onChange={e => setBestChannelExpTag(e.target.value)} />
-                                <div className="text-muted" style={{ marginTop: 4, fontSize: 11 }}>Experiment tag for A/B variant tracking.</div>
-                              </div>
-                              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Variant Content Per Channel</div>
-                              {bestChannelPool.map(ch => (
-                                <div key={ch} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                                  <span style={{ fontSize: 16, width: 24, textAlign: "center" }}>{CHANNEL_ICONS[ch]}</span>
-                                  <span style={{ fontWeight: 600, fontSize: 11, width: 54 }}>{CHANNEL_LABELS[ch]}</span>
-                                  <select className="form-select" style={{ flex: 1, fontSize: 11 }}>
-                                    <option value="">Select variant...</option>
-                                    <option>Welcome Template (V2)</option>
-                                    <option>Reminder Template (V2)</option>
-                                    <option>Promotional Template (V2)</option>
-                                  </select>
-                                </div>
-                              ))}
-                              <button className="btn btn-tertiary btn-destructive" style={{ fontSize: 11, marginTop: 4 }} onClick={() => { setBestChannelExperiment(false); setBestChannelExpTag(""); }}>Remove Experiment</button>
-                            </div>
-                          )}
                         </div>
                       </>
                     )}
