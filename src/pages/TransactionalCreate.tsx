@@ -158,18 +158,6 @@ export default function TransactionalCreate() {
             ))}
           </div>
 
-          <div className="divider" />
-
-          {/* Transactional Deduplication */}
-          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Transactional Deduplication</div>
-          <div className="alert alert-info" style={{ marginBottom: 0 }}>
-            <div className="alert-title">Idempotency Protection Active</div>
-            <ul style={{ margin: "8px 0 0 16px", padding: 0 }}>
-              <li>Same message to same subscriber within 5 minutes = deduplicated</li>
-              <li>Idempotency key: <code style={{ background: "rgba(0,0,0,0.05)", padding: "1px 4px", borderRadius: 3 }}>subscriber_id + campaign_id + timestamp_bucket</code></li>
-              <li>Prevents duplicate OTPs, double booking confirmations, etc.</li>
-            </ul>
-          </div>
         </div>
       )}
 
