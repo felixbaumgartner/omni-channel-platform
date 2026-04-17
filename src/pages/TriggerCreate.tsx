@@ -9,8 +9,6 @@ import {
   type TopicCategory,
 } from "../types";
 
-type TriggerType = "GENERAL" | "SESSION";
-
 const TOPIC_OPTIONS = Object.entries(INPUT_TOPICS).map(([key, cfg]) => ({
   key,
   label: cfg.label,
@@ -28,7 +26,6 @@ export default function TriggerCreate() {
   const [description, setDescription] = useState("");
 
   // Input configuration
-  const [triggerType, setTriggerType] = useState<TriggerType>("GENERAL");
   const [inputTopic, setInputTopic] = useState("");
   const [additionalTopics, setAdditionalTopics] = useState<string[]>([]);
   const [consentCheck, setConsentCheck] = useState(true);
@@ -130,7 +127,7 @@ export default function TriggerCreate() {
           <div style={{ fontSize: 48, marginBottom: 16 }}>&#10003;</div>
           <h2 style={{ marginBottom: 8 }}>Trigger Created</h2>
           <p className="text-muted mb-16">
-            "{triggerName}" has been saved as a {triggerType} trigger on topic{" "}
+            "{triggerName}" has been saved as a trigger on topic{" "}
             <code style={{ background: "rgba(0,0,0,0.05)", padding: "1px 6px", borderRadius: 3 }}>
               {selectedTopicConfig?.label || inputTopic}
             </code>.
@@ -158,7 +155,6 @@ export default function TriggerCreate() {
         <div className="page-header-main">
           <h1 className="page-title">New Trigger</h1>
           <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-            <span className="badge badge-outline">{triggerType}</span>
             {inputTopic && <span className="badge badge-media">{selectedTopicConfig?.label || inputTopic}</span>}
             <span className="badge badge-draft">Draft</span>
           </div>
@@ -238,39 +234,6 @@ export default function TriggerCreate() {
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Input Configuration</div>
         <p className="text-muted mb-16">Configure the event source and timing for this trigger.</p>
 
-        {/* Trigger Type */}
-        <div className="form-group">
-          <label className="form-label">Trigger Type</label>
-          <div className="radio-card-group" style={{ gridTemplateColumns: "1fr 1fr" }}>
-            <div
-              className={`radio-card ${triggerType === "GENERAL" ? "selected" : ""}`}
-              onClick={() => setTriggerType("GENERAL")}
-            >
-              <div className="radio-card-header">
-                <div className="radio-card-radio" />
-                <div className="radio-card-title">General</div>
-              </div>
-              <div className="radio-card-description">
-                Evaluates each event independently. No session tracking or event joining. Best for state-change events
-                (booking confirmed, payment processed).
-              </div>
-            </div>
-            <div
-              className={`radio-card ${triggerType === "SESSION" ? "selected" : ""}`}
-              onClick={() => setTriggerType("SESSION")}
-            >
-              <div className="radio-card-header">
-                <div className="radio-card-radio" />
-                <div className="radio-card-title">Session</div>
-              </div>
-              <div className="radio-card-description">
-                Groups events within a joining window before evaluating. Uses session tracking for behavioral patterns
-                (cart abandonment, browse-then-leave).
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Input Topic */}
         <div className="form-group">
           <label className="form-label">Input Topic</label>
@@ -341,9 +304,7 @@ export default function TriggerCreate() {
         {/* Timing Configuration */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div className="form-group">
-            <label className="form-label">
-              {triggerType === "SESSION" ? "Joining Window (seconds)" : "Event Window (seconds)"}
-            </label>
+            <label className="form-label">Event Window (seconds)</label>
             <input
               className="form-input"
               type="number"
@@ -353,9 +314,7 @@ export default function TriggerCreate() {
               onChange={e => setJoiningWindow(e.target.value)}
             />
             <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
-              {triggerType === "SESSION"
-                ? "Time window to group related events into a single session before evaluation."
-                : "Tracking window for event correlation. 0 = evaluate immediately."}
+              Tracking window for event correlation. 0 = evaluate immediately.
             </div>
           </div>
           <div className="form-group">
