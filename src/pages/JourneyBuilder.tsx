@@ -465,6 +465,24 @@ export default function JourneyBuilder() {
                           </div>
                           <div className="text-muted" style={{ fontSize: 11, marginTop: 4 }}>Only used when delivery retry for the chosen channel fails.</div>
                         </div>
+
+                        {/* Per-Channel Content */}
+                        <div className="form-group">
+                          <label className="form-label">Content Per Channel</label>
+                          <div className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Assign a content template for each channel in the pool. The heuristic picks the channel; the system delivers the corresponding content.</div>
+                          {bestChannelPool.map(ch => (
+                            <div key={ch} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 16, width: 24, textAlign: "center" }}>{CHANNEL_ICONS[ch]}</span>
+                              <span style={{ fontWeight: 600, fontSize: 12, width: 60 }}>{CHANNEL_LABELS[ch]}</span>
+                              <select className="form-select" style={{ flex: 1, fontSize: 12 }}>
+                                <option value="">Select template...</option>
+                                <option>Welcome Template</option>
+                                <option>Reminder Template</option>
+                                <option>Promotional Template</option>
+                              </select>
+                            </div>
+                          ))}
+                        </div>
                       </>
                     )}
                   </div>
