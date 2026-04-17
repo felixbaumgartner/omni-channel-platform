@@ -260,17 +260,6 @@ export default function CampaignCreate() {
                 </div>
               </div>
 
-              {/* Multi-channel guardrails warning */}
-              {deliveryMode === "multi_channel" && (
-                <div className="alert alert-warning tier-selection-appear" style={{ marginTop: 16 }}>
-                  <div className="alert-title">Multi-Channel Guardrails Active</div>
-                  <ul style={{ margin: "8px 0 0 16px", padding: 0 }}>
-                    <li>Subscriber must have valid consent for every selected channel</li>
-                    <li>Campaign-level frequency caps are respected across all channels</li>
-                    <li>Subscribers lacking consent for one or more channels will be flagged</li>
-                  </ul>
-                </div>
-              )}
 
               {/* Channel Send Spacing — Multi-Channel Mode Only */}
               {deliveryMode === "multi_channel" && (
