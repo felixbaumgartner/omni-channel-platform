@@ -174,7 +174,6 @@ export default function CampaignList() {
                         </span>
                       ))}
                     </div>
-                    {g.deduplicationEnabled && <span className="badge badge-dedup">Dedup</span>}
                   </div>
                   <div className="ucg-card-metrics">
                     <div className="ucg-card-metric">
