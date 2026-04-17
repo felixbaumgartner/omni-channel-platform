@@ -21,7 +21,7 @@ export default function App() {
       {/* Header */}
       <div className="app-layout-header">
         <div className="app-layout-header-title">
-          Targeting &mdash; Omni-Channel Platform
+          Targeting (PROD)
         </div>
         <div className="app-layout-header-right">
           <span className="app-header-link">Help &amp; Feedback</span>
