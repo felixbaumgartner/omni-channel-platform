@@ -209,6 +209,35 @@ export default function JourneyBuilder() {
                     </div>
                     {(step.type === "email" || step.type === "push" || step.type === "sms" || step.type === "whatsapp") && (
                       <>
+                        {/* Campaign Name */}
+                        <div className="form-group">
+                          <label className="form-label">Campaign Name</label>
+                          <input className="form-input" placeholder={`j1_${step.label.toLowerCase().replace(/\s+/g, "_")}`} />
+                          <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Auto-prefixed with journey ID. Max 44 chars, alphanumeric + underscore/dash.</div>
+                        </div>
+
+                        {/* Campaign Purpose */}
+                        <div className="form-group">
+                          <label className="form-label">Campaign Purpose</label>
+                          <select className="form-select">
+                            <option value="marketing">Marketing</option>
+                            <option value="non_marketing">Non-Marketing</option>
+                          </select>
+                        </div>
+
+                        {/* Send Configuration — Email only */}
+                        {step.type === "email" && (
+                          <div className="form-group">
+                            <label className="form-label">Sender Profile</label>
+                            <select className="form-select">
+                              <option value="">Select sender profile...</option>
+                              <option>Booking.com (noreply@booking.com)</option>
+                              <option>Booking.com Campaigns (email.campaign@sg.booking.com)</option>
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Content Template */}
                         <div className="form-group">
                           <label className="form-label">Content Template</label>
                           <select className="form-select">
@@ -218,9 +247,44 @@ export default function JourneyBuilder() {
                             <option>Promotional Template</option>
                           </select>
                         </div>
+
+                        {/* Message Category */}
+                        <div className="form-group">
+                          <label className="form-label">Message Category</label>
+                          <select className="form-select">
+                            <option value="">Select category...</option>
+                            <option>Accommodations</option>
+                            <option>Flights</option>
+                            <option>Car Rental</option>
+                            <option>Attractions</option>
+                            <option>General</option>
+                          </select>
+                        </div>
+
+                        {/* Tracking Label */}
                         <div className="form-group">
                           <label className="form-label">Tracking Label</label>
                           <input className="form-input" placeholder="e.g., journey_step_1" />
+                          <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>4-32 chars, alphanumeric with underscore/dash. Used for Tableau reporting.</div>
+                        </div>
+
+                        {/* Experiment */}
+                        <div className="form-group">
+                          <label className="form-label">Experiment Tag</label>
+                          <input className="form-input" placeholder="e.g., emk_welcome_experiment" />
+                          <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Optional. Enables A/B variant testing for this step.</div>
+                        </div>
+
+                        {/* Reporting */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                          <div className="form-group">
+                            <label className="form-label">Affiliate ID</label>
+                            <input className="form-input" type="number" placeholder="e.g., 123456" />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Parent Affiliate ID</label>
+                            <input className="form-input" type="number" placeholder="e.g., 654321" />
+                          </div>
                         </div>
                       </>
                     )}
