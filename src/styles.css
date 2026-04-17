@@ -435,6 +435,8 @@ body {
 .omni-kpi-card .kpi-label { color: rgba(255,255,255,0.8); }
 .omni-kpi-card .kpi-value { color: #fff; font-size: 24px; }
 .omni-kpi-card .kpi-sub { color: rgba(255,255,255,0.7); }
+.info-icon { cursor: help; opacity: 0.6; font-size: 14px; vertical-align: middle; }
+.info-icon:hover { opacity: 1; }
 
 /* ── View Toggle ── */
 
