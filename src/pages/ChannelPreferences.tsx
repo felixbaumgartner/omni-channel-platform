@@ -38,17 +38,17 @@ export default function ChannelPreferences() {
       {/* Engine Status — Enhanced with omni KPIs */}
       <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         <div className="kpi-card">
-          <div className="kpi-label">Routing Mode</div>
+          <div className="kpi-label">Routing Mode <span className="info-icon" data-tooltip="The active channel selection strategy. Heuristics Only uses rules like Last Engaged Channel. ML + Heuristics adds a machine-learned model that scores channels per subscriber.">&#9432;</span></div>
           <div className="kpi-value" style={{ fontSize: 16 }}>{mlEnabled ? "ML + Heuristics" : "Heuristics Only"}</div>
           <div className="kpi-sub">{mlEnabled ? "ML active" : "Phase 1"}</div>
         </div>
         <div className="kpi-card" style={{ background: "linear-gradient(135deg, #003580, #006ce4)", color: "#fff" }}>
-          <div className="kpi-label" style={{ color: "rgba(255,255,255,0.8)" }}>Freq Cap Blocked</div>
+          <div className="kpi-label" style={{ color: "rgba(255,255,255,0.8)" }}>Freq Cap Blocked <span className="info-icon" style={{ color: "rgba(255,255,255,0.7)" }} data-tooltip="Total number of message sends blocked in the last 7 days because the subscriber had already reached their per-channel frequency limit.">&#9432;</span></div>
           <div className="kpi-value" style={{ fontSize: 22, color: "#fff" }}>3.2M</div>
           <div className="kpi-sub" style={{ color: "rgba(255,255,255,0.7)" }}>violations prevented</div>
         </div>
         <div className="kpi-card" style={{ background: "linear-gradient(135deg, #003580, #006ce4)", color: "#fff" }}>
-          <div className="kpi-label" style={{ color: "rgba(255,255,255,0.8)" }}>Fatigue Score</div>
+          <div className="kpi-label" style={{ color: "rgba(255,255,255,0.8)" }}>Fatigue Score <span className="info-icon" style={{ color: "rgba(255,255,255,0.7)" }} data-tooltip="Average messaging fatigue score across all subscribers (scale 0-5). Lower is better. Measures how over-messaged your audience is across all channels.">&#9432;</span></div>
           <div className="kpi-value" style={{ fontSize: 22, color: "#fff" }}>{omniChannelKPIs.channelFatigueScore}</div>
           <div className="kpi-sub" style={{ color: "rgba(255,255,255,0.7)" }}>avg across subscribers</div>
         </div>
