@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, type MessageChannel, type JourneyStepType } from "../types";
+import { defaultHeuristicRules, type PreferenceRule } from "../data/mockData";
 
 interface Step {
   id: string;
@@ -43,6 +44,8 @@ export default function JourneyBuilder() {
   const [endDate, setEndDate] = useState("");
   const [resetMode, setResetMode] = useState("none");
   const [exitRule, setExitRule] = useState("");
+  const [heuristicRules] = useState<PreferenceRule[]>(defaultHeuristicRules.filter(r => r.active));
+  const [bestChannelPool, setBestChannelPool] = useState<MessageChannel[]>(["email", "push", "sms", "whatsapp"]);
 
   function addStep(type: JourneyStepType) {
     const opt = STEP_OPTIONS.find(s => s.type === type)!;
@@ -53,6 +56,18 @@ export default function JourneyBuilder() {
   function removeStep(id: string) {
     setSteps(prev => prev.filter(s => s.id !== id));
     if (selectedStep === id) setSelectedStep(null);
+  }
+
+  function toggleBestChannelPool(ch: MessageChannel) {
+    setBestChannelPool(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
+  }
+
+  function moveBestChannel(index: number, direction: "up" | "down") {
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= bestChannelPool.length) return;
+    const next = [...bestChannelPool];
+    [next[index], next[target]] = [next[target], next[index]];
+    setBestChannelPool(next);
   }
 
   function handleSave() {
@@ -383,27 +398,72 @@ export default function JourneyBuilder() {
                     )}
                     {step.type === "best_channel" && (
                       <>
-                        <div className="alert alert-info" style={{ fontSize: 12, marginBottom: 12 }}>
-                          <strong>AI-Routed:</strong> Picks the optimal channel per subscriber at journey execution time using CDP signals and the Channel Preference Engine.
-                        </div>
+                        {/* Channel Pool Selection */}
                         <div className="form-group">
-                          <label className="form-label">Eligible Channels</label>
-                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          <label className="form-label">Channel Pool</label>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                             {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
-                              <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
+                              <span
+                                key={ch}
+                                className={`badge ${bestChannelPool.includes(ch) ? "badge-brand" : "badge-outline"}`}
+                                style={{ cursor: "pointer" }}
+                                onClick={() => toggleBestChannelPool(ch)}
+                              >
+                                {CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}
+                              </span>
                             ))}
                           </div>
+                          <div className="text-muted" style={{ marginTop: 4, fontSize: 11 }}>Click to toggle channels in the routing pool.</div>
                         </div>
+
+                        {/* Active Heuristic */}
                         <div className="form-group">
-                          <label className="form-label">Fallback Timeout (hours)</label>
-                          <input className="form-input" type="number" defaultValue="4" />
+                          <label className="form-label">Active Heuristic</label>
+                          {heuristicRules.map(rule => (
+                            <div key={rule.id} className="rule-card" style={{ marginBottom: 6 }}>
+                              <div className="rule-card-header">
+                                <div className="rule-card-priority">P{rule.priority}</div>
+                                <div className="rule-card-info">
+                                  <div style={{ fontWeight: 600, fontSize: 13 }}>{rule.name}</div>
+                                  <div className="text-muted" style={{ fontSize: 11 }}>{rule.description}</div>
+                                </div>
+                              </div>
+                              <div className="rule-card-logic">
+                                <code>{rule.logic}</code>
+                              </div>
+                            </div>
+                          ))}
+                          <div className="text-muted" style={{ fontSize: 11 }}>If no match, the fallback order below is used.</div>
                         </div>
+
+                        {/* Fallback Channel Order */}
                         <div className="form-group">
-                          <label className="form-label">Routing Model</label>
-                          <select className="form-select">
-                            <option>ML + Heuristics (recommended)</option>
-                            <option>Heuristics Only</option>
-                          </select>
+                          <label className="form-label">Fallback Channel Order</label>
+                          <div className="fallback-sequence">
+                            {bestChannelPool.map((ch, i) => (
+                              <div key={ch} className="fallback-item" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <span className="fallback-number">{i + 1}</span>
+                                <span style={{ fontSize: 13 }}>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
+                                {i === 0 && <span className="badge badge-brand" style={{ fontSize: 9 }}>Primary</span>}
+                                {i > 0 && <span className="badge badge-outline" style={{ fontSize: 9 }}>Fallback</span>}
+                                <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
+                                  <button
+                                    className="btn btn-secondary"
+                                    style={{ padding: "2px 6px", fontSize: 10, lineHeight: 1, opacity: i === 0 ? 0.3 : 1 }}
+                                    disabled={i === 0}
+                                    onClick={() => moveBestChannel(i, "up")}
+                                  >&#9650;</button>
+                                  <button
+                                    className="btn btn-secondary"
+                                    style={{ padding: "2px 6px", fontSize: 10, lineHeight: 1, opacity: i === bestChannelPool.length - 1 ? 0.3 : 1 }}
+                                    disabled={i === bestChannelPool.length - 1}
+                                    onClick={() => moveBestChannel(i, "down")}
+                                  >&#9660;</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="text-muted" style={{ fontSize: 11, marginTop: 4 }}>Only used when delivery retry for the chosen channel fails.</div>
                         </div>
                       </>
                     )}
