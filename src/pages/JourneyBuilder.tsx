@@ -46,6 +46,8 @@ export default function JourneyBuilder() {
   const [exitRule, setExitRule] = useState("");
   const [heuristicRules] = useState<PreferenceRule[]>(defaultHeuristicRules.filter(r => r.active));
   const [bestChannelPool, setBestChannelPool] = useState<MessageChannel[]>(["email", "push", "sms", "whatsapp"]);
+  const [bestChannelExperiment, setBestChannelExperiment] = useState(false);
+  const [bestChannelExpTag, setBestChannelExpTag] = useState("");
 
   function addStep(type: JourneyStepType) {
     const opt = STEP_OPTIONS.find(s => s.type === type)!;
@@ -482,6 +484,38 @@ export default function JourneyBuilder() {
                               </select>
                             </div>
                           ))}
+                        </div>
+
+                        {/* Experiment */}
+                        <div className="form-group">
+                          <label className="form-label">Experiment</label>
+                          {!bestChannelExperiment ? (
+                            <div className="content-empty-state" style={{ padding: 12 }}>
+                              <p className="text-muted" style={{ margin: "4px 0", fontSize: 11 }}>No experiment configured. Set up an A/B test to compare content variants.</p>
+                              <button className="btn btn-secondary" style={{ fontSize: 12, padding: "4px 12px" }} onClick={() => setBestChannelExperiment(true)}>Setup Experiment</button>
+                            </div>
+                          ) : (
+                            <div className="tier-selection-appear">
+                              <div className="form-group" style={{ marginBottom: 8 }}>
+                                <input className="form-input" style={{ fontSize: 12 }} placeholder="e.g., emk_best_channel_experiment" value={bestChannelExpTag} onChange={e => setBestChannelExpTag(e.target.value)} />
+                                <div className="text-muted" style={{ marginTop: 4, fontSize: 11 }}>Experiment tag for A/B variant tracking.</div>
+                              </div>
+                              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Variant Content Per Channel</div>
+                              {bestChannelPool.map(ch => (
+                                <div key={ch} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                                  <span style={{ fontSize: 16, width: 24, textAlign: "center" }}>{CHANNEL_ICONS[ch]}</span>
+                                  <span style={{ fontWeight: 600, fontSize: 11, width: 54 }}>{CHANNEL_LABELS[ch]}</span>
+                                  <select className="form-select" style={{ flex: 1, fontSize: 11 }}>
+                                    <option value="">Select variant...</option>
+                                    <option>Welcome Template (V2)</option>
+                                    <option>Reminder Template (V2)</option>
+                                    <option>Promotional Template (V2)</option>
+                                  </select>
+                                </div>
+                              ))}
+                              <button className="btn btn-tertiary btn-destructive" style={{ fontSize: 11, marginTop: 4 }} onClick={() => { setBestChannelExperiment(false); setBestChannelExpTag(""); }}>Remove Experiment</button>
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
