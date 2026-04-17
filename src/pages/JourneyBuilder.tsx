@@ -36,8 +36,15 @@ export default function JourneyBuilder() {
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [dedupEnabled, setDedupEnabled] = useState(true);
-  const [freqCapEnabled, setFreqCapEnabled] = useState(true);
+  const [entryChannel, setEntryChannel] = useState("email");
+  const [canReenter, setCanReenter] = useState(false);
+  const [exclusive, setExclusive] = useState(false);
+  const [journeyPriority, setJourneyPriority] = useState("1");
+  const [reportingLabel, setReportingLabel] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [resetMode, setResetMode] = useState("none");
+  const [exitRule, setExitRule] = useState("");
 
   function addStep(type: JourneyStepType) {
     const opt = STEP_OPTIONS.find(s => s.type === type)!;
@@ -117,24 +124,70 @@ export default function JourneyBuilder() {
 
           {/* Journey-Level Settings */}
           <div className="journey-settings-panel">
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Journey-Level Omni-Channel Settings</div>
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Journey Settings</div>
+
+            {/* Entry & Scheduling */}
+            <div style={{ fontWeight: 600, fontSize: 12, color: "var(--color-gray-500)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>Entry & Scheduling</div>
+
             <div className="journey-settings-row">
-              <span className="journey-settings-label">Cross-Channel Deduplication</span>
+              <span className="journey-settings-label">Entry Channel</span>
+              <select className="form-select" style={{ width: 140, fontSize: 12 }} value={entryChannel} onChange={e => setEntryChannel(e.target.value)}>
+                <option value="email">Email</option>
+                <option value="push">Push</option>
+              </select>
+            </div>
+            <div className="journey-settings-row">
+              <span className="journey-settings-label">Entry Window Start</span>
+              <input className="form-input" type="date" style={{ width: 150, fontSize: 12 }} value={startDate} onChange={e => setStartDate(e.target.value)} />
+            </div>
+            <div className="journey-settings-row">
+              <span className="journey-settings-label">Entry Window End</span>
+              <input className="form-input" type="date" style={{ width: 150, fontSize: 12 }} value={endDate} onChange={e => setEndDate(e.target.value)} />
+            </div>
+            <div className="journey-settings-row">
+              <span className="journey-settings-label">Allow Re-entry</span>
               <label className="toggle-switch toggle-switch--sm">
-                <input type="checkbox" checked={dedupEnabled} onChange={e => setDedupEnabled(e.target.checked)} />
+                <input type="checkbox" checked={canReenter} onChange={e => setCanReenter(e.target.checked)} />
                 <span className="toggle-slider" />
               </label>
             </div>
             <div className="journey-settings-row">
-              <span className="journey-settings-label">Respect Frequency Caps</span>
+              <span className="journey-settings-label">Exit Rule</span>
+              <select className="form-select" style={{ width: 150, fontSize: 12 }} value={exitRule} onChange={e => setExitRule(e.target.value)}>
+                <option value="">None</option>
+                <option value="booked">Booking Confirmed</option>
+                <option value="unsubscribed">Unsubscribed</option>
+                <option value="converted">Goal Converted</option>
+              </select>
+            </div>
+
+            <div style={{ borderTop: "1px solid var(--border-color)", margin: "10px 0" }} />
+
+            {/* Priority & Behavior */}
+            <div style={{ fontWeight: 600, fontSize: 12, color: "var(--color-gray-500)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>Priority & Behavior</div>
+
+            <div className="journey-settings-row">
+              <span className="journey-settings-label">Journey Priority</span>
+              <input className="form-input" type="number" min="1" max="100" style={{ width: 60, fontSize: 12, textAlign: "center" }} value={journeyPriority} onChange={e => setJourneyPriority(e.target.value)} />
+            </div>
+            <div className="journey-settings-row">
+              <span className="journey-settings-label">Exclusive</span>
               <label className="toggle-switch toggle-switch--sm">
-                <input type="checkbox" checked={freqCapEnabled} onChange={e => setFreqCapEnabled(e.target.checked)} />
+                <input type="checkbox" checked={exclusive} onChange={e => setExclusive(e.target.checked)} />
                 <span className="toggle-slider" />
               </label>
             </div>
             <div className="journey-settings-row">
-              <span className="journey-settings-label">Channel Priority</span>
-              <span className="text-muted" style={{ fontSize: 12 }}>Email &gt; Push &gt; SMS &gt; WhatsApp</span>
+              <span className="journey-settings-label">Reset Mode</span>
+              <select className="form-select" style={{ width: 140, fontSize: 12 }} value={resetMode} onChange={e => setResetMode(e.target.value)}>
+                <option value="none">None</option>
+                <option value="always">Always</option>
+                <option value="condition">Conditional</option>
+              </select>
+            </div>
+            <div className="journey-settings-row">
+              <span className="journey-settings-label">Reporting Label</span>
+              <input className="form-input" style={{ width: 150, fontSize: 12 }} placeholder="e.g., post_booking_q2" value={reportingLabel} onChange={e => setReportingLabel(e.target.value)} />
             </div>
           </div>
 
