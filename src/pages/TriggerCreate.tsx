@@ -297,7 +297,7 @@ export default function TriggerCreate() {
             Enable direct marketing consent check
           </label>
           <div className="text-muted" style={{ marginTop: 4, fontSize: 12, marginLeft: 24 }}>
-            When enabled, consent will be validated at delivery time via Janet subscription API per channel.
+            When enabled, consent is validated when the event reaches the message trigger, via Janet subscription API per channel.
           </div>
         </div>
 
