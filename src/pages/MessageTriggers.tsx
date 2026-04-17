@@ -71,9 +71,6 @@ export default function MessageTriggers() {
                   <span>{t.name}</span>
                   <span className={`badge ${t.status === "Live" ? "badge-constructive" : t.status === "Draft" ? "badge-draft" : "badge-callout"}`}>{t.status}</span>
                   <span className="badge badge-outline">{t.triggerType}</span>
-                  {t.omniChannelRouting && (
-                    <span className="badge-orchestration badge-orchestration--best_channel">Omni-Channel Routing</span>
-                  )}
                 </div>
                 <div className="list-card-meta" style={{ marginTop: 4 }}>
                   {t.channels.map(ch => (
@@ -85,34 +82,6 @@ export default function MessageTriggers() {
                   <span className="badge badge-media">{t.linkedCampaigns} campaigns</span>
                   <span className="badge badge-media">{formatNum(t.dailyVolume)}/day</span>
                 </div>
-
-                {/* Rule Expression */}
-                <div style={{ marginTop: 8, padding: "6px 10px", background: "var(--color-gray-50)", borderRadius: 4 }}>
-                  <code style={{ fontSize: 12, color: "var(--color-gray-500)" }}>{t.ruleExpression}</code>
-                </div>
-
-                {/* Omni-Channel Routing Flow */}
-                {t.omniChannelRouting && t.channelRoutingRules && (
-                  <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 6 }}>OMNI-CHANNEL ROUTING FLOW</div>
-                    <div className="trigger-flow">
-                      <span className="trigger-flow-node trigger-flow-node--event">&#9889; {t.inputTopic}</span>
-                      <span className="trigger-flow-arrow">&rarr;</span>
-                      <span className="trigger-flow-node trigger-flow-node--rules">Rules Engine</span>
-                      <span className="trigger-flow-arrow">&rarr;</span>
-                      <span className="trigger-flow-node trigger-flow-node--router">Channel Router</span>
-                      <span className="trigger-flow-arrow">&rarr;</span>
-                      {t.channelRoutingRules.map((cr, i) => (
-                        <span key={cr.channel}>
-                          {i > 0 && <span style={{ color: "var(--color-gray-300)", margin: "0 2px" }}>|</span>}
-                          <span className={`trigger-flow-node trigger-flow-node--channel`} style={{ background: `var(--color-${cr.channel === "whatsapp" ? "inapp" : cr.channel})`, color: "#fff", border: "none" }}>
-                            {CHANNEL_ICONS[cr.channel]} {cr.condition}
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           ))}
