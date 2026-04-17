@@ -36,26 +36,11 @@ export default function ChannelPreferences() {
       </div>
 
       {/* Engine Status — Enhanced with omni KPIs */}
-      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(6, 1fr)" }}>
+      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         <div className="kpi-card">
           <div className="kpi-label">Routing Mode</div>
           <div className="kpi-value" style={{ fontSize: 16 }}>{mlEnabled ? "ML + Heuristics" : "Heuristics Only"}</div>
           <div className="kpi-sub">{mlEnabled ? "ML active" : "Phase 1"}</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-label">CDP Coverage</div>
-          <div className="kpi-value" style={{ fontSize: 22 }}>89.2%</div>
-          <div className="kpi-sub">signal coverage</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-label">Routing Accuracy</div>
-          <div className="kpi-value" style={{ fontSize: 22 }}>73.8%</div>
-          <div className="kpi-sub">to best channel</div>
-        </div>
-        <div className="kpi-card" style={{ background: "linear-gradient(135deg, #003580, #006ce4)", color: "#fff" }}>
-          <div className="kpi-label" style={{ color: "rgba(255,255,255,0.8)" }}>Dedup Rate</div>
-          <div className="kpi-value" style={{ fontSize: 22, color: "#fff" }}>{omniChannelKPIs.dedupRate}%</div>
-          <div className="kpi-sub" style={{ color: "rgba(255,255,255,0.7)" }}>sends prevented</div>
         </div>
         <div className="kpi-card" style={{ background: "linear-gradient(135deg, #003580, #006ce4)", color: "#fff" }}>
           <div className="kpi-label" style={{ color: "rgba(255,255,255,0.8)" }}>Freq Cap Blocked</div>
