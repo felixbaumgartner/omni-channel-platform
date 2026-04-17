@@ -54,6 +54,10 @@ interface ChannelContentSectionProps {
   onTrackingLabelChange: (v: string) => void;
   voucherEnabled: boolean;
   onVoucherToggle: (v: boolean) => void;
+  experimentEnabled: boolean;
+  onExperimentToggle: (v: boolean) => void;
+  experimentTag: string;
+  onExperimentTagChange: (v: string) => void;
 }
 
 function ChannelContentPanel({
@@ -66,6 +70,10 @@ function ChannelContentPanel({
   onTrackingLabelChange,
   voucherEnabled,
   onVoucherToggle,
+  experimentEnabled,
+  onExperimentToggle,
+  experimentTag,
+  onExperimentTagChange,
 }: ChannelContentSectionProps) {
   const [showPicker, setShowPicker] = useState(false);
   const items = MOCK_CONTENT[channel] || [];
@@ -196,6 +204,34 @@ function ChannelContentPanel({
           More info &#x2197;
         </a>
       </div>
+
+      {/* Experiment */}
+      <div style={{ marginTop: 24 }}>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>Experiment</div>
+        {!experimentEnabled ? (
+          <div className="content-empty-state">
+            <p className="text-muted" style={{ margin: "8px 0" }}>No experiment configured. Set up an A/B test to compare content variants.</p>
+            <button className="btn btn-secondary" onClick={() => onExperimentToggle(true)}>Setup Experiment</button>
+          </div>
+        ) : (
+          <div className="tier-selection-appear">
+            <div className="form-group">
+              <label className="form-label">Experiment Tag</label>
+              <input className="form-input" placeholder={`e.g., emk_${channel}_experiment`} value={experimentTag} onChange={e => onExperimentTagChange(e.target.value)} />
+              <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Used for automatic stage tracking. Prefix: emk, mm_email, attr_mm_email.</div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Variant Content</label>
+              <div className="content-empty-state" style={{ padding: 16 }}>
+                <div className="content-empty-icon" style={{ fontSize: 24 }}>{CHANNEL_ICONS[channel]}</div>
+                <p className="text-muted" style={{ margin: "4px 0", fontSize: 12 }}>No variant content selected</p>
+                <button className="btn btn-secondary" style={{ fontSize: 12, padding: "4px 12px" }}>Select Variant Content</button>
+              </div>
+            </div>
+            <button className="btn btn-tertiary btn-destructive" style={{ fontSize: 13 }} onClick={() => { onExperimentToggle(false); onExperimentTagChange(""); }}>Remove Experiment</button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -211,6 +247,8 @@ interface ChannelState {
   messageCategory: string;
   trackingLabel: string;
   voucherEnabled: boolean;
+  experimentEnabled: boolean;
+  experimentTag: string;
 }
 
 export default function BaseContentSection({ selectedChannels }: BaseContentSectionProps) {
@@ -218,7 +256,7 @@ export default function BaseContentSection({ selectedChannels }: BaseContentSect
   const [channelStates, setChannelStates] = useState<Record<string, ChannelState>>({});
 
   function getState(ch: string): ChannelState {
-    return channelStates[ch] || { contentId: null, messageCategory: "", trackingLabel: "", voucherEnabled: false };
+    return channelStates[ch] || { contentId: null, messageCategory: "", trackingLabel: "", voucherEnabled: false, experimentEnabled: false, experimentTag: "" };
   }
 
   function updateState(ch: string, patch: Partial<ChannelState>) {
@@ -271,6 +309,10 @@ export default function BaseContentSection({ selectedChannels }: BaseContentSect
               onTrackingLabelChange={v => updateState(ch, { trackingLabel: v })}
               voucherEnabled={getState(ch).voucherEnabled}
               onVoucherToggle={v => updateState(ch, { voucherEnabled: v })}
+              experimentEnabled={getState(ch).experimentEnabled}
+              onExperimentToggle={v => updateState(ch, { experimentEnabled: v })}
+              experimentTag={getState(ch).experimentTag}
+              onExperimentTagChange={v => updateState(ch, { experimentTag: v })}
             />
           </div>
         ))}
