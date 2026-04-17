@@ -49,11 +49,6 @@ export default function Analytics() {
           <div className="kpi-sub">open rate vs. random channel</div>
         </div>
         <div className="omni-kpi-card">
-          <div className="kpi-label">Dedup Savings</div>
-          <div className="kpi-value">{formatNum(omniChannelKPIs.dedupSavings)}</div>
-          <div className="kpi-sub">messages prevented</div>
-        </div>
-        <div className="omni-kpi-card">
           <div className="kpi-label">Cross-Channel Lift</div>
           <div className="kpi-value">+{omniChannelKPIs.crossChannelConversionLift}%</div>
           <div className="kpi-sub">conversion vs single-channel</div>
@@ -104,7 +99,6 @@ export default function Analytics() {
               <th>Orchestration</th>
               <th style={{ textAlign: "right" }}>Total Reach</th>
               <th style={{ textAlign: "right" }}>Unique Reach</th>
-              <th style={{ textAlign: "right" }}>Dedup Savings</th>
               <th style={{ textAlign: "right" }}>Open %</th>
               <th style={{ textAlign: "right" }}>Click %</th>
             </tr>
@@ -130,11 +124,6 @@ export default function Analytics() {
                 </td>
                 <td style={{ textAlign: "right" }}>{formatNum(g.totalReach)}</td>
                 <td style={{ textAlign: "right" }}>{formatNum(g.uniqueReach)}</td>
-                <td style={{ textAlign: "right" }}>
-                  {g.deduplicationEnabled ? (
-                    <span className="badge badge-dedup">{formatNum(g.totalReach - g.uniqueReach)} saved</span>
-                  ) : <span className="text-muted">Off</span>}
-                </td>
                 <td style={{ textAlign: "right" }}>{g.aggregateOpenRate}%</td>
                 <td style={{ textAlign: "right" }}>{g.aggregateClickRate}%</td>
               </tr>
