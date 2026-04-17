@@ -18,19 +18,7 @@ const nav = ({ isActive }: { isActive: boolean }) => (isActive ? "active" : "");
 export default function App() {
   return (
     <div className="app-layout">
-      {/* Header */}
-      <div className="app-layout-header">
-        <div className="app-layout-header-title">
-          Targeting (PROD)
-        </div>
-        <div className="app-layout-header-right">
-          <span className="app-header-link">Help &amp; Feedback</span>
-          <span className="app-header-link">Documentation</span>
-          <span className="app-header-link">Settings</span>
-        </div>
-      </div>
-
-      <div className="app-layout-main">
+<div className="app-layout-main">
         {/* Sidebar */}
         <div className="app-layout-sidebar">
           <div className="app-nav-section">
