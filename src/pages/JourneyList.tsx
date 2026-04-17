@@ -86,48 +86,6 @@ export default function JourneyList() {
                   {j.crossChannelHandoffs ? <span className="badge badge-dedup">{formatNum(j.crossChannelHandoffs)} handoffs</span> : null}
                   <span className="badge badge-media">Updated {j.updatedAt}</span>
                 </div>
-
-                {/* Channel Effectiveness */}
-                {j.channelEffectiveness && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-                    <span className="text-muted" style={{ fontSize: 11, flexShrink: 0 }}>Effectiveness:</span>
-                    <div className="effectiveness-bars" style={{ flex: 1 }}>
-                      {(Object.entries(j.channelEffectiveness) as [MessageChannel, number][])
-                        .filter(([, v]) => v > 0)
-                        .map(([ch, v]) => (
-                          <div key={ch} className={`effectiveness-bar effectiveness-bar--${ch}`} style={{ width: `${v}%` }} title={`${CHANNEL_ICONS[ch]} ${ch}: ${v}%`} />
-                        ))}
-                    </div>
-                    <div style={{ display: "flex", gap: 4, fontSize: 10, color: "var(--color-gray-500)" }}>
-                      {(Object.entries(j.channelEffectiveness) as [MessageChannel, number][])
-                        .filter(([, v]) => v > 0)
-                        .map(([ch, v]) => (
-                          <span key={ch}>{CHANNEL_ICONS[ch]}{v}%</span>
-                        ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Mini Journey visualization */}
-                <div className="journey-mini-viz">
-                  {j.steps.map((step, i) => (
-                    <span key={step.id} className="journey-mini-step-wrapper">
-                      <span className={`journey-mini-step journey-mini-step--${step.type}`} title={step.label}>
-                        {step.type === "trigger" ? "\u26A1" :
-                         step.type === "email" ? "\u2709" :
-                         step.type === "push" ? "\uD83D\uDD14" :
-                         step.type === "sms" ? "\uD83D\uDCF1" :
-                         step.type === "whatsapp" ? "\uD83D\uDCE8" :
-                         step.type === "delay" ? "\u23F3" :
-                         step.type === "condition" ? "\u2753" :
-                         step.type === "best_channel" ? "\u2728" :
-                         step.type === "cross_channel_eligibility" ? "\uD83D\uDD00" :
-                         "\u2194"}
-                      </span>
-                      {i < j.steps.length - 1 && <span className="journey-mini-arrow">&rarr;</span>}
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
           ))}
