@@ -15,7 +15,7 @@ export default function CampaignCreate() {
   const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>([]);
   const [channelPriority, setChannelPriority] = useState<MessageChannel[]>([]);
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("best_channel");
-  const [fallbackTimeout, setFallbackTimeout] = useState("4");
+
   const [heuristicRules] = useState<PreferenceRule[]>(defaultHeuristicRules.filter(r => r.active));
   const [experimentEnabled, setExperimentEnabled] = useState(false);
   const [experimentTag, setExperimentTag] = useState("");
@@ -298,45 +298,35 @@ export default function CampaignCreate() {
               {deliveryMode === "best_channel" && (
                 <div className="tier-selection-appear" style={{ marginTop: 16 }}>
                   <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Priority & Retry</div>
-                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>When the heuristic above has no answer, channels are tried in this order. Also used for delivery retry when the chosen channel fails or goes unopened.</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
-                    <div className="form-group">
-                      <label className="form-label">Fallback Channel Order</label>
-                      <div className="fallback-sequence">
-                        {channelPriority.map((ch, i) => (
-                          <div key={ch} className="fallback-item" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span className="fallback-number">{i + 1}</span>
-                            <span>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
-                            {i === 0 && <span className="badge badge-brand" style={{ fontSize: 10 }}>Primary</span>}
-                            {i > 0 && <span className="badge badge-outline" style={{ fontSize: 10 }}>Fallback</span>}
-                            <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
-                              <button
-                                className="btn btn-secondary"
-                                style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === 0 ? 0.3 : 1 }}
-                                disabled={i === 0}
-                                onClick={() => moveChannelPriority(i, "up")}
-                                title="Move up"
-                              >&#9650;</button>
-                              <button
-                                className="btn btn-secondary"
-                                style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === channelPriority.length - 1 ? 0.3 : 1 }}
-                                disabled={i === channelPriority.length - 1}
-                                onClick={() => moveChannelPriority(i, "down")}
-                                title="Move down"
-                              >&#9660;</button>
-                            </div>
+                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>When the heuristic above has no answer, channels are tried in this order. Only used when delivery retry for the chosen channel fails.</p>
+                  <div className="form-group">
+                    <label className="form-label">Fallback Channel Order</label>
+                    <div className="fallback-sequence">
+                      {channelPriority.map((ch, i) => (
+                        <div key={ch} className="fallback-item" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span className="fallback-number">{i + 1}</span>
+                          <span>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
+                          {i === 0 && <span className="badge badge-brand" style={{ fontSize: 10 }}>Primary</span>}
+                          {i > 0 && <span className="badge badge-outline" style={{ fontSize: 10 }}>Fallback</span>}
+                          <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+                            <button
+                              className="btn btn-secondary"
+                              style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === 0 ? 0.3 : 1 }}
+                              disabled={i === 0}
+                              onClick={() => moveChannelPriority(i, "up")}
+                              title="Move up"
+                            >&#9650;</button>
+                            <button
+                              className="btn btn-secondary"
+                              style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === channelPriority.length - 1 ? 0.3 : 1 }}
+                              disabled={i === channelPriority.length - 1}
+                              onClick={() => moveChannelPriority(i, "down")}
+                              title="Move down"
+                            >&#9660;</button>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="form-group">
-                      <label className="form-label">Fallback Timeout (hours)</label>
-                      <input className="form-input" type="number" min="1" max="72" value={fallbackTimeout} onChange={e => setFallbackTimeout(e.target.value)} />
-                      <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Hours to wait before triggering fallback</div>
-                    </div>
-                  </div>
-                  <div className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>
-                    Retry triggers: non-delivery, unopened within {fallbackTimeout}h, channel opt-out. All channels exhausted = suppressed.
                   </div>
                 </div>
               )}
