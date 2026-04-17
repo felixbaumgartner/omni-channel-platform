@@ -135,11 +135,21 @@ export default function TransactionalCreate() {
       {selectedChannels.length > 1 && (
         <div className="bui-box tier-selection-appear">
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Multi-Channel Delivery</div>
-          <p className="text-muted mb-16">Transactional messages are delivered across all selected channels simultaneously for maximum reliability.</p>
+          <p className="text-muted mb-16">All selected channels fire within a single send event for maximum reliability.</p>
 
-          {/* Fallback Chain */}
-          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Transactional Fallback Chain</div>
-          <p className="text-muted mb-8" style={{ fontSize: 13 }}>Unlike marketing best-channel, transactional fallback ensures delivery by escalating through channels.</p>
+          {/* Guardrails */}
+          <div className="alert alert-warning" style={{ marginBottom: 16 }}>
+            <div className="alert-title">Multi-Channel Guardrails Active</div>
+            <ul style={{ margin: "8px 0 0 16px", padding: 0 }}>
+              <li>Subscriber must have valid consent for every selected channel</li>
+              <li>Campaign-level frequency caps are respected across all channels</li>
+              <li>Subscribers lacking consent for one or more channels will be flagged</li>
+            </ul>
+          </div>
+
+          {/* Channel Send Spacing */}
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Send Spacing</div>
+          <p className="text-muted mb-8" style={{ fontSize: 13 }}>A platform-level minimum spacing of <strong>5 minutes</strong> is enforced between successive channel dispatches to the same subscriber.</p>
           <div className="fallback-chain">
             {selectedChannels.map((ch, i) => (
               <div key={ch}>
@@ -147,17 +157,14 @@ export default function TransactionalCreate() {
                   <span className="fallback-chain-number">{i + 1}</span>
                   <span style={{ fontSize: 18 }}>{CHANNEL_ICONS[ch]}</span>
                   <strong>{CHANNEL_LABELS[ch]}</strong>
-                  {i === 0 && <span className="badge badge-brand" style={{ fontSize: 10 }}>Primary</span>}
-                  {i > 0 && <span className="badge badge-callout" style={{ fontSize: 10 }}>Fallback</span>}
-                  <span className="fallback-chain-sla">SLA: {i === 0 ? "5s" : i === 1 ? "10s" : "30s"} | Retries: 3</span>
                 </div>
                 {i < selectedChannels.length - 1 && (
-                  <div className="fallback-chain-arrow">&#8595; if delivery fails within timeout</div>
+                  <div className="fallback-chain-arrow">&#8595; 5 min spacing</div>
                 )}
               </div>
             ))}
           </div>
-
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>Channels dispatch in the order shown above. This spacing is a delivery hygiene guardrail — it is not configurable, does not introduce conditional logic, and all selected channels will always fire.</p>
         </div>
       )}
 

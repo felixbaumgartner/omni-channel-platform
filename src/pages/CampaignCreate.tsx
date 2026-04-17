@@ -272,6 +272,29 @@ export default function CampaignCreate() {
                 </div>
               )}
 
+              {/* Channel Send Spacing — Multi-Channel Mode Only */}
+              {deliveryMode === "multi_channel" && (
+                <div className="tier-selection-appear" style={{ marginTop: 16 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Send Spacing</div>
+                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>All selected channels fire within a single send event. A platform-level minimum spacing of <strong>5 minutes</strong> is enforced between successive channel dispatches to the same subscriber.</p>
+                  <div className="fallback-chain">
+                    {channelPriority.map((ch, i) => (
+                      <div key={ch}>
+                        <div className="fallback-chain-item">
+                          <span className="fallback-chain-number">{i + 1}</span>
+                          <span style={{ fontSize: 18 }}>{CHANNEL_ICONS[ch]}</span>
+                          <strong>{CHANNEL_LABELS[ch]}</strong>
+                        </div>
+                        {i < channelPriority.length - 1 && (
+                          <div className="fallback-chain-arrow">&#8595; 5 min spacing</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>Channels dispatch in the order shown above. This spacing is a delivery hygiene guardrail — it is not configurable, does not introduce conditional logic, and all selected channels will always fire.</p>
+                </div>
+              )}
+
               {/* Active Heuristic — Best Channel Mode Only */}
               {deliveryMode === "best_channel" && (
                 <div className="tier-selection-appear" style={{ marginTop: 16 }}>
