@@ -64,14 +64,6 @@ export default function App() {
             </div>
           </div>
 
-          <div className="sidebar-footer">
-            <div className="sidebar-footer-item">
-              <span className="sidebar-dot sidebar-dot--green" /> System Healthy
-            </div>
-            <div className="sidebar-footer-item text-muted" style={{ fontSize: 11 }}>
-              v2.1.0 &middot; Omni-Channel &middot; Last sync: 2 min ago
-            </div>
-          </div>
         </div>
 
         {/* Main */}
