@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, FUNNEL_LABELS, VERTICAL_LABELS, RULE_ATTRIBUTES, type MessageChannel, type Funnel, type Vertical, type EligibilityRule, type RuleOperator } from "../types";
 import ClassificationQuestionnaire, { type Classification } from "../components/ClassificationQuestionnaire";
 import BaseContentSection from "../components/BaseContentSection";
-import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER } from "../data/mockData";
+import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, type PreferenceRule } from "../data/mockData";
 
 type DeliveryMode = "best_channel" | "multi_channel";
 
@@ -16,6 +16,7 @@ export default function CampaignCreate() {
   const [channelPriority, setChannelPriority] = useState<MessageChannel[]>([]);
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("best_channel");
   const [fallbackTimeout, setFallbackTimeout] = useState("4");
+  const [heuristicRules] = useState<PreferenceRule[]>(defaultHeuristicRules.filter(r => r.active));
   const [experimentEnabled, setExperimentEnabled] = useState(false);
   const [experimentTag, setExperimentTag] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -245,7 +246,7 @@ export default function CampaignCreate() {
                     <div className="radio-card-title">Best Channel</div>
                   </div>
                   <div className="radio-card-description">
-                    Heuristics select the optimal channel per subscriber from your selected pool. If no heuristic matches, the campaign's channel priority order is used. If delivery fails or goes unopened, the system retries the next channel in order.
+                    Heuristic selects the best channel per subscriber. Falls back to the channel priority order below when no match is found.
                   </div>
                 </div>
                 <div className={`radio-card ${deliveryMode === "multi_channel" ? "selected" : ""}`} onClick={() => setDeliveryMode("multi_channel")}>
@@ -271,11 +272,33 @@ export default function CampaignCreate() {
                 </div>
               )}
 
+              {/* Active Heuristic — Best Channel Mode Only */}
+              {deliveryMode === "best_channel" && (
+                <div className="tier-selection-appear" style={{ marginTop: 16 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Active Heuristic</div>
+                  {heuristicRules.map(rule => (
+                    <div key={rule.id} className="rule-card" style={{ marginBottom: 8 }}>
+                      <div className="rule-card-header">
+                        <div className="rule-card-priority">P{rule.priority}</div>
+                        <div className="rule-card-info">
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>{rule.name}</div>
+                          <div className="text-muted" style={{ fontSize: 13 }}>{rule.description}</div>
+                        </div>
+                      </div>
+                      <div className="rule-card-logic">
+                        <code>{rule.logic}</code>
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>If this heuristic has no match for a subscriber, the fallback channel order below is used.</p>
+                </div>
+              )}
+
               {/* Channel Priority & Retry — Best Channel Mode Only (P0) */}
               {deliveryMode === "best_channel" && (
                 <div className="tier-selection-appear" style={{ marginTop: 16 }}>
                   <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Priority & Retry</div>
-                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>Set the priority order for initial channel selection (when heuristics have no answer) and delivery retry (when the chosen channel fails or goes unopened).</p>
+                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>When the heuristic above has no answer, channels are tried in this order. Also used for delivery retry when the chosen channel fails or goes unopened.</p>
                   <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
                     <div className="form-group">
                       <label className="form-label">Fallback Channel Order</label>
