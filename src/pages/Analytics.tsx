@@ -44,12 +44,12 @@ export default function Analytics() {
       {/* Omni-Channel Intelligence Metrics */}
       <div className="omni-kpi-grid">
         <div className="omni-kpi-card">
-          <div className="kpi-label">Routing Lift <span className="info-icon" title="Improvement in open rate when using intelligent channel routing vs. sending on a random channel. Measures the benefit of picking the right channel for each user.">&#9432;</span></div>
+          <div className="kpi-label">Routing Lift <span className="info-icon" data-tooltip="Improvement in open rate when using intelligent channel routing vs. sending on a random channel. Measures the benefit of picking the right channel for each user.">&#9432;</span></div>
           <div className="kpi-value">+{omniChannelKPIs.routingLift}%</div>
           <div className="kpi-sub">open rate vs. random channel</div>
         </div>
         <div className="omni-kpi-card">
-          <div className="kpi-label">Cross-Channel Lift <span className="info-icon" title="Improvement in conversion rate when using multiple channels together vs. a single channel. Measures the combined effect of reaching users across more than one channel.">&#9432;</span></div>
+          <div className="kpi-label">Cross-Channel Lift <span className="info-icon" data-tooltip="Improvement in conversion rate when using multiple channels together vs. a single channel. Measures the combined effect of reaching users across more than one channel.">&#9432;</span></div>
           <div className="kpi-value">+{omniChannelKPIs.crossChannelConversionLift}%</div>
           <div className="kpi-sub">conversion vs single-channel</div>
         </div>

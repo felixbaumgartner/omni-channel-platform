@@ -435,8 +435,9 @@ body {
 .omni-kpi-card .kpi-label { color: rgba(255,255,255,0.8); }
 .omni-kpi-card .kpi-value { color: #fff; font-size: 24px; }
 .omni-kpi-card .kpi-sub { color: rgba(255,255,255,0.7); }
-.info-icon { cursor: help; opacity: 0.6; font-size: 14px; vertical-align: middle; }
+.info-icon { cursor: help; opacity: 0.6; font-size: 14px; vertical-align: middle; position: relative; }
 .info-icon:hover { opacity: 1; }
+.info-icon:hover::after { content: attr(data-tooltip); position: absolute; left: 50%; transform: translateX(-50%); top: calc(100% + 8px); background: #1a1a2e; color: #fff; font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: 0; line-height: 1.4; padding: 10px 14px; border-radius: 8px; width: 260px; white-space: normal; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: none; }
 
 /* ── View Toggle ── */
 
