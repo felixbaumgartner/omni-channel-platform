@@ -53,11 +53,6 @@ export default function Analytics() {
           <div className="kpi-value">+{omniChannelKPIs.crossChannelConversionLift}%</div>
           <div className="kpi-sub">conversion vs single-channel</div>
         </div>
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Cannibalization</div>
-          <div className="kpi-value">{omniChannelKPIs.channelCannibalizationRate}%</div>
-          <div className="kpi-sub">channels competing for same conversion</div>
-        </div>
       </div>
 
       {/* Summary KPIs */}
