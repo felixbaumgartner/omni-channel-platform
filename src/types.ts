@@ -275,8 +275,8 @@ export interface Campaign {
 
 export type JourneyStepType =
   | "trigger" | "email" | "push" | "sms" | "whatsapp"
-  | "delay" | "condition" | "split"
-  | "cross_channel_eligibility" | "best_channel";
+  | "delay" | "condition"
+  | "best_channel";
 
 export type JourneyOrchestrationType = "single_channel" | "cross_channel" | "omni_channel";
 

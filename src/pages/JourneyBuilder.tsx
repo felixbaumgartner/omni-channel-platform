@@ -16,10 +16,8 @@ const STEP_OPTIONS: { type: JourneyStepType; label: string; icon: string; descri
   { type: "sms", label: "Send SMS", icon: "\uD83D\uDCF1", description: "Send an SMS message" },
   { type: "whatsapp", label: "WhatsApp Message", icon: "\uD83D\uDCE8", description: "Show an WhatsApp card" },
   { type: "best_channel", label: "Best Channel Send", icon: "\u2728", description: "AI-routed: picks optimal channel per subscriber" },
-  { type: "cross_channel_eligibility", label: "Cross-Channel Eligibility", icon: "\uD83D\uDD00", description: "Branch by subscriber channel eligibility" },
   { type: "delay", label: "Wait / Delay", icon: "\u23F3", description: "Wait before next step" },
-  { type: "condition", label: "Condition Split", icon: "\u2753", description: "Branch based on behavior" },
-  { type: "split", label: "Channel Split", icon: "\u2194\uFE0F", description: "Split by channel eligibility" },
+  { type: "condition", label: "Decision Split", icon: "\u2753", description: "Branch based on behavior" },
 ];
 
 let nextId = 1;
@@ -88,9 +86,7 @@ export default function JourneyBuilder() {
       case "whatsapp": return "\uD83D\uDCE8";
       case "delay": return "\u23F3";
       case "condition": return "\u2753";
-      case "split": return "\u2194\uFE0F";
       case "best_channel": return "\u2728";
-      case "cross_channel_eligibility": return "\uD83D\uDD00";
       default: return "\u26A1";
     }
   };
@@ -408,24 +404,6 @@ export default function JourneyBuilder() {
                             <option>ML + Heuristics (recommended)</option>
                             <option>Heuristics Only</option>
                           </select>
-                        </div>
-                      </>
-                    )}
-                    {step.type === "cross_channel_eligibility" && (
-                      <>
-                        <div className="alert alert-info" style={{ fontSize: 12, marginBottom: 12 }}>
-                          <strong>Branching:</strong> Routes subscribers to different paths based on their channel eligibility (opt-in status, device type, app installed).
-                        </div>
-                        <div style={{ fontSize: 13, display: "flex", flexDirection: "column", gap: 8 }}>
-                          <div style={{ padding: 8, background: "#dbeafe", borderRadius: 4 }}>
-                            <strong>Path A:</strong> Email eligible &rarr; continue to email steps
-                          </div>
-                          <div style={{ padding: 8, background: "#fef3c7", borderRadius: 4 }}>
-                            <strong>Path B:</strong> Push only &rarr; continue to push steps
-                          </div>
-                          <div style={{ padding: 8, background: "#d1fae5", borderRadius: 4 }}>
-                            <strong>Path C:</strong> SMS only &rarr; continue to SMS steps
-                          </div>
                         </div>
                       </>
                     )}

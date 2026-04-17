@@ -157,7 +157,7 @@ export const mockJourneys: Journey[] = [
       { id: "s2", type: "push", label: "Reminder Push", children: ["s3"] },
       { id: "s3", type: "delay", label: "Wait 4 hours", config: { duration: "4h" }, children: ["s4"] },
       { id: "s4", type: "condition", label: "Clicked Push?", children: ["s5", "s6"] },
-      { id: "s5", type: "split", label: "Exit: Converted" },
+      { id: "s5", type: "condition", label: "Exit: Converted" },
       { id: "s6", type: "email", label: "Fallback Email with Deals" },
     ],
     createdAt: "15 Feb 2026", updatedAt: "5 Mar 2026",
