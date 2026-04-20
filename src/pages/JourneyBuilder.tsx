@@ -35,7 +35,8 @@ export default function JourneyBuilder() {
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [entryChannel, setEntryChannel] = useState("email");
+  const [entryChannel, setEntryChannel] = useState<MessageChannel[]>([]);
+  const [entryContentEnabled, setEntryContentEnabled] = useState(false);
   const [canReenter, setCanReenter] = useState(false);
   const [exclusive, setExclusive] = useState(false);
   const [journeyPriority, setJourneyPriority] = useState("1");
@@ -102,6 +103,10 @@ export default function JourneyBuilder() {
       }
       return [...prev, ch];
     });
+  }
+
+  function toggleEntryChannel(ch: MessageChannel) {
+    setEntryChannel(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
   }
 
   function moveBestChannel(index: number, direction: "up" | "down") {
@@ -182,12 +187,63 @@ export default function JourneyBuilder() {
             {/* Entry & Scheduling */}
             <div style={{ fontWeight: 600, fontSize: 12, color: "var(--color-gray-500)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>Entry & Scheduling</div>
 
-            <div className="journey-settings-row">
-              <span className="journey-settings-label">Entry Channel</span>
-              <select className="form-select" style={{ width: 140, fontSize: 12 }} value={entryChannel} onChange={e => setEntryChannel(e.target.value)}>
-                <option value="email">Email</option>
-                <option value="push">Push</option>
-              </select>
+            <div style={{ marginBottom: 12 }}>
+              <div className="journey-settings-label" style={{ marginBottom: 6 }}>Entry Channel</div>
+              <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+                {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
+                  <div
+                    key={ch}
+                    className={`channel-selector-card ${entryChannel.includes(ch) ? "selected" : ""}`}
+                    style={{ padding: 10 }}
+                    onClick={() => toggleEntryChannel(ch)}
+                  >
+                    <div className="channel-selector-check">{entryChannel.includes(ch) ? "\u2713" : ""}</div>
+                    <div className="channel-selector-icon" style={{ fontSize: 20, marginBottom: 4 }}>{CHANNEL_ICONS[ch]}</div>
+                    <div className="channel-selector-label" style={{ fontSize: 11 }}>{CHANNEL_LABELS[ch]}</div>
+                  </div>
+                ))}
+              </div>
+              {entryChannel.length === 0 && (
+                <div className="info-banner tier-selection-appear" style={{ marginTop: 8, flexDirection: "column", alignItems: "flex-start", fontSize: 11 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span className="info-banner-icon">&#9889;</span>
+                    <strong style={{ fontSize: 12 }}>System selects the best channel per subscriber</strong>
+                  </div>
+                  <div style={{ paddingLeft: 28, marginTop: 6 }}>
+                    <div style={{ marginBottom: 4 }}>Heuristic routing rules (evaluated in order):</div>
+                    <ol style={{ margin: "2px 0 2px 16px", padding: 0, lineHeight: 1.7 }}>
+                      {defaultHeuristicRules.filter(r => r.active).map(r => (
+                        <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
+                      ))}
+                    </ol>
+                    <div style={{ marginTop: 6, padding: "4px 8px", background: "rgba(0,53,128,0.06)", borderRadius: 4 }}>
+                      Fallback order: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" \u2192 ")}</strong>
+                    </div>
+                    <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                      <label className="toggle-switch toggle-switch--sm">
+                        <input type="checkbox" checked={entryContentEnabled} onChange={() => setEntryContentEnabled(prev => !prev)} />
+                        <span className="toggle-slider" />
+                      </label>
+                      <span style={{ fontWeight: 600 }}>Configure content for all channels</span>
+                    </div>
+                    {entryContentEnabled && (
+                      <div className="text-muted" style={{ marginTop: 4 }}>Content templates for all 4 channels will be shown below. The system picks the channel at send time.</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {entryChannel.length === 1 && (
+                <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                  <span className="info-banner-icon">&#128274;</span>
+                  <span><strong>Fixed Channel</strong> &mdash; only {CHANNEL_LABELS[entryChannel[0]]}. No routing or fallback needed.</span>
+                </div>
+              )}
+              {entryChannel.length >= 2 && (
+                <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                  <span className="info-banner-icon">&#10024;</span>
+                  <span><strong>Best Channel</strong> &mdash; heuristic selects from {entryChannel.length} channels. Fallback order applies when no signal.</span>
+                </div>
+              )}
             </div>
             <div className="journey-settings-row">
               <span className="journey-settings-label">Entry Window Start</span>
