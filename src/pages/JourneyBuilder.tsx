@@ -105,8 +105,26 @@ export default function JourneyBuilder() {
     });
   }
 
+  const AUTO_BEST_CHANNEL_ID = "auto_best_channel";
+
   function toggleEntryChannel(ch: MessageChannel) {
-    setEntryChannel(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
+    setEntryChannel(prev => {
+      const next = prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch];
+      if (next.length >= 2) {
+        setSteps(s => {
+          if (s.some(st => st.id === AUTO_BEST_CHANNEL_ID)) return s;
+          const triggerIdx = s.findIndex(st => st.type === "trigger");
+          const inserted = [...s];
+          inserted.splice(triggerIdx + 1, 0, { id: AUTO_BEST_CHANNEL_ID, type: "best_channel", label: "Best Channel Send" });
+          return inserted;
+        });
+        setBestChannelPool(next);
+      } else {
+        setSteps(s => s.filter(st => st.id !== AUTO_BEST_CHANNEL_ID));
+        setBestChannelPool([]);
+      }
+      return next;
+    });
   }
 
   function moveBestChannel(index: number, direction: "up" | "down") {
@@ -315,8 +333,11 @@ export default function JourneyBuilder() {
                       <div className="journey-step-label">{step.label}</div>
                       <div className="journey-step-type">{step.type}</div>
                     </div>
-                    {step.type !== "trigger" && (
+                    {step.type !== "trigger" && step.id !== AUTO_BEST_CHANNEL_ID && (
                       <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStep(step.id); }}>&times;</button>
+                    )}
+                    {step.id === AUTO_BEST_CHANNEL_ID && (
+                      <span title="Auto-added from entry channel selection" style={{ fontSize: 10, color: "var(--color-gray-400)", marginLeft: "auto", paddingRight: 8 }}>&#128274;</span>
                     )}
                   </div>
                   {i < steps.length - 1 && (
