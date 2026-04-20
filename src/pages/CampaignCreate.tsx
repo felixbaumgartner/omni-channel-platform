@@ -17,6 +17,7 @@ export default function CampaignCreate() {
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("best_channel");
 
   const [heuristicRules] = useState<PreferenceRule[]>(defaultHeuristicRules.filter(r => r.active));
+  const [bestChannelContentEnabled, setBestChannelContentEnabled] = useState(false);
   const [experimentEnabled, setExperimentEnabled] = useState(false);
   const [experimentTag, setExperimentTag] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -213,6 +214,16 @@ export default function CampaignCreate() {
                   <div style={{ fontSize: 12, marginTop: 8 }}>
                     <a href="/channel-preferences" style={{ color: "var(--color-blue-600)", textDecoration: "underline" }}>Customize rules and fallback order in Channel Preferences</a>
                   </div>
+                  <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                    <label className="toggle-switch toggle-switch--sm">
+                      <input type="checkbox" checked={bestChannelContentEnabled} onChange={() => setBestChannelContentEnabled(prev => !prev)} />
+                      <span className="toggle-slider" />
+                    </label>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Configure content for all channels</span>
+                  </div>
+                  {bestChannelContentEnabled && (
+                    <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Content templates for all 4 channels will be available below. The system decides which channel to use at send time.</div>
+                  )}
                 </div>
               </div>
             )}
@@ -384,7 +395,7 @@ export default function CampaignCreate() {
           </div>
 
           {/* Base Content */}
-          <BaseContentSection selectedChannels={selectedChannels} />
+          <BaseContentSection selectedChannels={selectedChannels.length > 0 ? selectedChannels : bestChannelContentEnabled ? (["email", "push", "sms", "whatsapp"] as MessageChannel[]) : []} />
 
           {/* Experiment */}
           <div className="bui-box">
@@ -420,7 +431,7 @@ export default function CampaignCreate() {
               </div>
             </div>
             <div className="alert alert-info" style={{ marginTop: 8 }}>
-              <strong>Consent Summary:</strong> {selectedChannels.length} channel(s) selected. Subscriber consent will be validated per-channel at send time via Janet subscription API.
+              <strong>Consent Summary:</strong> {selectedChannels.length > 0 ? `${selectedChannels.length} channel(s) selected` : bestChannelContentEnabled ? "All 4 channels (system decides)" : "No channels selected (system decides)"}. Subscriber consent will be validated per-channel at send time via Janet subscription API.
             </div>
           </div>
 
