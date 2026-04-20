@@ -16,7 +16,7 @@ const STEP_OPTIONS: { type: JourneyStepType; label: string; icon: string; descri
   { type: "push", label: "Send Push", icon: "\uD83D\uDD14", description: "Send a push notification" },
   { type: "sms", label: "Send SMS", icon: "\uD83D\uDCF1", description: "Send an SMS message" },
   { type: "whatsapp", label: "WhatsApp Message", icon: "\uD83D\uDCE8", description: "Show an WhatsApp card" },
-  { type: "best_channel", label: "Best Channel Send", icon: "\u2728", description: "Heuristic-routed: selects the best channel per subscriber" },
+  { type: "best_channel", label: "Best Channel Send", icon: "\u2728", description: "Auto-select best channel" },
   { type: "delay", label: "Wait / Delay", icon: "\u23F3", description: "Wait before next step" },
   { type: "condition", label: "Decision Split", icon: "\u2753", description: "Branch based on behavior" },
 ];
