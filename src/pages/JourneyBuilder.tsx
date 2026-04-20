@@ -46,8 +46,38 @@ export default function JourneyBuilder() {
   const [exitRule, setExitRule] = useState("");
   const [heuristicRules] = useState<PreferenceRule[]>(defaultHeuristicRules.filter(r => r.active));
   const [bestChannelPool, setBestChannelPool] = useState<MessageChannel[]>(["email", "push", "sms", "whatsapp"]);
-  const [bestChannelExperiment, setBestChannelExperiment] = useState(false);
-  const [bestChannelExpTag, setBestChannelExpTag] = useState("");
+  const [channelExperiments, setChannelExperiments] = useState<Record<string, { enabled: boolean; tag: string; variants: string[] }>>({});
+
+  function toggleChannelExperiment(ch: MessageChannel) {
+    setChannelExperiments(prev => {
+      const current = prev[ch];
+      if (current?.enabled) {
+        const { [ch]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [ch]: { enabled: true, tag: "", variants: [""] } };
+    });
+  }
+
+  function setChannelExpTag(ch: MessageChannel, tag: string) {
+    setChannelExperiments(prev => ({ ...prev, [ch]: { ...prev[ch], tag } }));
+  }
+
+  function addChannelVariant(ch: MessageChannel) {
+    setChannelExperiments(prev => ({
+      ...prev,
+      [ch]: { ...prev[ch], variants: [...(prev[ch]?.variants || [""]), ""] },
+    }));
+  }
+
+  function removeChannelVariant(ch: MessageChannel, index: number) {
+    setChannelExperiments(prev => {
+      const variants = [...(prev[ch]?.variants || [])];
+      variants.splice(index, 1);
+      if (variants.length === 0) variants.push("");
+      return { ...prev, [ch]: { ...prev[ch], variants } };
+    });
+  }
 
   function addStep(type: JourneyStepType) {
     const opt = STEP_OPTIONS.find(s => s.type === type)!;
@@ -61,7 +91,16 @@ export default function JourneyBuilder() {
   }
 
   function toggleBestChannelPool(ch: MessageChannel) {
-    setBestChannelPool(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
+    setBestChannelPool(prev => {
+      if (prev.includes(ch)) {
+        setChannelExperiments(exps => {
+          const { [ch]: _, ...rest } = exps;
+          return rest;
+        });
+        return prev.filter(c => c !== ch);
+      }
+      return [...prev, ch];
+    });
   }
 
   function moveBestChannel(index: number, direction: "up" | "down") {
@@ -402,24 +441,44 @@ export default function JourneyBuilder() {
                       <>
                         {/* Channel Pool Selection */}
                         <div className="form-group">
-                          <label className="form-label">Channel Pool</label>
-                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          <label className="form-label">Channel Selection</label>
+                          <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Select which channels to include. The heuristic picks the best channel per subscriber; the fallback order is used when the heuristic has no signal.</p>
+                          <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
                             {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
-                              <span
+                              <div
                                 key={ch}
-                                className={`badge ${bestChannelPool.includes(ch) ? "badge-brand" : "badge-outline"}`}
-                                style={{ cursor: "pointer" }}
+                                className={`channel-selector-card ${bestChannelPool.includes(ch) ? "selected" : ""}`}
+                                style={{ padding: 10 }}
                                 onClick={() => toggleBestChannelPool(ch)}
                               >
-                                {CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}
-                              </span>
+                                <div className="channel-selector-check">{bestChannelPool.includes(ch) ? "\u2713" : ""}</div>
+                                <div className="channel-selector-icon" style={{ fontSize: 20, marginBottom: 4 }}>{CHANNEL_ICONS[ch]}</div>
+                                <div className="channel-selector-label" style={{ fontSize: 11 }}>{CHANNEL_LABELS[ch]}</div>
+                              </div>
                             ))}
                           </div>
-                          <div className="text-muted" style={{ marginTop: 4, fontSize: 11 }}>Click to toggle channels in the routing pool.</div>
+                          {bestChannelPool.length === 0 && (
+                            <div className="alert alert-warning tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                              Select at least one channel to configure routing.
+                            </div>
+                          )}
+                          {bestChannelPool.length === 1 && (
+                            <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                              <span className="info-banner-icon">&#128274;</span>
+                              <span><strong>Fixed Channel</strong> &mdash; only {CHANNEL_LABELS[bestChannelPool[0]]}. No routing or fallback needed.</span>
+                            </div>
+                          )}
+                          {bestChannelPool.length >= 2 && (
+                            <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                              <span className="info-banner-icon">&#10024;</span>
+                              <span><strong>Best Channel</strong> &mdash; heuristic selects from {bestChannelPool.length} channels. Fallback order applies when no signal.</span>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Active Heuristic */}
-                        <div className="form-group">
+                        {/* Active Heuristic — only when 2+ channels */}
+                        {bestChannelPool.length >= 2 && (
+                        <div className="form-group tier-selection-appear">
                           <label className="form-label">Active Heuristic</label>
                           {heuristicRules.map(rule => (
                             <div key={rule.id} className="rule-card" style={{ marginBottom: 6 }}>
@@ -437,9 +496,11 @@ export default function JourneyBuilder() {
                           ))}
                           <div className="text-muted" style={{ fontSize: 11 }}>If no match, the fallback order below is used.</div>
                         </div>
+                        )}
 
-                        {/* Fallback Channel Order */}
-                        <div className="form-group">
+                        {/* Fallback Channel Order — only when 2+ channels */}
+                        {bestChannelPool.length >= 2 && (
+                        <div className="form-group tier-selection-appear">
                           <label className="form-label">Fallback Channel Order</label>
                           <div className="fallback-sequence">
                             {bestChannelPool.map((ch, i) => (
@@ -465,57 +526,74 @@ export default function JourneyBuilder() {
                               </div>
                             ))}
                           </div>
-                          <div className="text-muted" style={{ fontSize: 11, marginTop: 4 }}>Only used when delivery retry for the chosen channel fails.</div>
+                          <div className="text-muted" style={{ fontSize: 11, marginTop: 4 }}>Campaign creator&rsquo;s preferred order. Used when the heuristic has no signal.</div>
                         </div>
+                        )}
 
-                        {/* Per-Channel Content */}
-                        <div className="form-group">
+                        {/* Per-Channel Content — only when channels selected */}
+                        {bestChannelPool.length >= 1 && (
+                        <div className="form-group tier-selection-appear">
                           <label className="form-label">Content Per Channel</label>
-                          <div className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Assign content for each channel. The heuristic picks the channel; the system delivers the corresponding content.</div>
+                          <div className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Assign content for each channel. Each channel can have its own independent experiment with base and variant templates.</div>
 
-                          {/* Experiment toggle */}
-                          {!bestChannelExperiment ? (
-                            <button className="btn btn-secondary" style={{ fontSize: 11, padding: "3px 10px", marginBottom: 10 }} onClick={() => setBestChannelExperiment(true)}>+ Setup Experiment</button>
-                          ) : (
-                            <div className="tier-selection-appear" style={{ marginBottom: 10 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                                <input className="form-input" style={{ flex: 1, fontSize: 11 }} placeholder="Experiment tag..." value={bestChannelExpTag} onChange={e => setBestChannelExpTag(e.target.value)} />
-                                <button className="btn btn-tertiary btn-destructive" style={{ fontSize: 10, padding: "2px 6px", whiteSpace: "nowrap" }} onClick={() => { setBestChannelExperiment(false); setBestChannelExpTag(""); }}>Remove</button>
+                          {bestChannelPool.map(ch => {
+                            const exp = channelExperiments[ch];
+                            const isExpEnabled = exp?.enabled ?? false;
+                            return (
+                              <div key={ch} style={{ border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", padding: 12, marginBottom: 10, background: isExpEnabled ? "var(--color-blue-50, #eff6ff)" : "var(--color-gray-50)" }}>
+                                {/* Channel header */}
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                                  <span style={{ fontSize: 16 }}>{CHANNEL_ICONS[ch]}</span>
+                                  <span style={{ fontWeight: 700, fontSize: 13 }}>{CHANNEL_LABELS[ch]}</span>
+                                  {isExpEnabled && <span className="badge badge-brand" style={{ fontSize: 9 }}>Experiment</span>}
+                                </div>
+
+                                {/* Base content */}
+                                <div style={{ marginBottom: 6 }}>
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--color-gray-500)", textTransform: "uppercase" as const }}>Base</span>
+                                  <select className="form-select" style={{ width: "100%", fontSize: 11, marginTop: 2 }}>
+                                    <option value="">Select base template...</option>
+                                    <option>Welcome Template</option>
+                                    <option>Reminder Template</option>
+                                    <option>Promotional Template</option>
+                                  </select>
+                                </div>
+
+                                {/* Experiment section */}
+                                {!isExpEnabled ? (
+                                  <button className="btn btn-secondary" style={{ fontSize: 10, padding: "2px 8px" }} onClick={() => toggleChannelExperiment(ch)}>+ Add Experiment</button>
+                                ) : (
+                                  <div className="tier-selection-appear">
+                                    {/* Experiment tag */}
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                                      <input className="form-input" style={{ flex: 1, fontSize: 11 }} placeholder="Experiment tag..." value={exp.tag} onChange={e => setChannelExpTag(ch, e.target.value)} />
+                                      <button className="btn btn-tertiary btn-destructive" style={{ fontSize: 10, padding: "2px 6px", whiteSpace: "nowrap" as const }} onClick={() => toggleChannelExperiment(ch)}>Remove Experiment</button>
+                                    </div>
+
+                                    {/* Variants */}
+                                    <span style={{ fontSize: 10, fontWeight: 700, color: "var(--color-gray-500)", textTransform: "uppercase" as const }}>Variants</span>
+                                    {exp.variants.map((_, vi) => (
+                                      <div key={vi} style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                                        <span style={{ fontSize: 10, fontWeight: 600, color: "var(--color-gray-400)", width: 16, textAlign: "center" as const }}>V{vi + 1}</span>
+                                        <select className="form-select" style={{ flex: 1, fontSize: 11 }}>
+                                          <option value="">Select variant template...</option>
+                                          <option>Welcome Template (V2)</option>
+                                          <option>Reminder Template (V2)</option>
+                                          <option>Promotional Template (V2)</option>
+                                        </select>
+                                        {exp.variants.length > 1 && (
+                                          <button className="btn btn-tertiary btn-destructive" style={{ fontSize: 10, padding: "1px 5px" }} onClick={() => removeChannelVariant(ch, vi)}>&times;</button>
+                                        )}
+                                      </div>
+                                    ))}
+                                    <button className="btn btn-secondary" style={{ fontSize: 10, padding: "2px 8px", marginTop: 6 }} onClick={() => addChannelVariant(ch)}>+ Add Variant</button>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          )}
-
-                          {/* Column headers */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                            <span style={{ width: 82 }} />
-                            <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: "var(--color-gray-500)", textTransform: "uppercase" }}>Base</span>
-                            {bestChannelExperiment && (
-                              <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: "var(--color-gray-500)", textTransform: "uppercase" }}>Variant</span>
-                            )}
-                          </div>
-
-                          {/* Per-channel rows */}
-                          {bestChannelPool.map(ch => (
-                            <div key={ch} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                              <span style={{ fontSize: 14, width: 22, textAlign: "center" }}>{CHANNEL_ICONS[ch]}</span>
-                              <span style={{ fontWeight: 600, fontSize: 11, width: 54 }}>{CHANNEL_LABELS[ch]}</span>
-                              <select className="form-select" style={{ flex: 1, fontSize: 11 }}>
-                                <option value="">Select base...</option>
-                                <option>Welcome Template</option>
-                                <option>Reminder Template</option>
-                                <option>Promotional Template</option>
-                              </select>
-                              {bestChannelExperiment && (
-                                <select className="form-select" style={{ flex: 1, fontSize: 11 }}>
-                                  <option value="">Select variant...</option>
-                                  <option>Welcome Template (V2)</option>
-                                  <option>Reminder Template (V2)</option>
-                                  <option>Promotional Template (V2)</option>
-                                </select>
-                              )}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
+                        )}
                       </>
                     )}
                   </div>
