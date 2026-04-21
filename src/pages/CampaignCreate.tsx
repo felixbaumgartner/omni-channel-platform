@@ -18,8 +18,6 @@ export default function CampaignCreate() {
 
   const [heuristicRules] = useState<PreferenceRule[]>(defaultHeuristicRules.filter(r => r.active));
   const [bestChannelContentEnabled, setBestChannelContentEnabled] = useState(false);
-  const [experimentEnabled, setExperimentEnabled] = useState(false);
-  const [experimentTag, setExperimentTag] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   // New omni-channel state
@@ -396,25 +394,6 @@ export default function CampaignCreate() {
 
           {/* Base Content */}
           <BaseContentSection selectedChannels={selectedChannels.length > 0 ? selectedChannels : bestChannelContentEnabled ? (["email", "push", "sms", "whatsapp"] as MessageChannel[]) : []} />
-
-          {/* Experiment */}
-          <div className="bui-box">
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Experiment</div>
-            {!experimentEnabled ? (
-              <div style={{ padding: 24, border: "1px dashed var(--border-color)", borderRadius: "var(--radius-md)", textAlign: "center" }}>
-                <p className="text-muted" style={{ marginBottom: 12 }}>No experiment configured. Set up an A/B test to compare content variants.</p>
-                <button className="btn btn-secondary" onClick={() => setExperimentEnabled(true)}>Setup Experiment</button>
-              </div>
-            ) : (
-              <div className="tier-selection-appear">
-                <div className="form-group">
-                  <label className="form-label">Experiment Tag</label>
-                  <input className="form-input" placeholder="e.g., emk_summer_deals_experiment" value={experimentTag} onChange={e => setExperimentTag(e.target.value)} />
-                </div>
-                <button className="btn btn-secondary btn-destructive" onClick={() => { setExperimentEnabled(false); setExperimentTag(""); }}>Remove Experiment</button>
-              </div>
-            )}
-          </div>
 
           {/* Compliance & Reporting */}
           <div className="bui-box">
