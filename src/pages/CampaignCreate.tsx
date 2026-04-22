@@ -190,6 +190,7 @@ export default function CampaignCreate() {
                 <strong>The system will automatically select the best channel per subscriber</strong>
               </div>
               <div style={{ paddingLeft: 32 }}>
+                <div className="text-muted" style={{ fontSize: 13, marginTop: 6, marginBottom: 8 }}>Enable the toggle below to configure content for all channels, or skip it and select specific channels using the cards below.</div>
                 <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10 }}>
                   <label className="toggle-switch toggle-switch--sm">
                     <input type="checkbox" checked={bestChannelContentEnabled} onChange={() => {
