@@ -192,7 +192,17 @@ export default function CampaignCreate() {
               <div style={{ paddingLeft: 32 }}>
                 <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10 }}>
                   <label className="toggle-switch toggle-switch--sm">
-                    <input type="checkbox" checked={bestChannelContentEnabled} onChange={() => setBestChannelContentEnabled(prev => !prev)} />
+                    <input type="checkbox" checked={bestChannelContentEnabled} onChange={() => {
+                      if (!bestChannelContentEnabled) {
+                        const allChannels: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
+                        setSelectedChannels(allChannels);
+                        setChannelPriority(allChannels);
+                      } else {
+                        setSelectedChannels([]);
+                        setChannelPriority([]);
+                      }
+                      setBestChannelContentEnabled(prev => !prev);
+                    }} />
                     <span className="toggle-slider" />
                   </label>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>Configure content for all channels</span>
