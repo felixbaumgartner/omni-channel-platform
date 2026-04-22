@@ -38,7 +38,6 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
   const [isReward, setIsReward] = useState(false);
   const [crossChannelCoordinated, setCrossChannelCoordinated] = useState(true);
   const [perChannelRanges, setPerChannelRanges] = useState<Record<string, { start: string; end: string }>>({});
-  const [noSendReasonId, setNoSendReasonId] = useState("");
 
   const hashPct = Math.max(0, Math.min(100, Number(hashEnd) - Number(hashStart)));
   const nameValid = /^[a-zA-Z0-9_-]{4,64}$/.test(name);
@@ -286,16 +285,6 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
             <label className="form-label">Salt</label>
             <input className="form-input" placeholder="Auto-generated if empty" value={salt} onChange={e => setSalt(e.target.value)} />
             <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Randomization seed for consistent hashing. Same salt = same subscriber assignment.</div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Linked No-Send Reason</label>
-            <select className="form-select" value={noSendReasonId} onChange={e => setNoSendReasonId(e.target.value)}>
-              <option value="">None (create new on save)</option>
-              <option value="5001">frequency_cap_exceeded</option>
-              <option value="5003">recent_booking_suppression</option>
-              <option value="5004">channel_fatigue_crosschannel</option>
-            </select>
-            <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Link to an existing no-send reason, or a new one will be created.</div>
           </div>
         </div>
       </div>

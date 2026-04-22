@@ -401,7 +401,7 @@ export const channelOverlap = {
 };
 
 /* ══════════════════════════════════════════════════════════════
-   NEW: Message Triggers, Holdouts, Priority, No-Send, Subscriptions
+   NEW: Message Triggers, Holdouts, Priority, Subscriptions
    ══════════════════════════════════════════════════════════════ */
 
 /* ── Message Triggers ── */
@@ -573,74 +573,6 @@ export const mockCampaignPriorities: MockCampaignPriority[] = [
   { campaignId: 1005, campaignName: "genius_promo_push_email", channel: "email", pipeline: "Scheduled: Daily EMK", priority: 78, type: "marketing", unifiedGroupId: "UCG-2026-002" },
   { campaignId: 1006, campaignName: "checkin_reminder_push", channel: "push", pipeline: "Trigger: checkin_reminder", priority: 88, type: "non_marketing" },
   { campaignId: 1011, campaignName: "price_alert_push", channel: "push", pipeline: "Trigger: price_change", priority: 72, type: "marketing" },
-];
-
-/* ── No-Send Reasons ── */
-
-export interface MockNoSendReason {
-  id: number;
-  label: string;
-  description: string;
-  status: "ENABLED" | "DISABLED" | "ARCHIVED";
-  channels: (MessageChannel | "all")[];
-  purpose: "marketing" | "non_marketing" | "all";
-  defaultApply: boolean;
-  overridable: boolean;
-  matchedCampaigns: number;
-  suppressedLast7d: number;
-  omniChannelBehavior: "suppress_all" | "suppress_channel" | "fallback_to_other";
-  rules?: string;
-}
-
-export const mockNoSendReasons: MockNoSendReason[] = [
-  {
-    id: 5001, label: "frequency_cap_exceeded",
-    description: "Subscriber has exceeded the daily/weekly message frequency cap for this channel",
-    status: "ENABLED", channels: ["all"], purpose: "marketing",
-    defaultApply: true, overridable: false, matchedCampaigns: 42, suppressedLast7d: 1240000,
-    omniChannelBehavior: "fallback_to_other",
-    rules: "subscriber.messages_received_24h > channel.daily_cap",
-  },
-  {
-    id: 5002, label: "unsubscribed_category",
-    description: "Subscriber has opted out of this message category via Janet subscription preferences",
-    status: "ENABLED", channels: ["all"], purpose: "marketing",
-    defaultApply: true, overridable: false, matchedCampaigns: 42, suppressedLast7d: 3800000,
-    omniChannelBehavior: "suppress_channel",
-    rules: "subscriber.subscription_status(category) == 'opted_out'",
-  },
-  {
-    id: 5003, label: "recent_booking_suppression",
-    description: "Suppress marketing messages within 48h of a booking to avoid confusion with transactional messages",
-    status: "ENABLED", channels: ["email", "push"], purpose: "marketing",
-    defaultApply: true, overridable: true, matchedCampaigns: 28, suppressedLast7d: 890000,
-    omniChannelBehavior: "suppress_all",
-    rules: "subscriber.hours_since_last_booking < 48",
-  },
-  {
-    id: 5004, label: "channel_fatigue_crosschannel",
-    description: "Subscriber received 5+ messages across all channels in last 24h — suppress non-transactional",
-    status: "ENABLED", channels: ["all"], purpose: "marketing",
-    defaultApply: true, overridable: false, matchedCampaigns: 42, suppressedLast7d: 560000,
-    omniChannelBehavior: "suppress_all",
-    rules: "subscriber.total_messages_all_channels_24h >= 5",
-  },
-  {
-    id: 5005, label: "gdpr_consent_missing",
-    description: "Subscriber has not provided GDPR marketing consent for this market",
-    status: "ENABLED", channels: ["all"], purpose: "marketing",
-    defaultApply: true, overridable: false, matchedCampaigns: 42, suppressedLast7d: 2100000,
-    omniChannelBehavior: "suppress_all",
-    rules: "subscriber.gdpr_consent(market) == false",
-  },
-  {
-    id: 5006, label: "sms_market_restriction",
-    description: "SMS marketing not permitted in subscriber's market due to local regulation",
-    status: "ENABLED", channels: ["sms"], purpose: "all",
-    defaultApply: true, overridable: false, matchedCampaigns: 12, suppressedLast7d: 420000,
-    omniChannelBehavior: "fallback_to_other",
-    rules: "market.sms_marketing_allowed == false",
-  },
 ];
 
 /* ── Subscription Categories ── */
