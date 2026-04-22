@@ -1,6 +1,6 @@
 import type { Campaign, Journey, UnifiedCampaignGroup, SubscriberProfile, EligibilityRule, MessageChannel } from "../types";
 
-/* ── Heuristic Routing Rules & Default Channel Order ── */
+/* ── Rule-Based Routing Rules & Default Channel Order ── */
 
 export interface PreferenceRule {
   id: number;

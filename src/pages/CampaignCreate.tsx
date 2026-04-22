@@ -211,14 +211,14 @@ export default function CampaignCreate() {
                 {bestChannelContentEnabled && (
                   <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Content templates for all 4 channels will be available below. The system decides which channel to use at send time.</div>
                 )}
-                <div style={{ fontSize: 13, marginTop: 12, marginBottom: 4 }}>Heuristic routing rules (evaluated in order):</div>
+                <div style={{ fontSize: 13, marginTop: 12, marginBottom: 4 }}>Rule-based routing (evaluated in order):</div>
                 <ol style={{ margin: "4px 0 4px 18px", padding: 0, fontSize: 13, lineHeight: 1.7 }}>
                   {defaultHeuristicRules.filter(r => r.active).map(r => (
                     <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
                   ))}
                 </ol>
                 <div style={{ fontSize: 13, marginTop: 10, padding: "8px 12px", background: "rgba(0,53,128,0.06)", borderRadius: 6 }}>
-                  If no heuristic matches, the platform default priority order is used: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" \u2192 ")}</strong>. If delivery fails, the system retries the next channel in order. All channels exhausted = suppressed.
+                  If no rule matches, the platform default priority order is used: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" \u2192 ")}</strong>. If delivery fails, the system retries the next channel in order. All channels exhausted = suppressed.
                 </div>
                 <div style={{ fontSize: 12, marginTop: 8 }}>
                   <a href="/channel-preferences" style={{ color: "var(--color-blue-600)", textDecoration: "underline" }}>Customize rules and fallback order in Channel Preferences</a>
@@ -270,7 +270,7 @@ export default function CampaignCreate() {
                     <div className="radio-card-title">Best Channel</div>
                   </div>
                   <div className="radio-card-description">
-                    Heuristic selects the best channel per subscriber. Falls back to the channel priority order below when no match is found.
+                    Rule-based routing selects the best channel per subscriber. Falls back to the channel priority order below when no match is found.
                   </div>
                 </div>
                 <div className={`radio-card ${deliveryMode === "multi_channel" ? "selected" : ""}`} onClick={() => setDeliveryMode("multi_channel")}>
@@ -308,10 +308,10 @@ export default function CampaignCreate() {
                 </div>
               )}
 
-              {/* Active Heuristic — Best Channel Mode Only */}
+              {/* Active Routing Rule — Best Channel Mode Only */}
               {deliveryMode === "best_channel" && (
                 <div className="tier-selection-appear" style={{ marginTop: 16 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Active Heuristic</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Active Routing Rule</div>
                   {heuristicRules.map(rule => (
                     <div key={rule.id} className="rule-card" style={{ marginBottom: 8 }}>
                       <div className="rule-card-header">
@@ -326,7 +326,7 @@ export default function CampaignCreate() {
                       </div>
                     </div>
                   ))}
-                  <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>If this heuristic has no match for a subscriber, the fallback channel order below is used.</p>
+                  <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>If this rule has no match for a subscriber, the fallback channel order below is used.</p>
                 </div>
               )}
 
@@ -334,7 +334,7 @@ export default function CampaignCreate() {
               {deliveryMode === "best_channel" && (
                 <div className="tier-selection-appear" style={{ marginTop: 16 }}>
                   <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Priority & Retry</div>
-                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>When the heuristic above has no answer, channels are tried in this order. Only used when delivery retry for the chosen channel fails.</p>
+                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>When the routing rule above has no answer, channels are tried in this order. Only used when delivery retry for the chosen channel fails.</p>
                   <div className="form-group">
                     <label className="form-label">Fallback Channel Order</label>
                     <div className="fallback-sequence">

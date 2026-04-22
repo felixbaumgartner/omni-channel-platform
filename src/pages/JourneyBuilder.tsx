@@ -228,7 +228,7 @@ export default function JourneyBuilder() {
                     <strong style={{ fontSize: 12 }}>System selects the best channel per subscriber</strong>
                   </div>
                   <div style={{ paddingLeft: 28, marginTop: 6 }}>
-                    <div style={{ marginBottom: 4 }}>Heuristic routing rules (evaluated in order):</div>
+                    <div style={{ marginBottom: 4 }}>Rule-based routing (evaluated in order):</div>
                     <ol style={{ margin: "2px 0 2px 16px", padding: 0, lineHeight: 1.7 }}>
                       {defaultHeuristicRules.filter(r => r.active).map(r => (
                         <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
@@ -259,7 +259,7 @@ export default function JourneyBuilder() {
               {entryChannel.length >= 2 && (
                 <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                   <span className="info-banner-icon">&#10024;</span>
-                  <span><strong>Best Channel</strong> &mdash; heuristic selects from {entryChannel.length} channels. Fallback order applies when no signal.</span>
+                  <span><strong>Best Channel</strong> &mdash; rule-based routing selects from {entryChannel.length} channels. Fallback order applies when no signal.</span>
                 </div>
               )}
             </div>
@@ -520,7 +520,7 @@ export default function JourneyBuilder() {
                         {/* Channel Pool Selection */}
                         <div className="form-group">
                           <label className="form-label">Channel Selection</label>
-                          <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Select which channels to include. The heuristic picks the best channel per subscriber; the fallback order is used when the heuristic has no signal.</p>
+                          <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Select which channels to include. The routing rule picks the best channel per subscriber; the fallback order is used when the rule has no signal.</p>
                           <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
                             {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
                               <div
@@ -542,7 +542,7 @@ export default function JourneyBuilder() {
                                 <strong style={{ fontSize: 12 }}>The system will automatically select the best channel per subscriber</strong>
                               </div>
                               <div style={{ paddingLeft: 28, marginTop: 6 }}>
-                                <div style={{ marginBottom: 4 }}>Heuristic routing rules (evaluated in order):</div>
+                                <div style={{ marginBottom: 4 }}>Rule-based routing (evaluated in order):</div>
                                 <ol style={{ margin: "2px 0 2px 16px", padding: 0, lineHeight: 1.7 }}>
                                   {defaultHeuristicRules.filter(r => r.active).map(r => (
                                     <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
@@ -573,15 +573,15 @@ export default function JourneyBuilder() {
                           {bestChannelPool.length >= 2 && (
                             <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                               <span className="info-banner-icon">&#10024;</span>
-                              <span><strong>Best Channel</strong> &mdash; heuristic selects from {bestChannelPool.length} channels. Fallback order applies when no signal.</span>
+                              <span><strong>Best Channel</strong> &mdash; rule-based routing selects from {bestChannelPool.length} channels. Fallback order applies when no signal.</span>
                             </div>
                           )}
                         </div>
 
-                        {/* Active Heuristic — only when 2+ channels */}
+                        {/* Active Routing Rule — only when 2+ channels */}
                         {bestChannelPool.length >= 2 && (
                         <div className="form-group tier-selection-appear">
-                          <label className="form-label">Active Heuristic</label>
+                          <label className="form-label">Active Routing Rule</label>
                           {heuristicRules.map(rule => (
                             <div key={rule.id} className="rule-card" style={{ marginBottom: 6 }}>
                               <div className="rule-card-header">
@@ -628,7 +628,7 @@ export default function JourneyBuilder() {
                               </div>
                             ))}
                           </div>
-                          <div className="text-muted" style={{ fontSize: 11, marginTop: 4 }}>Campaign creator&rsquo;s preferred order. Used when the heuristic has no signal.</div>
+                          <div className="text-muted" style={{ fontSize: 11, marginTop: 4 }}>Campaign creator&rsquo;s preferred order. Used when the routing rule has no signal.</div>
                         </div>
                         )}
 

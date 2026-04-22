@@ -51,7 +51,7 @@ export default function Dashboard() {
           <div className="kpi-sub">spanning {mockCampaigns.filter(c => c.unifiedGroupId).length} channel campaigns</div>
         </div>
         <div className="omni-kpi-card">
-          <div className="kpi-label">Best Channel Routing <span className="info-icon" data-tooltip="Percentage of sends where a heuristic (e.g., Last Engaged Channel) selected the optimal channel for each subscriber, rather than defaulting to the static fallback channel order.">&#9432;</span></div>
+          <div className="kpi-label">Best Channel Routing <span className="info-icon" data-tooltip="Percentage of sends where a routing rule (e.g., Last Engaged Channel) selected the optimal channel for each subscriber, rather than defaulting to the static fallback channel order.">&#9432;</span></div>
           <div className="kpi-value">{omniChannelKPIs.bestChannelRouting}%</div>
           <div className="kpi-sub">of sends via intelligent routing</div>
         </div>

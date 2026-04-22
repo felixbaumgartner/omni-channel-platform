@@ -51,7 +51,7 @@ export default function ChannelPreferences() {
           <div className="tier-selection-appear" style={{ marginTop: 16 }}>
             <div className="alert alert-info">
               <div className="alert-title">ML Model Active (Shadow Mode)</div>
-              ML routing runs in parallel with heuristic routing. Predictions are logged but do not affect delivery. Compare predicted vs actual engagement before full cutover.
+              ML routing runs in parallel with rule-based routing. Predictions are logged but do not affect delivery. Compare predicted vs actual engagement before full cutover.
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginTop: 12 }}>
               <div>
@@ -64,7 +64,7 @@ export default function ChannelPreferences() {
               </div>
               <div>
                 <div className="text-muted" style={{ fontSize: 12, marginBottom: 4 }}>Cold-Start Coverage</div>
-                <div style={{ fontWeight: 600 }}>Heuristic Fallback</div>
+                <div style={{ fontWeight: 600 }}>Rule-Based Fallback</div>
               </div>
             </div>
             <div style={{ marginTop: 12, fontSize: 13 }}>
@@ -128,7 +128,7 @@ export default function ChannelPreferences() {
               <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 13, lineHeight: 1.6 }}>
                 <li>Marketer did not specify a channel pool</li>
                 <li>CDP has no engagement signal for a subscriber</li>
-                <li>All heuristic rules evaluate to no result</li>
+                <li>All routing rules evaluate to no result</li>
                 <li>ML model returns no confident prediction</li>
               </ul>
             </div>
@@ -149,8 +149,8 @@ export default function ChannelPreferences() {
 
       {/* Heuristic Rules */}
       <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Heuristic Routing Rules</div>
-        <p className="text-muted mb-16">Rules are evaluated in priority order. The first matching rule determines the primary channel. {mlEnabled ? "Heuristics serve as fallback when no ML score is available." : ""}</p>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Rule-Based Routing</div>
+        <p className="text-muted mb-16">Rules are evaluated in priority order. The first matching rule determines the primary channel. {mlEnabled ? "Rules serve as fallback when no ML score is available." : ""}</p>
         <div className="rules-list">
           {rules.sort((a, b) => a.priority - b.priority).map(rule => (
             <div key={rule.id} className={`rule-card ${rule.active ? "" : "rule-card--disabled"}`}>
