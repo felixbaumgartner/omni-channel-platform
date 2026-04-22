@@ -234,6 +234,11 @@ export default function CampaignCreate() {
                 </div>
               ))}
             </div>
+            {bestChannelContentEnabled && selectedChannels.length > 0 && selectedChannels.length < 4 && (
+              <div className="alert alert-warning tier-selection-appear" style={{ marginTop: 12 }}>
+                <strong>Channel mismatch:</strong> "Configure content for all channels" is enabled, but only {selectedChannels.length} of 4 channels are selected. Either turn off the toggle above and use manual channel selection, or re-select all 4 channels.
+              </div>
+            )}
             {selectedChannels.length === 1 && (
               <div className="info-banner tier-selection-appear" style={{ marginTop: 16 }}>
                 <span className="info-banner-icon">&#128274;</span>
