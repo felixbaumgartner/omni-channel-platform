@@ -477,7 +477,6 @@ body {
 .badge-orchestration { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-full); }
 .badge-orchestration--best_channel { background: linear-gradient(135deg, #dbeafe, #ede9fe); color: var(--color-blue-600); border: 1px solid #93c5fd; }
 .badge-orchestration--multi_channel { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
-.badge-orchestration--sequential { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
 
 /* ── Journey Orchestration Type ── */
 

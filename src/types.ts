@@ -130,7 +130,7 @@ export const INPUT_TOPICS: Record<string, InputTopicConfig> = {
 
 /* ── Omni-Channel Types ── */
 
-export type OrchestrationMode = "best_channel" | "multi_channel" | "sequential";
+export type OrchestrationMode = "best_channel" | "multi_channel";
 export type Funnel = "upper" | "mid" | "lower" | "retention";
 export type Vertical = "accommodation" | "flights" | "attractions" | "car_rental";
 
@@ -143,7 +143,7 @@ export const VERTICAL_LABELS: Record<Vertical, string> = {
 };
 
 export const ORCHESTRATION_LABELS: Record<OrchestrationMode, string> = {
-  best_channel: "Best Channel", multi_channel: "Multi-Channel", sequential: "Sequential",
+  best_channel: "Best Channel", multi_channel: "Multi-Channel",
 };
 
 /* ── Channel-Specific Message Categories (from PROD) ── */

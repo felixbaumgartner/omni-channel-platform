@@ -83,7 +83,7 @@ export const mockCampaigns: Campaign[] = [
     pipeline: "Trigger: cart_abandon",
     createdAt: "10 Feb 2026", updatedAt: "5 Mar 2026", updatedBy: "convert-team",
     deliveryCount: 3100000, openRate: 41.8, clickRate: 12.3,
-    unifiedGroupId: "UCG-2026-003", funnel: "lower", vertical: "accommodation", orchestrationMode: "sequential",
+    unifiedGroupId: "UCG-2026-003", funnel: "lower", vertical: "accommodation", orchestrationMode: "best_channel",
   },
   {
     id: 1009, name: "booking_modification_sms",
@@ -279,7 +279,7 @@ export const mockUnifiedGroups: UnifiedCampaignGroup[] = [
   {
     id: "UCG-2026-003", name: "Cart Abandonment Recovery",
     description: "Sequential cross-channel recovery: push first, email fallback, WhatsApp reminder",
-    orchestrationMode: "sequential",
+    orchestrationMode: "best_channel",
     channels: ["push", "email", "whatsapp"],
     channelDeliveries: [
       { channel: "push", contentId: 5506, messageCategory: "price_alerts", status: "active", campaignId: 1008 },
