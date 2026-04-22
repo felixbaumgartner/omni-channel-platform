@@ -200,7 +200,24 @@ export default function CampaignCreate() {
                   <strong>The system will automatically select the best channel per subscriber</strong>
                 </div>
                 <div style={{ paddingLeft: 32 }}>
-                  <div style={{ fontSize: 13, marginTop: 8, marginBottom: 4 }}>Heuristic routing rules (evaluated in order):</div>
+                  <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                    <label className="toggle-switch toggle-switch--sm">
+                      <input type="checkbox" checked={bestChannelContentEnabled} onChange={() => {
+                        if (!bestChannelContentEnabled) {
+                          const allChannels: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
+                          setSelectedChannels(allChannels);
+                          setChannelPriority(allChannels);
+                        }
+                        setBestChannelContentEnabled(prev => !prev);
+                      }} />
+                      <span className="toggle-slider" />
+                    </label>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Configure content for all channels</span>
+                  </div>
+                  {bestChannelContentEnabled && (
+                    <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Content templates for all 4 channels will be available below. The system decides which channel to use at send time.</div>
+                  )}
+                  <div style={{ fontSize: 13, marginTop: 12, marginBottom: 4 }}>Heuristic routing rules (evaluated in order):</div>
                   <ol style={{ margin: "4px 0 4px 18px", padding: 0, fontSize: 13, lineHeight: 1.7 }}>
                     {defaultHeuristicRules.filter(r => r.active).map(r => (
                       <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
@@ -212,16 +229,6 @@ export default function CampaignCreate() {
                   <div style={{ fontSize: 12, marginTop: 8 }}>
                     <a href="/channel-preferences" style={{ color: "var(--color-blue-600)", textDecoration: "underline" }}>Customize rules and fallback order in Channel Preferences</a>
                   </div>
-                  <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
-                    <label className="toggle-switch toggle-switch--sm">
-                      <input type="checkbox" checked={bestChannelContentEnabled} onChange={() => setBestChannelContentEnabled(prev => !prev)} />
-                      <span className="toggle-slider" />
-                    </label>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>Configure content for all channels</span>
-                  </div>
-                  {bestChannelContentEnabled && (
-                    <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Content templates for all 4 channels will be available below. The system decides which channel to use at send time.</div>
-                  )}
                 </div>
               </div>
             )}
