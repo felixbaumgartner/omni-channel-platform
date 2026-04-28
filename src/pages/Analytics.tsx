@@ -16,7 +16,6 @@ export default function Analytics() {
 
   const totalSent = channelMetrics.reduce((s, m) => s + m.sent, 0);
   const totalDelivered = channelMetrics.reduce((s, m) => s + m.delivered, 0);
-  const totalOpened = channelMetrics.reduce((s, m) => s + m.opened, 0);
   const totalClicked = channelMetrics.reduce((s, m) => s + m.clicked, 0);
 
   const topCampaigns = mockCampaigns
@@ -44,9 +43,9 @@ export default function Analytics() {
       {/* Omni-Channel Intelligence Metrics */}
       <div className="omni-kpi-grid">
         <div className="omni-kpi-card">
-          <div className="kpi-label">Routing Lift <span className="info-icon" data-tooltip="Improvement in open rate when using intelligent channel routing vs. sending on a random channel. Measures the benefit of picking the right channel for each user.">&#9432;</span></div>
+          <div className="kpi-label">Routing Lift <span className="info-icon" data-tooltip="Improvement in click rate when using intelligent channel routing vs. sending on a random channel. Measures the benefit of picking the right channel for each user.">&#9432;</span></div>
           <div className="kpi-value">+{omniChannelKPIs.routingLift}%</div>
-          <div className="kpi-sub">open rate vs. random channel</div>
+          <div className="kpi-sub">click rate vs. random channel</div>
         </div>
         <div className="omni-kpi-card">
           <div className="kpi-label">Cross-Channel Lift <span className="info-icon" data-tooltip="Improvement in conversion rate when using multiple channels together vs. a single channel. Measures the combined effect of reaching users across more than one channel.">&#9432;</span></div>
@@ -65,11 +64,6 @@ export default function Analytics() {
           <div className="kpi-label">Total Delivered</div>
           <div className="kpi-value">{formatNum(totalDelivered)}</div>
           <div className="kpi-sub">{((totalDelivered / totalSent) * 100).toFixed(1)}% rate</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-label">Total Opened</div>
-          <div className="kpi-value">{formatNum(totalOpened)}</div>
-          <div className="kpi-sub">{((totalOpened / totalDelivered) * 100).toFixed(1)}% rate</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Total Clicked</div>
@@ -94,7 +88,6 @@ export default function Analytics() {
               <th>Orchestration</th>
               <th style={{ textAlign: "right" }}>Total Reach</th>
               <th style={{ textAlign: "right" }}>Unique Reach</th>
-              <th style={{ textAlign: "right" }}>Open %</th>
               <th style={{ textAlign: "right" }}>Click %</th>
             </tr>
           </thead>
@@ -119,7 +112,6 @@ export default function Analytics() {
                 </td>
                 <td style={{ textAlign: "right" }}>{formatNum(g.totalReach)}</td>
                 <td style={{ textAlign: "right" }}>{formatNum(g.uniqueReach)}</td>
-                <td style={{ textAlign: "right" }}>{g.aggregateOpenRate}%</td>
                 <td style={{ textAlign: "right" }}>{g.aggregateClickRate}%</td>
               </tr>
             ))}
@@ -197,8 +189,6 @@ export default function Analytics() {
               <th style={{ textAlign: "right" }}>Sent</th>
               <th style={{ textAlign: "right" }}>Delivered</th>
               <th style={{ textAlign: "right" }}>Delivery %</th>
-              <th style={{ textAlign: "right" }}>Opened</th>
-              <th style={{ textAlign: "right" }}>Open %</th>
               <th style={{ textAlign: "right" }}>Clicked</th>
               <th style={{ textAlign: "right" }}>Click %</th>
               <th style={{ textAlign: "right" }}>Bounce %</th>
@@ -211,8 +201,6 @@ export default function Analytics() {
                 <td style={{ textAlign: "right" }}>{formatNum(m.sent)}</td>
                 <td style={{ textAlign: "right" }}>{formatNum(m.delivered)}</td>
                 <td style={{ textAlign: "right" }}><span className={`badge ${m.deliveryRate > 96 ? "badge-constructive" : "badge-callout"}`}>{m.deliveryRate}%</span></td>
-                <td style={{ textAlign: "right" }}>{formatNum(m.opened)}</td>
-                <td style={{ textAlign: "right" }}>{m.openRate}%</td>
                 <td style={{ textAlign: "right" }}>{m.clicked > 0 ? formatNum(m.clicked) : "N/A"}</td>
                 <td style={{ textAlign: "right" }}>{m.clickRate > 0 ? m.clickRate + "%" : "N/A"}</td>
                 <td style={{ textAlign: "right" }}><span className={`badge ${m.bounceRate < 3 ? "badge-constructive" : m.bounceRate < 5 ? "badge-callout" : "badge-destructive"}`}>{m.bounceRate}%</span></td>
@@ -261,7 +249,6 @@ export default function Analytics() {
               <th>Type</th>
               <th>Group</th>
               <th style={{ textAlign: "right" }}>Sent</th>
-              <th style={{ textAlign: "right" }}>Open Rate</th>
               <th style={{ textAlign: "right" }}>Click Rate</th>
             </tr>
           </thead>
@@ -273,7 +260,6 @@ export default function Analytics() {
                 <td><span className={`badge ${c.type === "transactional" ? "badge-constructive" : c.type === "marketing" ? "badge-marketing" : "badge-outline"}`}>{c.type}</span></td>
                 <td>{c.unifiedGroupId ? <span className="badge badge-brand" style={{ fontSize: 10 }}>{c.unifiedGroupId}</span> : <span className="text-muted">-</span>}</td>
                 <td style={{ textAlign: "right" }}>{formatNum(c.deliveryCount || 0)}</td>
-                <td style={{ textAlign: "right" }}>{c.openRate}%</td>
                 <td style={{ textAlign: "right" }}>{c.clickRate ? c.clickRate + "%" : "N/A"}</td>
               </tr>
             ))}
