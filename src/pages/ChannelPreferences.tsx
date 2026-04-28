@@ -1,37 +1,13 @@
 import { useState } from "react";
 import { CHANNEL_ICONS, CHANNEL_LABELS, type MessageChannel } from "../types";
-import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, defaultScoringWeights, type PreferenceRule, type ScoringWeight } from "../data/mockData";
+import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, defaultScoringWeights, type PreferenceRule } from "../data/mockData";
 
 export default function ChannelPreferences() {
   const [rules, setRules] = useState<PreferenceRule[]>(defaultHeuristicRules);
   const [mlEnabled, setMlEnabled] = useState(false);
   const [channelOrder, setChannelOrder] = useState<MessageChannel[]>(DEFAULT_CHANNEL_ORDER);
   const [priorityDirty, setPriorityDirty] = useState(false);
-  const [weights, setWeights] = useState<ScoringWeight[]>(defaultScoringWeights);
-  const [weightsDirty, setWeightsDirty] = useState(false);
-
-  function updateWeight(id: string, newVal: number) {
-    setWeights(prev => {
-      const idx = prev.findIndex(w => w.id === id);
-      if (idx === -1) return prev;
-      const clamped = Math.max(prev[idx].minWeight, Math.min(prev[idx].maxWeight, newVal));
-      const others = prev.filter((_, i) => i !== idx);
-      const remaining = +(1 - clamped).toFixed(2);
-      const othersTotal = others.reduce((s, w) => s + w.weight, 0);
-      const scaled = othersTotal > 0
-        ? others.map(w => ({ ...w, weight: +((w.weight / othersTotal) * remaining).toFixed(2) }))
-        : others.map(w => ({ ...w, weight: +(remaining / others.length).toFixed(2) }));
-      const result = [...scaled];
-      result.splice(idx, 0, { ...prev[idx], weight: clamped });
-      return result;
-    });
-    setWeightsDirty(true);
-  }
-
-  function resetWeights() {
-    setWeights(defaultScoringWeights);
-    setWeightsDirty(false);
-  }
+  const weights = defaultScoringWeights;
 
   function moveChannel(index: number, direction: "up" | "down") {
     const target = direction === "up" ? index - 1 : index + 1;
@@ -101,75 +77,22 @@ export default function ChannelPreferences() {
 
       {/* Channel Scoring Weights */}
       <div className="bui-box">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Scoring Weights</div>
-            <p className="text-muted mb-16">For each subscriber, every eligible channel receives a composite score from these weighted factors. The highest-scoring channel wins. Adjust weights to tune routing behaviour — weights always sum to 100%.</p>
-          </div>
-          {weightsDirty && (
-            <div style={{ display: "flex", gap: 8, flexShrink: 0, marginLeft: 16 }}>
-              <button className="btn btn-secondary" style={{ fontSize: 13, padding: "6px 12px" }} onClick={resetWeights}>Reset</button>
-              <button className="btn btn-primary" style={{ fontSize: 13, padding: "6px 12px" }} onClick={() => setWeightsDirty(false)}>Save Weights</button>
-            </div>
-          )}
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Scoring</div>
+          <p className="text-muted mb-16">For each subscriber, every eligible channel receives a score based on the factor below. The highest-scoring channel wins.</p>
         </div>
 
-        {/* Weight bars */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 8 }}>
+        {/* Single factor display */}
+        <div style={{ marginTop: 8 }}>
           {weights.map(w => (
-            <div key={w.id}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                <div>
-                  <span style={{ fontWeight: 600, fontSize: 14 }}>{w.label}</span>
-                  <span className="text-muted" style={{ marginLeft: 8, fontSize: 12 }}>{w.description}</span>
-                </div>
-                <span style={{ fontWeight: 700, fontSize: 14, minWidth: 44, textAlign: "right" }}>{Math.round(w.weight * 100)}%</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <input
-                  type="range"
-                  min={w.minWeight * 100}
-                  max={w.maxWeight * 100}
-                  value={Math.round(w.weight * 100)}
-                  onChange={e => updateWeight(w.id, Number(e.target.value) / 100)}
-                  style={{ flex: 1, accentColor: "var(--color-blue-500)" }}
-                />
-                <span className="text-muted" style={{ fontSize: 11, minWidth: 80, textAlign: "right" }}>
-                  {Math.round(w.minWeight * 100)}–{Math.round(w.maxWeight * 100)}% range
-                </span>
+            <div key={w.id} className="rule-card" style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 20px" }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#003580", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>100%</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{w.label}</div>
+                <div className="text-muted" style={{ fontSize: 13, marginTop: 2 }}>{w.description}</div>
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Visual bar chart of current distribution */}
-        <div style={{ marginTop: 20, padding: "16px 0 0", borderTop: "1px solid var(--border-color)" }}>
-          <div className="text-muted" style={{ fontSize: 12, marginBottom: 8 }}>Current weight distribution</div>
-          <div style={{ display: "flex", height: 28, borderRadius: "var(--radius-sm)", overflow: "hidden" }}>
-            {weights.map((w, i) => {
-              const colors = ["#003580", "#006ce4", "#0896ff", "#38bdf8", "#b3d4fc"];
-              return (
-                <div
-                  key={w.id}
-                  style={{ width: `${w.weight * 100}%`, background: colors[i % colors.length], display: "flex", alignItems: "center", justifyContent: "center", color: i < 3 ? "#fff" : "#003580", fontSize: 11, fontWeight: 600, transition: "width 0.3s" }}
-                  title={`${w.label}: ${Math.round(w.weight * 100)}%`}
-                >
-                  {w.weight >= 0.1 ? `${Math.round(w.weight * 100)}%` : ""}
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
-            {weights.map((w, i) => {
-              const colors = ["#003580", "#006ce4", "#0896ff", "#38bdf8", "#b3d4fc"];
-              return (
-                <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: colors[i % colors.length], display: "inline-block" }} />
-                  {w.label}
-                </div>
-              );
-            })}
-          </div>
         </div>
 
         {/* Scoring example */}
@@ -177,13 +100,9 @@ export default function ChannelPreferences() {
           <div style={{ fontWeight: 600, marginBottom: 8 }}>Example: how scoring picks a channel</div>
           <div className="text-muted">
             Subscriber has Email open rate 30% (90d) and Push tap rate 8% (90d), with 1 push tap yesterday.<br />
-            <strong>Engagement:</strong> Email {Math.round(weights[0].weight * 100)}% × 0.34 = {(weights[0].weight * 0.34).toFixed(3)} &nbsp;|&nbsp; Push {Math.round(weights[0].weight * 100)}% × 0.11 = {(weights[0].weight * 0.11).toFixed(3)}<br />
-            <strong>Cap headroom:</strong> Email {Math.round(weights[1].weight * 100)}% × 0.67 = {(weights[1].weight * 0.67).toFixed(3)} &nbsp;|&nbsp; Push {Math.round(weights[1].weight * 100)}% × 1.00 = {(weights[1].weight * 1.0).toFixed(3)}<br />
-            <strong>Fatigue freshness:</strong> Email {Math.round(weights[2].weight * 100)}% × 0.80 = {(weights[2].weight * 0.80).toFixed(3)} &nbsp;|&nbsp; Push {Math.round(weights[2].weight * 100)}% × 0.50 = {(weights[2].weight * 0.50).toFixed(3)}<br />
+            <strong>Engagement:</strong> Email recency-weighted rate = 0.34 &nbsp;|&nbsp; Push recency-weighted rate = 0.11<br />
             <strong style={{ color: "var(--color-blue-600)" }}>
-              Total: Email = {(weights[0].weight * 0.34 + weights[1].weight * 0.67 + weights[2].weight * 0.80).toFixed(3)}
-              &nbsp;|&nbsp; Push = {(weights[0].weight * 0.11 + weights[1].weight * 1.0 + weights[2].weight * 0.50).toFixed(3)}
-              &nbsp; → Email wins
+              Result: Email 0.340 vs Push 0.110 → Email wins
             </strong>
           </div>
         </div>
