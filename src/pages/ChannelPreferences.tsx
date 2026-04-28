@@ -69,7 +69,7 @@ export default function ChannelPreferences() {
               </div>
             </div>
             <div style={{ marginTop: 12, fontSize: 13 }}>
-              <strong>Input features:</strong> last channel engaged, days since last engagement per channel, open rate per channel (30/60/90d windows), device type, market/locale, message category, time-of-day engagement patterns
+              <strong>Input features:</strong> last channel engaged, days since last engagement per channel, click rate per channel (30/60/90d windows), device type, market/locale, message category, time-of-day engagement patterns
             </div>
           </div>
         )}
@@ -99,10 +99,10 @@ export default function ChannelPreferences() {
         <div style={{ marginTop: 20, padding: 16, background: "var(--color-gray-50)", borderRadius: "var(--radius-md)", fontSize: 13, lineHeight: 1.7 }}>
           <div style={{ fontWeight: 600, marginBottom: 8 }}>Example: how scoring picks a channel</div>
           <div className="text-muted">
-            Subscriber has Email open rate 30% (90d) and Push tap rate 8% (90d), with 1 push tap yesterday.<br />
-            <strong>Engagement:</strong> Email recency-weighted rate = 0.34 &nbsp;|&nbsp; Push recency-weighted rate = 0.11<br />
+            Subscriber has Email click rate 10% (90d) and Push tap rate 8% (90d), with 1 push tap yesterday.<br />
+            <strong>Engagement:</strong> Email recency-weighted click rate = 0.12 &nbsp;|&nbsp; Push recency-weighted tap rate = 0.11<br />
             <strong style={{ color: "var(--color-blue-600)" }}>
-              Result: Email 0.340 vs Push 0.110 → Email wins
+              Result: Email 0.120 vs Push 0.110 → Email wins
             </strong>
           </div>
         </div>

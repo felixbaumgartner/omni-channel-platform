@@ -12,7 +12,7 @@ export interface PreferenceRule {
 }
 
 export const defaultHeuristicRules: PreferenceRule[] = [
-  { id: 1, name: "Weighted Engagement Rate", description: "Recency-weighted open/click rate across 7d / 30d / 90d windows. Recent activity counts more, but long-term patterns outweigh a single recent interaction", logic: "weighted_engagement_rate(7d×1.0, 30d×0.5, 90d×0.2) → highest_rate_channel", priority: 1, active: true },
+  { id: 1, name: "Weighted Click Rate", description: "Recency-weighted click rate across 7d / 30d / 90d windows. Recent activity counts more, but long-term patterns outweigh a single recent interaction", logic: "weighted_click_rate(7d×1.0, 30d×0.5, 90d×0.2) → highest_rate_channel", priority: 1, active: true },
 ];
 
 export interface ScoringWeight {
@@ -25,7 +25,7 @@ export interface ScoringWeight {
 }
 
 export const defaultScoringWeights: ScoringWeight[] = [
-  { id: "engagement", label: "Engagement Likelihood", description: "Recency-weighted open/click rate per channel (7d / 30d / 90d decay)", weight: 1.00, minWeight: 1.00, maxWeight: 1.00 },
+  { id: "engagement", label: "Engagement Likelihood", description: "Recency-weighted click rate per channel (7d / 30d / 90d decay)", weight: 1.00, minWeight: 1.00, maxWeight: 1.00 },
 ];
 
 export const DEFAULT_CHANNEL_ORDER: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
