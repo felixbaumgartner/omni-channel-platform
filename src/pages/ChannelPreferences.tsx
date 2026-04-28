@@ -97,13 +97,68 @@ export default function ChannelPreferences() {
 
         {/* Scoring example */}
         <div style={{ marginTop: 20, padding: 16, background: "var(--color-gray-50)", borderRadius: "var(--radius-md)", fontSize: 13, lineHeight: 1.7 }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Example: how scoring picks a channel</div>
+          <div style={{ fontWeight: 600, marginBottom: 12 }}>Example: how scoring picks a channel</div>
           <div className="text-muted">
-            Subscriber has Email click rate 10% (90d) and Push tap rate 8% (90d), with 1 push tap yesterday.<br />
-            <strong>Engagement:</strong> Email recency-weighted click rate = 0.12 &nbsp;|&nbsp; Push recency-weighted tap rate = 0.11<br />
+            A subscriber received 20 emails and 25 push notifications over 90 days.<br /><br />
+
+            <strong>Step 1 — Count clicks per time window</strong>
+            <table style={{ width: "100%", marginTop: 8, marginBottom: 12, borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
+                  <th style={{ textAlign: "left", padding: "4px 8px", fontWeight: 600 }}>Window</th>
+                  <th style={{ textAlign: "left", padding: "4px 8px", fontWeight: 600 }}>Decay Weight</th>
+                  <th style={{ textAlign: "center", padding: "4px 8px", fontWeight: 600 }}>Email Clicks</th>
+                  <th style={{ textAlign: "center", padding: "4px 8px", fontWeight: 600 }}>Email Sends</th>
+                  <th style={{ textAlign: "center", padding: "4px 8px", fontWeight: 600 }}>Push Taps</th>
+                  <th style={{ textAlign: "center", padding: "4px 8px", fontWeight: 600 }}>Push Sends</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ padding: "4px 8px" }}>Last 7 days</td>
+                  <td style={{ padding: "4px 8px" }}>1.0 (full)</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>1</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>5</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>1</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>4</td>
+                </tr>
+                <tr style={{ background: "var(--card-bg)" }}>
+                  <td style={{ padding: "4px 8px" }}>8–30 days</td>
+                  <td style={{ padding: "4px 8px" }}>0.5</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>1</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>7</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>1</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>10</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "4px 8px" }}>31–90 days</td>
+                  <td style={{ padding: "4px 8px" }}>0.2</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>0</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>8</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>0</td>
+                  <td style={{ textAlign: "center", padding: "4px 8px" }}>11</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <strong>Step 2 — Apply decay weights</strong><br />
+            <span style={{ fontFamily: "'SF Mono', Monaco, Consolas, monospace", fontSize: 12 }}>
+              Email weighted clicks &nbsp;= (1 × 1.0) + (1 × 0.5) + (0 × 0.2) = <strong>1.50</strong><br />
+              Email weighted sends &nbsp;&nbsp;= (5 × 1.0) + (7 × 0.5) + (8 × 0.2) = <strong>10.10</strong><br />
+              Push &nbsp;weighted taps &nbsp;&nbsp;= (1 × 1.0) + (1 × 0.5) + (0 × 0.2) = <strong>1.50</strong><br />
+              Push &nbsp;weighted sends &nbsp;&nbsp;= (4 × 1.0) + (10 × 0.5) + (11 × 0.2) = <strong>11.20</strong>
+            </span><br /><br />
+
+            <strong>Step 3 — Compute weighted click rate</strong><br />
+            <span style={{ fontFamily: "'SF Mono', Monaco, Consolas, monospace", fontSize: 12 }}>
+              Email = weighted clicks ÷ weighted sends = 1.50 ÷ 10.10 = <strong>0.149</strong><br />
+              Push &nbsp;= weighted taps &nbsp;÷ weighted sends = 1.50 ÷ 11.20 = <strong>0.134</strong>
+            </span><br /><br />
+
             <strong style={{ color: "var(--color-blue-600)" }}>
-              Result: Email 0.120 vs Push 0.110 → Email wins
-            </strong>
+              Result: Email 0.149 vs Push 0.134 → Email wins
+            </strong><br />
+            <span style={{ fontSize: 12 }}>Both channels had 2 total clicks, but email had fewer sends — higher efficiency. The decay weights didn't change the outcome here because both channels had identical recency patterns. If push had more recent clicks, the 1.0 weight on the 7-day window would tilt the score toward push.</span>
           </div>
         </div>
       </div>
