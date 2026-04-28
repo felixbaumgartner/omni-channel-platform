@@ -185,10 +185,6 @@ export default function CampaignList() {
                       <div className="ucg-card-metric-label">Unique (Deduped)</div>
                     </div>
                     <div className="ucg-card-metric">
-                      <div className="ucg-card-metric-value">{g.aggregateOpenRate}%</div>
-                      <div className="ucg-card-metric-label">Open Rate</div>
-                    </div>
-                    <div className="ucg-card-metric">
                       <div className="ucg-card-metric-value">{g.aggregateClickRate}%</div>
                       <div className="ucg-card-metric-label">Click Rate</div>
                     </div>
@@ -279,7 +275,6 @@ export default function CampaignList() {
                     ))}
                     <span className="badge badge-media">{m.pipeline}</span>
                     {m.deliveryCount && <span className="badge badge-media">{formatNum(m.deliveryCount)} sent</span>}
-                    {m.openRate && <span className="badge badge-media">{m.openRate}% open</span>}
                     <span className="badge badge-media">Updated {m.updatedAt} by {m.updatedBy}</span>
                   </div>
                 </div>
