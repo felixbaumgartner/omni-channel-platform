@@ -158,7 +158,7 @@ export default function ChannelPreferences() {
             <strong style={{ color: "var(--color-blue-600)" }}>
               Result: Email 0.149 vs Push 0.134 → Email wins
             </strong><br />
-            <span style={{ fontSize: 12 }}>Both channels had 2 total clicks, but email had fewer sends — higher efficiency. The decay weights didn't change the outcome here because both channels had identical recency patterns. If push had more recent clicks, the 1.0 weight on the 7-day window would tilt the score toward push.</span>
+            <span style={{ fontSize: 12 }}>Both channels had 2 total clicks, but email had fewer sends so higher efficiency. The decay weights didn't change the outcome here because both channels had identical recency patterns. If push had more recent clicks, the 1.0 weight on the 7-day window would tilt the score toward push.</span>
           </div>
         </div>
       </div>
