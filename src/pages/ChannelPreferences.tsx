@@ -180,11 +180,9 @@ export default function ChannelPreferences() {
             <strong>Engagement:</strong> Email {Math.round(weights[0].weight * 100)}% × 0.34 = {(weights[0].weight * 0.34).toFixed(3)} &nbsp;|&nbsp; Push {Math.round(weights[0].weight * 100)}% × 0.11 = {(weights[0].weight * 0.11).toFixed(3)}<br />
             <strong>Cap headroom:</strong> Email {Math.round(weights[1].weight * 100)}% × 0.67 = {(weights[1].weight * 0.67).toFixed(3)} &nbsp;|&nbsp; Push {Math.round(weights[1].weight * 100)}% × 1.00 = {(weights[1].weight * 1.0).toFixed(3)}<br />
             <strong>Fatigue freshness:</strong> Email {Math.round(weights[2].weight * 100)}% × 0.80 = {(weights[2].weight * 0.80).toFixed(3)} &nbsp;|&nbsp; Push {Math.round(weights[2].weight * 100)}% × 0.50 = {(weights[2].weight * 0.50).toFixed(3)}<br />
-            <strong>Message fit:</strong> Email {Math.round(weights[3].weight * 100)}% × 0.90 = {(weights[3].weight * 0.90).toFixed(3)} (rich content) &nbsp;|&nbsp; Push {Math.round(weights[3].weight * 100)}% × 0.40 = {(weights[3].weight * 0.40).toFixed(3)}<br />
-            <strong>Cost:</strong> Email {Math.round(weights[4].weight * 100)}% × 1.00 = {(weights[4].weight * 1.0).toFixed(3)} &nbsp;|&nbsp; Push {Math.round(weights[4].weight * 100)}% × 1.00 = {(weights[4].weight * 1.0).toFixed(3)}<br />
             <strong style={{ color: "var(--color-blue-600)" }}>
-              Total: Email = {(weights[0].weight * 0.34 + weights[1].weight * 0.67 + weights[2].weight * 0.80 + weights[3].weight * 0.90 + weights[4].weight * 1.0).toFixed(3)}
-              &nbsp;|&nbsp; Push = {(weights[0].weight * 0.11 + weights[1].weight * 1.0 + weights[2].weight * 0.50 + weights[3].weight * 0.40 + weights[4].weight * 1.0).toFixed(3)}
+              Total: Email = {(weights[0].weight * 0.34 + weights[1].weight * 0.67 + weights[2].weight * 0.80).toFixed(3)}
+              &nbsp;|&nbsp; Push = {(weights[0].weight * 0.11 + weights[1].weight * 1.0 + weights[2].weight * 0.50).toFixed(3)}
               &nbsp; → Email wins
             </strong>
           </div>

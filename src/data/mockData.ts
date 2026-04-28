@@ -15,8 +15,6 @@ export const defaultHeuristicRules: PreferenceRule[] = [
   { id: 1, name: "Weighted Engagement Rate", description: "Recency-weighted open/click rate across 7d / 30d / 90d windows. Recent activity counts more, but long-term patterns outweigh a single recent interaction", logic: "weighted_engagement_rate(7d×1.0, 30d×0.5, 90d×0.2) → highest_rate_channel", priority: 1, active: true },
   { id: 2, name: "Cap Headroom", description: "Prefer channels with more remaining daily/weekly budget. Avoids burning the last slot on a low-priority campaign", logic: "remaining_cap_pct(channel) → prefer_highest_headroom", priority: 2, active: true },
   { id: 3, name: "Channel Fatigue Freshness", description: "Penalise channels used recently (last 6h). A channel not messaged today has a freshness advantage", logic: "hours_since_last_send(channel) → prefer_longest_gap", priority: 3, active: true },
-  { id: 4, name: "Message-Type Affinity", description: "Match message characteristics to channel strengths: rich content → email, time-sensitive → push, short confirmation → SMS", logic: "message_tag ∈ {rich_content, time_sensitive, short_alert} → affinity_boost(channel)", priority: 4, active: true },
-  { id: 5, name: "Cost Efficiency", description: "When engagement scores are within 5% of each other, prefer the lower-cost channel (push/email over SMS)", logic: "if abs(score_a - score_b) < 0.05 → prefer_lower_cost", priority: 5, active: true },
 ];
 
 export interface ScoringWeight {
@@ -29,11 +27,9 @@ export interface ScoringWeight {
 }
 
 export const defaultScoringWeights: ScoringWeight[] = [
-  { id: "engagement", label: "Engagement Likelihood", description: "Recency-weighted open/click rate per channel (7d / 30d / 90d decay)", weight: 0.40, minWeight: 0.10, maxWeight: 0.70 },
-  { id: "cap_headroom", label: "Cap Headroom", description: "Remaining daily/weekly frequency cap budget per channel", weight: 0.20, minWeight: 0.05, maxWeight: 0.40 },
-  { id: "fatigue", label: "Channel Fatigue Freshness", description: "Hours since last message on this channel (longer gap = higher score)", weight: 0.15, minWeight: 0.00, maxWeight: 0.30 },
-  { id: "message_fit", label: "Message-Type Fit", description: "How well the message content matches channel strengths", weight: 0.15, minWeight: 0.00, maxWeight: 0.30 },
-  { id: "cost", label: "Cost Efficiency", description: "Prefer lower-cost channels when scores are comparable (push/email over SMS)", weight: 0.10, minWeight: 0.00, maxWeight: 0.25 },
+  { id: "engagement", label: "Engagement Likelihood", description: "Recency-weighted open/click rate per channel (7d / 30d / 90d decay)", weight: 0.50, minWeight: 0.10, maxWeight: 0.70 },
+  { id: "cap_headroom", label: "Cap Headroom", description: "Remaining daily/weekly frequency cap budget per channel", weight: 0.30, minWeight: 0.05, maxWeight: 0.50 },
+  { id: "fatigue", label: "Channel Fatigue Freshness", description: "Hours since last message on this channel (longer gap = higher score)", weight: 0.20, minWeight: 0.00, maxWeight: 0.40 },
 ];
 
 export const DEFAULT_CHANNEL_ORDER: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
