@@ -13,17 +13,6 @@ function formatNum(n: number): string {
 
 const OPERATORS = ["equals", "not_equals", "greater_than", "less_than", "in"] as const;
 
-const PIPELINES = [
-  "Scheduled: Daily EMK",
-  "Scheduled: Daily Notifications",
-  "Scheduled: Weekly Reactivation",
-  "Trigger: cart_abandon",
-  "Trigger: booking_confirmed",
-  "Trigger: price_change",
-  "Trigger: genius_level_change",
-  "Trigger: user_signup",
-];
-
 const CHANNEL_COLORS: Record<MessageChannel, string> = {
   email: "var(--color-email, #0071c2)",
   push: "var(--color-push, #7c3aed)",
@@ -44,7 +33,6 @@ export default function AudienceEstimationCreate() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [pipeline, setPipeline] = useState("");
   const [channels, setChannels] = useState<MessageChannel[]>([]);
   const [orchestrationMode, setOrchestrationMode] = useState<OrchestrationMode>("best_channel");
   const [dedupWindow, setDedupWindow] = useState<DedupWindow>("24h");
@@ -74,7 +62,7 @@ export default function AudienceEstimationCreate() {
     setShowResults(false);
   };
 
-  const canEstimate = name.trim() && pipeline && channels.length > 0 && rules.length > 0 && rules.every(r => r.attribute && r.value);
+  const canEstimate = name.trim() && channels.length > 0 && rules.length > 0 && rules.every(r => r.attribute && r.value);
 
   const handleEstimate = () => {
     setEstimating(true);
@@ -103,24 +91,15 @@ export default function AudienceEstimationCreate() {
       {/* Section 1: Segment Information */}
       <div className="bui-box">
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Segment Information</div>
-        <div className="form-grid">
-          <div className="form-field">
-            <label className="form-label">Name *</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="e.g., summer_deals_high_value"
-              value={name}
-              onChange={e => setName(e.target.value)}
-            />
-          </div>
-          <div className="form-field">
-            <label className="form-label">Pipeline *</label>
-            <select className="form-select" value={pipeline} onChange={e => setPipeline(e.target.value)}>
-              <option value="">Select pipeline...</option>
-              {PIPELINES.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </div>
+        <div className="form-field">
+          <label className="form-label">Name *</label>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="e.g., summer_deals_high_value"
+            value={name}
+            onChange={e => setName(e.target.value)}
+          />
         </div>
         <div className="form-field" style={{ marginTop: 12 }}>
           <label className="form-label">Description</label>
