@@ -1017,3 +1017,16 @@ textarea.form-input { resize: vertical; font-family: inherit; }
   border: 1px solid var(--color-blue-200);
   border-radius: var(--radius-md);
 }
+
+/* Estimation Progress Bar Animation */
+.estimation-progress-bar {
+  height: 4px;
+  background: var(--color-blue-500);
+  border-radius: 2px;
+  animation: estimation-progress 2s ease-in-out;
+}
+@keyframes estimation-progress {
+  0% { width: 0; }
+  60% { width: 70%; }
+  100% { width: 100%; }
+}
