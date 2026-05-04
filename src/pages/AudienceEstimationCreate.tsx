@@ -36,9 +36,7 @@ export default function AudienceEstimationCreate() {
   const [description, setDescription] = useState("");
   const [channels, setChannels] = useState<MessageChannel[]>([]);
   const [orchestrationMode, setOrchestrationMode] = useState<OrchestrationMode>("best_channel");
-  const [rules, setRules] = useState<RuleRow[]>([
-    { id: 1, attribute: "genius_level", operator: "greater_than", value: "1", connector: "AND" },
-  ]);
+  const [rules, setRules] = useState<RuleRow[]>([]);
   const [showRuleMenu, setShowRuleMenu] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduling, setScheduling] = useState(false);
