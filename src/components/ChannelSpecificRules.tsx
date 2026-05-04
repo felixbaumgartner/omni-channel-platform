@@ -1,4 +1,5 @@
-import { CHANNEL_SPECIFIC_RULES, type MessageChannel, type ChannelRulesState, type ChannelSpecificRuleConfig, type ChannelSpecificRuleValue, type RuleOperator } from "../types";
+import { useState } from "react";
+import { CHANNEL_SPECIFIC_RULES, CHANNEL_LABELS, type MessageChannel, type ChannelRulesState, type ChannelSpecificRuleConfig, type ChannelSpecificRuleValue, type RuleOperator } from "../types";
 
 interface ChannelSpecificRulesProps {
   selectedChannels: MessageChannel[];
@@ -19,6 +20,16 @@ function updateRuleValue(state: ChannelRulesState, channel: MessageChannel, rule
     return { ...state, [channel]: updated };
   }
   return { ...state, [channel]: [...existing, { ruleId, value: "", ...update }] };
+}
+
+function removeRuleValue(state: ChannelRulesState, channel: MessageChannel, ruleId: string): ChannelRulesState {
+  const existing = state[channel] || [];
+  const filtered = existing.filter(r => r.ruleId !== ruleId);
+  if (filtered.length === 0) {
+    const { [channel]: _, ...rest } = state;
+    return rest;
+  }
+  return { ...state, [channel]: filtered };
 }
 
 function VersionInput({ config, ruleValue, onChange }: { config: ChannelSpecificRuleConfig; ruleValue?: ChannelSpecificRuleValue; onChange: (val: Record<string, string>) => void }) {
@@ -100,11 +111,11 @@ function MultiSelectField({ config, ruleValue, onChange }: { config: ChannelSpec
   );
 }
 
-function RuleField({ config, channel, state, onUpdate }: { config: ChannelSpecificRuleConfig; channel: MessageChannel; state: ChannelRulesState; onUpdate: (s: ChannelRulesState) => void }) {
+function RuleField({ config, channel, state, onUpdate, onRemove }: { config: ChannelSpecificRuleConfig; channel: MessageChannel; state: ChannelRulesState; onUpdate: (s: ChannelRulesState) => void; onRemove: () => void }) {
   const ruleValue = getRuleValue(state, channel, config.id);
 
   return (
-    <div className="channel-rule-field">
+    <div className="channel-rule-field tier-selection-appear">
       <span className="channel-rule-label">{config.label}</span>
       {config.fieldType === "version_input" && (
         <VersionInput config={config} ruleValue={ruleValue} onChange={val => onUpdate(updateRuleValue(state, channel, config.id, { value: val }))} />
@@ -118,36 +129,89 @@ function RuleField({ config, channel, state, onUpdate }: { config: ChannelSpecif
       {config.fieldType === "multi_select" && (
         <MultiSelectField config={config} ruleValue={ruleValue} onChange={val => onUpdate(updateRuleValue(state, channel, config.id, { value: val }))} />
       )}
+      <button className="rule-remove-btn" onClick={onRemove} title="Remove rule">&times;</button>
     </div>
   );
 }
 
 export default function ChannelSpecificRules({ selectedChannels, channelRulesState, onChannelRulesChange }: ChannelSpecificRulesProps) {
+  const [openMenuChannel, setOpenMenuChannel] = useState<MessageChannel | null>(null);
   const activeGroups = CHANNEL_SPECIFIC_RULES.filter(g => selectedChannels.includes(g.channel));
 
   if (activeGroups.length === 0) return null;
 
+  function getAddedRuleIds(channel: MessageChannel): string[] {
+    return (channelRulesState[channel] || []).map(r => r.ruleId);
+  }
+
+  function addRule(channel: MessageChannel, ruleId: string) {
+    const updated = updateRuleValue(channelRulesState, channel, ruleId, { value: "" });
+    onChannelRulesChange(updated);
+    setOpenMenuChannel(null);
+  }
+
+  function removeRule(channel: MessageChannel, ruleId: string) {
+    onChannelRulesChange(removeRuleValue(channelRulesState, channel, ruleId));
+  }
+
   return (
     <div className="channel-rules-container">
-      {activeGroups.map(group => (
-        <div key={group.channel} className={`channel-rules-group channel-rules-group--${group.channel} tier-selection-appear`}>
-          <div className="channel-rules-header">
-            <span className="channel-rules-icon">{group.icon}</span>
-            <span className="channel-rules-badge">{group.badgeLabel}</span>
+      {activeGroups.map(group => {
+        const addedIds = getAddedRuleIds(group.channel);
+        const addedRules = group.rules.filter(r => addedIds.includes(r.id));
+        const availableRules = group.rules.filter(r => !addedIds.includes(r.id));
+        const channelName = CHANNEL_LABELS[group.channel];
+
+        return (
+          <div key={group.channel} className={`channel-rules-group channel-rules-group--${group.channel} tier-selection-appear`}>
+            <div className="channel-rules-header">
+              <span className="channel-rules-icon">{group.icon}</span>
+              <span className="channel-rules-hint">
+                There may be <strong>{channelName.toLowerCase()}-specific rules</strong> to configure for this channel.
+              </span>
+            </div>
+
+            {addedRules.length > 0 && (
+              <div className="channel-rules-body">
+                {addedRules.map(rule => (
+                  <RuleField
+                    key={rule.id}
+                    config={rule}
+                    channel={group.channel}
+                    state={channelRulesState}
+                    onUpdate={onChannelRulesChange}
+                    onRemove={() => removeRule(group.channel, rule.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div style={{ position: "relative", marginTop: addedRules.length > 0 ? 10 : 0 }}>
+              <button
+                className="btn btn-secondary"
+                style={{ fontSize: 13 }}
+                onClick={() => setOpenMenuChannel(openMenuChannel === group.channel ? null : group.channel)}
+                disabled={availableRules.length === 0}
+              >
+                + Add {channelName} Rule
+              </button>
+              {availableRules.length === 0 && (
+                <span className="text-muted" style={{ fontSize: 12, marginLeft: 8 }}>All rules added</span>
+              )}
+              {openMenuChannel === group.channel && availableRules.length > 0 && (
+                <div className="channel-rules-menu tier-selection-appear">
+                  {availableRules.map(rule => (
+                    <div key={rule.id} className="channel-rules-menu-item" onClick={() => addRule(group.channel, rule.id)}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{rule.label}</div>
+                      {rule.description && <div className="text-muted" style={{ fontSize: 12 }}>{rule.description}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="channel-rules-body">
-            {group.rules.map(rule => (
-              <RuleField
-                key={rule.id}
-                config={rule}
-                channel={group.channel}
-                state={channelRulesState}
-                onUpdate={onChannelRulesChange}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

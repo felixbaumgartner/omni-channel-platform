@@ -210,7 +210,6 @@ export interface ChannelSpecificRuleConfig {
 export interface ChannelRuleGroupConfig {
   channel: MessageChannel;
   icon: string;
-  badgeLabel: string;
   rules: ChannelSpecificRuleConfig[];
 }
 
@@ -226,7 +225,6 @@ export const CHANNEL_SPECIFIC_RULES: ChannelRuleGroupConfig[] = [
   {
     channel: "push",
     icon: "🔔",
-    badgeLabel: "Required for Push",
     rules: [
       {
         id: "min_app_version",
