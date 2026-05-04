@@ -52,6 +52,7 @@ export default function JourneyBuilder() {
   const [channelExperiments, setChannelExperiments] = useState<Record<string, { enabled: boolean; tag: string; variants: string[] }>>({});
   const [journeyRules, setJourneyRules] = useState<EligibilityRule[]>([]);
   const [channelRules, setChannelRules] = useState<ChannelRulesState>({});
+  const [showJourneyRuleMenu, setShowJourneyRuleMenu] = useState(false);
 
   function toggleChannelExperiment(ch: MessageChannel) {
     setChannelExperiments(prev => {
@@ -84,8 +85,9 @@ export default function JourneyBuilder() {
     });
   }
 
-  function addJourneyRule() {
-    setJourneyRules(prev => [...prev, { id: `r${Date.now()}`, attribute: "genius_level", operator: "greater_than" as RuleOperator, value: 1, connector: "AND" }]);
+  function addJourneyRule(attribute: string) {
+    setJourneyRules(prev => [...prev, { id: `r${Date.now()}`, attribute, operator: "equals" as RuleOperator, value: "", connector: "AND" }]);
+    setShowJourneyRuleMenu(false);
   }
 
   function removeJourneyRule(id: string) {
@@ -388,7 +390,18 @@ export default function JourneyBuilder() {
                   </div>
                 ))}
               </div>
-              <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={addJourneyRule}>+ Add Rule</button>
+              <div style={{ position: "relative", marginTop: 12 }}>
+                <button className="btn btn-secondary" onClick={() => setShowJourneyRuleMenu(!showJourneyRuleMenu)}>+ Add Rule</button>
+                {showJourneyRuleMenu && (
+                  <div className="channel-rules-menu tier-selection-appear">
+                    {RULE_ATTRIBUTES.map(a => (
+                      <div key={a} className="channel-rules-menu-item" onClick={() => addJourneyRule(a)}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <ChannelSpecificRules

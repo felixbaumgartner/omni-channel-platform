@@ -27,6 +27,7 @@ export default function CampaignCreate() {
   const [purposeTag, setPurposeTag] = useState("");
   const [rules, setRules] = useState<EligibilityRule[]>([]);
   const [channelRules, setChannelRules] = useState<ChannelRulesState>({});
+  const [showRuleMenu, setShowRuleMenu] = useState(false);
   const [affiliateId, setAffiliateId] = useState("");
   const [parentAffiliateId, setParentAffiliateId] = useState("");
 
@@ -59,8 +60,9 @@ export default function CampaignCreate() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  function addRule() {
-    setRules(prev => [...prev, { id: `r${Date.now()}`, attribute: "genius_level", operator: "greater_than" as RuleOperator, value: 1, connector: "AND" }]);
+  function addRule(attribute: string) {
+    setRules(prev => [...prev, { id: `r${Date.now()}`, attribute, operator: "equals" as RuleOperator, value: "", connector: "AND" }]);
+    setShowRuleMenu(false);
   }
 
   function removeRule(id: string) {
@@ -408,7 +410,18 @@ export default function CampaignCreate() {
                   </div>
                 ))}
               </div>
-              <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={addRule}>+ Add Rule</button>
+              <div style={{ position: "relative", marginTop: 12 }}>
+                <button className="btn btn-secondary" onClick={() => setShowRuleMenu(!showRuleMenu)}>+ Add Rule</button>
+                {showRuleMenu && (
+                  <div className="channel-rules-menu tier-selection-appear">
+                    {RULE_ATTRIBUTES.map(a => (
+                      <div key={a} className="channel-rules-menu-item" onClick={() => addRule(a)}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               {rules.length > 0 && (
                 <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
                   Preview: {rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute} ${r.operator.replace("_", " ")} ${r.value}`).join("")}
