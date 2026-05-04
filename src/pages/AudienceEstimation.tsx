@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { audienceEstimationData, mockEligibilityRules, channelOverlap } from "../data/mockData";
+import { audienceEstimationData, mockEligibilityRules } from "../data/mockData";
 import { CHANNEL_ICONS, type MessageChannel, type OrchestrationMode } from "../types";
 
 type DedupWindow = "12h" | "24h" | "48h" | "disabled";
@@ -182,66 +182,6 @@ export default function AudienceEstimation() {
         </div>
       </div>
 
-      {/* Comparison: Old vs New */}
-      <div className="bui-box">
-        <div className="section-header">
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>Single-Channel vs Omni-Channel Estimation</div>
-            <div className="text-muted">How the same audience estimate changes with omni-channel orchestration</div>
-          </div>
-        </div>
-        <div className="estimation-comparison-grid">
-          <div className="estimation-comparison-card estimation-comparison-card--old">
-            <div className="estimation-comparison-badge">Single-Channel (Legacy)</div>
-            <div className="estimation-comparison-value">{formatNum(data.singleChannelComparison.emailOnly.audience)}</div>
-            <div className="estimation-comparison-label">will receive this email</div>
-            <div className="estimation-comparison-details">
-              <div>1 channel (email only)</div>
-              <div>No cross-channel reach</div>
-              <div>No deduplication needed</div>
-              <div>No routing optimization</div>
-            </div>
-          </div>
-          <div className="estimation-comparison-arrow">vs</div>
-          <div className="estimation-comparison-card estimation-comparison-card--new">
-            <div className="estimation-comparison-badge">Omni-Channel</div>
-            <div className="estimation-comparison-value">{formatNum(data.singleChannelComparison.omniChannel.uniqueReach)}</div>
-            <div className="estimation-comparison-label">unique reach across {data.singleChannelComparison.omniChannel.channels} channels</div>
-            <div className="estimation-comparison-details">
-              <div>{formatNum(data.singleChannelComparison.omniChannel.totalSends)} total messages</div>
-              <div>{formatNum(data.singleChannelComparison.omniChannel.dedupSavings)} dedup savings</div>
-              <div>+{data.singleChannelComparison.omniChannel.reachIncrease}% reach increase</div>
-              <div>Intelligent channel routing</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Reachability Tiers */}
-      <div className="bui-box">
-        <div className="section-header">
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>Reachability Tier Breakdown</div>
-            <div className="text-muted">How the audience distributes across channel reachability tiers</div>
-          </div>
-        </div>
-        <div className="reachability-grid">
-          {channelOverlap.reachabilityTiers.map(t => (
-            <div key={t.channels} className="reachability-card">
-              <div className="reachability-channels">{t.channels}</div>
-              <div className="reachability-label">channel{t.channels > 1 ? "s" : ""}</div>
-              <div className="reachability-pct">{t.pct}%</div>
-              <div className="reachability-engagement">{formatNum(t.subscribers)}</div>
-              <div style={{ marginTop: 8 }}>
-                <div style={{ height: 4, background: "var(--color-gray-100)", borderRadius: 2 }}>
-                  <div style={{ height: 4, width: `${t.avgEngagement}%`, background: t.channels >= 3 ? "var(--color-green-600)" : "var(--color-blue-500)", borderRadius: 2 }} />
-                </div>
-                <div style={{ fontSize: 10, color: "var(--color-gray-500)", marginTop: 2 }}>{t.avgEngagement}% avg engagement</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
