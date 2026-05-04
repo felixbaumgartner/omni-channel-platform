@@ -191,159 +191,102 @@ export default function AudienceEstimationCreate() {
 
   // ─── STEP: Estimation Results ───
   if (step === "estimated") {
+    const msgsPerSub = (effectiveSends / modeData.uniqueReach).toFixed(1);
+
     return (
       <div className="app-page">
         <div className="page-header">
           <div className="page-header-main">
-            <h1 className="page-title">Estimation Results</h1>
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <span className="badge badge-constructive">Done</span>
-              <span className={`badge-orchestration badge-orchestration--${orchestrationMode}`}>
-                {ORCHESTRATION_LABELS[orchestrationMode]}
-              </span>
-            </div>
+            <h1 className="page-title">{name}</h1>
+            <p className="page-subtitle">Audience estimation completed</p>
           </div>
           <div className="page-header-actions">
             <button className="btn btn-secondary" onClick={() => navigate("/audience-estimation")}>Back to Segments</button>
           </div>
         </div>
 
-        {/* Segment Info */}
+        {/* Result Summary Card */}
         <div className="bui-box">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>{name}</div>
-              {description && <div className="text-muted" style={{ marginTop: 4 }}>{description}</div>}
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {channels.map(ch => (
-                <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
-              ))}
-            </div>
-          </div>
+          <table className="data-table" style={{ fontSize: 14 }}>
+            <tbody>
+              <tr>
+                <td style={{ fontWeight: 600, width: 200 }}>Status</td>
+                <td><span className="badge badge-constructive">Done</span></td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 600 }}>Delivery Mode</td>
+                <td>
+                  <span className={`badge-orchestration badge-orchestration--${orchestrationMode}`}>
+                    {ORCHESTRATION_LABELS[orchestrationMode]}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 600 }}>Channels</td>
+                <td>{channels.map(ch => `${CHANNEL_ICONS[ch]} ${CHANNEL_LABELS[ch]}`).join("  ")}</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 600 }}>Eligibility Rules</td>
+                <td style={{ fontSize: 13 }}>{rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute.replace(/_/g, " ")} ${r.operator.replace(/_/g, " ")} ${r.value}`).join("")}</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 600 }}>Estimated Audience</td>
+                <td style={{ fontSize: 20, fontWeight: 700 }}>{formatNum(modeData.uniqueReach)} subscribers</td>
+              </tr>
+              {orchestrationMode === "multi_channel" && (
+                <>
+                  <tr>
+                    <td style={{ fontWeight: 600 }}>Total Messages</td>
+                    <td style={{ fontSize: 16, fontWeight: 600 }}>{formatNum(effectiveSends)}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ fontWeight: 600 }}>Messages per Subscriber</td>
+                    <td>{msgsPerSub} avg</td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
         </div>
 
-        {/* Best Channel Results */}
-        {orchestrationMode === "best_channel" && (
-          <>
-            <div className="kpi-grid">
-              <div className="kpi-card">
-                <div className="kpi-label">Unique Reach</div>
-                <div className="kpi-value">{formatNum(modeData.uniqueReach)}</div>
-                <div className="kpi-sub">subscribers will be reached</div>
-              </div>
-              <div className="kpi-card">
-                <div className="kpi-label">Total Messages</div>
-                <div className="kpi-value">{formatNum(modeData.uniqueReach)}</div>
-                <div className="kpi-sub">1 message per subscriber</div>
-              </div>
-              <div className="kpi-card">
-                <div className="kpi-label">Eligible Pool</div>
-                <div className="kpi-value">{formatNum(audienceEstimationData.baseEligible)}</div>
-                <div className="kpi-sub">{((modeData.uniqueReach / audienceEstimationData.baseEligible) * 100).toFixed(0)}% reachable</div>
-              </div>
-            </div>
-
-            <div className="bui-box">
-              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Predicted Channel Routing</div>
-              <p className="text-muted mb-16">The system will select one channel per subscriber based on engagement scoring. Each person receives exactly 1 message.</p>
-
-              <div className="estimation-stacked-bar" style={{ marginBottom: 16 }}>
-                {channels.map(ch => {
-                  const pct = modeData.channelSplit[ch as keyof typeof modeData.channelSplit] || 0;
-                  return <div key={ch} className="estimation-bar-segment" style={{ width: `${pct}%`, background: CHANNEL_COLORS[ch] }} />;
-                })}
-              </div>
-
-              <div className="estimation-channel-reach-grid">
-                {channels.map(ch => {
-                  const pct = modeData.channelSplit[ch as keyof typeof modeData.channelSplit] || 0;
-                  const count = Math.round(modeData.uniqueReach * pct / 100);
-                  return (
-                    <div key={ch} className="estimation-channel-reach-card">
-                      <div className="estimation-channel-reach-icon">{CHANNEL_ICONS[ch]}</div>
-                      <div className="estimation-channel-reach-name">{CHANNEL_LABELS[ch]}</div>
-                      <div className="estimation-channel-reach-value">{formatNum(count)}</div>
-                      <div className="estimation-channel-reach-pct">{pct}% of audience</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="info-banner">
-              <span className="info-banner-icon">&#9889;</span>
-              <span>
-                <strong>Best Channel routing:</strong> Each subscriber receives exactly 1 message on their highest-engagement channel.
-                The routing engine uses recency-weighted click rate to determine the optimal channel per subscriber.
-              </span>
-            </div>
-          </>
-        )}
-
-        {/* Multi-Channel Results */}
-        {orchestrationMode === "multi_channel" && (
-          <>
-            <div className="kpi-grid">
-              <div className="kpi-card">
-                <div className="kpi-label">Unique Reach</div>
-                <div className="kpi-value">{formatNum(modeData.uniqueReach)}</div>
-                <div className="kpi-sub">distinct subscribers</div>
-              </div>
-              <div className="kpi-card">
-                <div className="kpi-label">Total Messages</div>
-                <div className="kpi-value">{formatNum(effectiveSends)}</div>
-                <div className="kpi-sub">across {channels.length} channels</div>
-              </div>
-              <div className="kpi-card">
-                <div className="kpi-label">Msgs / Subscriber</div>
-                <div className="kpi-value">{(effectiveSends / modeData.uniqueReach).toFixed(1)}</div>
-                <div className="kpi-sub">average messages per person</div>
-              </div>
-              <div className="kpi-card">
-                <div className="kpi-label">Eligible Pool</div>
-                <div className="kpi-value">{formatNum(audienceEstimationData.baseEligible)}</div>
-                <div className="kpi-sub">{((modeData.uniqueReach / audienceEstimationData.baseEligible) * 100).toFixed(0)}% reachable</div>
-              </div>
-            </div>
-
-            <div className="bui-box">
-              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Per-Channel Volume</div>
-              <p className="text-muted mb-16">All selected channels fire for every eligible subscriber. Volume per channel depends on channel-specific reachability (consent + deliverability).</p>
-
-              <div className="estimation-stacked-bar" style={{ marginBottom: 16 }}>
-                {channels.map(ch => {
-                  const pct = modeData.channelSplit[ch as keyof typeof modeData.channelSplit] || 0;
-                  return <div key={ch} className="estimation-bar-segment" style={{ width: `${pct}%`, background: CHANNEL_COLORS[ch] }} />;
-                })}
-              </div>
-
-              <div className="estimation-channel-reach-grid">
-                {channels.map(ch => {
-                  const pct = modeData.channelSplit[ch as keyof typeof modeData.channelSplit] || 0;
-                  const count = Math.round(effectiveSends * pct / 100);
-                  const reachability = audienceEstimationData.channelReachability[ch as keyof typeof audienceEstimationData.channelReachability];
-                  return (
-                    <div key={ch} className="estimation-channel-reach-card">
-                      <div className="estimation-channel-reach-icon">{CHANNEL_ICONS[ch]}</div>
-                      <div className="estimation-channel-reach-name">{CHANNEL_LABELS[ch]}</div>
-                      <div className="estimation-channel-reach-value">{formatNum(count)}</div>
-                      <div className="estimation-channel-reach-pct">{reachability.pct}% reachable</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="info-banner">
-              <span className="info-banner-icon">&#128279;</span>
-              <span>
-                <strong>Multi-Channel delivery:</strong> Every eligible subscriber receives a message on ALL channels they are reachable on.
-                Total messages ({formatNum(effectiveSends)}) exceeds unique reach ({formatNum(modeData.uniqueReach)}) because subscribers receive {(effectiveSends / modeData.uniqueReach).toFixed(1)} messages on average.
-              </span>
-            </div>
-          </>
-        )}
+        {/* Per-Channel Breakdown */}
+        <div className="bui-box">
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>
+            {orchestrationMode === "best_channel" ? "Channel Routing Breakdown" : "Per-Channel Send Volume"}
+          </div>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Channel</th>
+                <th style={{ textAlign: "right" }}>
+                  {orchestrationMode === "best_channel" ? "Subscribers Routed" : "Messages Sent"}
+                </th>
+                <th style={{ textAlign: "right" }}>% of Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {channels.map(ch => {
+                const pct = modeData.channelSplit[ch as keyof typeof modeData.channelSplit] || 0;
+                const count = orchestrationMode === "best_channel"
+                  ? Math.round(modeData.uniqueReach * pct / 100)
+                  : Math.round(effectiveSends * pct / 100);
+                return (
+                  <tr key={ch}>
+                    <td>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</td>
+                    <td style={{ textAlign: "right" }}>{formatNum(count)}</td>
+                    <td style={{ textAlign: "right" }}>{pct}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <div className="text-muted" style={{ marginTop: 12, fontSize: 12 }}>
+            {orchestrationMode === "best_channel"
+              ? "Each subscriber receives exactly 1 message. The routing engine selects the channel with the highest engagement score per subscriber."
+              : "Each subscriber receives a message on every channel they are reachable on. Total messages exceed unique reach because subscribers are contacted on multiple channels."
+            }
+          </div>
+        </div>
       </div>
     );
   }
