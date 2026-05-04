@@ -511,9 +511,6 @@ export default function CampaignCreate() {
                 <input className="form-input" type="number" placeholder="Required for publish" value={parentAffiliateId} onChange={e => setParentAffiliateId(e.target.value)} />
               </div>
             </div>
-            <div className="alert alert-info" style={{ marginTop: 8 }}>
-              <strong>Consent Summary:</strong> {selectedChannels.length > 0 ? `${selectedChannels.length} channel(s) selected` : bestChannelContentEnabled ? "All 4 channels (system decides)" : "No channels selected (system decides)"}. Subscriber consent will be validated per-channel at send time via Janet subscription API.
-            </div>
           </div>
 
           {/* Bottom Save */}
