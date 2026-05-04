@@ -80,6 +80,14 @@ body {
 .sidebar-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .sidebar-dot--green { background: #22c55e; }
 
+/* ── Phase Selector ── */
+.phase-selector { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--sidebar-active); }
+.phase-selector-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.6; margin-bottom: 8px; color: #fff; }
+.phase-selector-pills { display: flex; gap: 4px; }
+.phase-pill { flex: 1; padding: 6px 0; border: 1px solid var(--sidebar-active); border-radius: var(--radius-sm); background: transparent; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; font-family: var(--font-family); }
+.phase-pill:hover { background: var(--sidebar-active); }
+.phase-pill--active { background: var(--color-blue-500); border-color: var(--color-blue-500); }
+
 /* ── Content ── */
 
 .app-layout-content { flex-grow: 1; z-index: 10; overflow: auto; display: flex; flex-direction: column; }

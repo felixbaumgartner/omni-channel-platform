@@ -1,4 +1,5 @@
 import { Routes, Route, NavLink, Navigate } from "react-router-dom";
+import { PhaseProvider, usePhase, type Phase } from "./context/PhaseContext";
 import Dashboard from "./pages/Dashboard";
 import CampaignList from "./pages/CampaignList";
 import CampaignCreate from "./pages/CampaignCreate";
@@ -17,8 +18,35 @@ import AudienceEstimationCreate from "./pages/AudienceEstimationCreate";
 
 const nav = ({ isActive }: { isActive: boolean }) => (isActive ? "active" : "");
 
+const PHASE_OPTIONS: { value: Phase; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "phase1", label: "Phase 1" },
+  { value: "phase2", label: "Phase 2" },
+];
+
+function PhaseSelector() {
+  const { phase, setPhase } = usePhase();
+  return (
+    <div className="phase-selector">
+      <div className="phase-selector-label">Development Phase</div>
+      <div className="phase-selector-pills">
+        {PHASE_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            className={`phase-pill ${phase === opt.value ? "phase-pill--active" : ""}`}
+            onClick={() => setPhase(opt.value)}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
+    <PhaseProvider>
     <div className="app-layout">
       {/* Header */}
       <div className="app-layout-header">
@@ -75,6 +103,7 @@ export default function App() {
             </div>
           </div>
 
+          <PhaseSelector />
         </div>
 
         {/* Main */}
@@ -100,5 +129,6 @@ export default function App() {
         </div>
       </div>
     </div>
+    </PhaseProvider>
   );
 }

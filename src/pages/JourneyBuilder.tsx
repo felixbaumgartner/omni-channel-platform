@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, RULE_ATTRIBUTES, type MessageChannel, type JourneyStepType, type EligibilityRule, type RuleOperator, type ChannelRulesState } from "../types";
 import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, type PreferenceRule } from "../data/mockData";
 import ChannelSpecificRules from "../components/ChannelSpecificRules";
+import { usePhase } from "../context/PhaseContext";
 
 interface Step {
   id: string;
@@ -27,6 +28,7 @@ function makeId() { return "step_" + nextId++; }
 
 export default function JourneyBuilder() {
   const navigate = useNavigate();
+  const { showBestChannel } = usePhase();
   const [journeyName, setJourneyName] = useState("");
   const [description, setDescription] = useState("");
   const [steps, setSteps] = useState<Step[]>([
@@ -224,6 +226,7 @@ export default function JourneyBuilder() {
 
             <div style={{ marginBottom: 12 }}>
               <div className="journey-settings-label" style={{ marginBottom: 6 }}>Entry Channel</div>
+              {showBestChannel && (
               <div className="info-banner" style={{ marginBottom: 8, flexDirection: "column", alignItems: "flex-start", fontSize: 11 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span className="info-banner-icon">&#9889;</span>
@@ -270,7 +273,10 @@ export default function JourneyBuilder() {
                   </div>
                 </div>
               </div>
+              )}
+              {showBestChannel && (
               <div className="text-muted" style={{ textAlign: "center", margin: "4px 0 8px", fontSize: 11, fontStyle: "italic" }}>&mdash; or select specific channels below &mdash;</div>
+              )}
               <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
                 {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
                   <div
@@ -296,7 +302,7 @@ export default function JourneyBuilder() {
                   <span><strong>Fixed Channel</strong> &mdash; only {CHANNEL_LABELS[entryChannel[0]]}. No routing or fallback needed.</span>
                 </div>
               )}
-              {entryChannel.length >= 2 && (
+              {showBestChannel && entryChannel.length >= 2 && (
                 <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                   <span className="info-banner-icon">&#10024;</span>
                   <span><strong>Best Channel</strong> &mdash; rule-based routing selects from {entryChannel.length} channels. Fallback order applies when no signal.</span>
@@ -451,7 +457,7 @@ export default function JourneyBuilder() {
                 <button className="journey-add-btn" onClick={() => setShowAddMenu(!showAddMenu)}>+ Add Step</button>
                 {showAddMenu && (
                   <div className="journey-add-menu tier-selection-appear">
-                    {STEP_OPTIONS.map(opt => (
+                    {STEP_OPTIONS.filter(opt => showBestChannel || opt.type !== "best_channel").map(opt => (
                       <div key={opt.type} className="journey-add-option" onClick={() => addStep(opt.type)}>
                         <span className="journey-add-option-icon">{opt.icon}</span>
                         <div>

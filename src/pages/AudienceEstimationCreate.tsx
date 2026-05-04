@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { audienceEstimationData } from "../data/mockData";
 import { CHANNEL_ICONS, CHANNEL_LABELS, ORCHESTRATION_LABELS, RULE_ATTRIBUTES, type MessageChannel, type OrchestrationMode } from "../types";
+import { usePhase } from "../context/PhaseContext";
 
 type Step = "form" | "saved" | "scheduling" | "estimated";
 
@@ -30,6 +31,7 @@ interface RuleRow {
 
 export default function AudienceEstimationCreate() {
   const navigate = useNavigate();
+  const { showBestChannel } = usePhase();
 
   const [step, setStep] = useState<Step>("form");
   const [name, setName] = useState("");
@@ -329,6 +331,7 @@ export default function AudienceEstimationCreate() {
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Delivery Mode</div>
           <p className="text-muted mb-16">Choose how messages are routed across the selected channels.</p>
           <div className="radio-card-group">
+            {showBestChannel && (
             <div className={`radio-card ${orchestrationMode === "best_channel" ? "selected" : ""}`} onClick={() => setOrchestrationMode("best_channel")}>
               <div className="radio-card-header">
                 <div className="radio-card-radio" />
@@ -338,6 +341,7 @@ export default function AudienceEstimationCreate() {
                 Estimates reach assuming the system picks one optimal channel per subscriber based on engagement scores. One message per person.
               </div>
             </div>
+            )}
             <div className={`radio-card ${orchestrationMode === "multi_channel" ? "selected" : ""}`} onClick={() => setOrchestrationMode("multi_channel")}>
               <div className="radio-card-header">
                 <div className="radio-card-radio" />

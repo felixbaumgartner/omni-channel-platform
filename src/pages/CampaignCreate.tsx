@@ -4,12 +4,14 @@ import { CHANNEL_LABELS, CHANNEL_ICONS, FUNNEL_LABELS, VERTICAL_LABELS, RULE_ATT
 import ClassificationQuestionnaire, { type Classification } from "../components/ClassificationQuestionnaire";
 import BaseContentSection from "../components/BaseContentSection";
 import ChannelSpecificRules from "../components/ChannelSpecificRules";
+import { usePhase } from "../context/PhaseContext";
 import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, mockTriggers, type PreferenceRule } from "../data/mockData";
 
 type DeliveryMode = "best_channel" | "multi_channel";
 
 export default function CampaignCreate() {
   const navigate = useNavigate();
+  const { showBestChannel } = usePhase();
   const [classification, setClassification] = useState<Classification | null>(null);
   const [campaignName, setCampaignName] = useState("");
   const [description, setDescription] = useState("");
@@ -245,6 +247,7 @@ export default function CampaignCreate() {
           <div className="bui-box">
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Selection</div>
             <p className="text-muted mb-16">Select channels for this campaign. A single campaign can target all channels.</p>
+            {showBestChannel && (
             <div className="info-banner" style={{ marginBottom: 16, flexDirection: "column", alignItems: "flex-start" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <span className="info-banner-icon">&#9889;</span>
@@ -286,7 +289,10 @@ export default function CampaignCreate() {
                 </div>
               </div>
             </div>
+            )}
+            {showBestChannel && (
             <div className="text-muted" style={{ textAlign: "center", margin: "8px 0 16px", fontSize: 13, fontStyle: "italic" }}>&mdash; or select specific channels below &mdash;</div>
+            )}
             <div className="channel-selector-grid">
               {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
                 <div key={ch} className={`channel-selector-card ${selectedChannels.includes(ch) ? "selected" : ""}`} onClick={() => toggleChannel(ch)}>
@@ -320,7 +326,7 @@ export default function CampaignCreate() {
           </div>
 
           {/* Delivery Mode (P0: Campaign Delivery Mode) */}
-          {selectedChannels.length > 1 && (
+          {showBestChannel && selectedChannels.length > 1 && (
             <div className="bui-box tier-selection-appear">
               <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Delivery Mode</div>
               <p className="text-muted mb-16">Choose how messages are routed across the selected channels.</p>
