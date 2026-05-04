@@ -19,7 +19,6 @@ export default function Dashboard() {
   const activeJourneys = mockJourneys.filter(j => j.status === "Active");
   const totalSent = channelMetrics.reduce((s, m) => s + m.sent, 0);
   const totalDelivered = channelMetrics.reduce((s, m) => s + m.delivered, 0);
-  const avgOpenRate = channelMetrics.reduce((s, m) => s + m.openRate, 0) / channelMetrics.length;
   const avgClickRate = channelMetrics.filter(m => m.clickRate > 0).reduce((s, m) => s + m.clickRate, 0) / channelMetrics.filter(m => m.clickRate > 0).length;
 
   return (
@@ -65,11 +64,6 @@ export default function Dashboard() {
           <div className="kpi-label">Delivery Rate</div>
           <div className="kpi-value">{((totalDelivered / totalSent) * 100).toFixed(1)}%</div>
           <div className="kpi-sub">{formatNum(totalDelivered)} delivered</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-label">Avg Open Rate</div>
-          <div className="kpi-value">{avgOpenRate.toFixed(1)}%</div>
-          <div className="kpi-sub">across channels</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Avg Click Rate</div>
@@ -124,10 +118,6 @@ export default function Dashboard() {
                   <div className="ucg-card-metric-label">Unique Reach</div>
                 </div>
                 <div className="ucg-card-metric">
-                  <div className="ucg-card-metric-value">{g.aggregateOpenRate}%</div>
-                  <div className="ucg-card-metric-label">Open Rate</div>
-                </div>
-                <div className="ucg-card-metric">
                   <div className="ucg-card-metric-value">{g.aggregateClickRate}%</div>
                   <div className="ucg-card-metric-label">Click Rate</div>
                 </div>
@@ -165,17 +155,12 @@ export default function Dashboard() {
                   <span className="channel-stat-label">Delivered</span>
                 </div>
                 <div className="channel-stat">
-                  <span className="channel-stat-value">{m.openRate}%</span>
-                  <span className="channel-stat-label">Opened</span>
-                </div>
-                <div className="channel-stat">
                   <span className="channel-stat-value">{m.clickRate > 0 ? m.clickRate + "%" : "N/A"}</span>
                   <span className="channel-stat-label">Clicked</span>
                 </div>
               </div>
               <div className="channel-bar-container">
                 <div className="channel-bar channel-bar--delivered" style={{ width: `${m.deliveryRate}%` }} />
-                <div className="channel-bar channel-bar--opened" style={{ width: `${m.openRate}%` }} />
                 <div className="channel-bar channel-bar--clicked" style={{ width: `${m.clickRate}%` }} />
               </div>
             </div>
