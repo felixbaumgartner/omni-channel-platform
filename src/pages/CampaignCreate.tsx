@@ -4,7 +4,7 @@ import { CHANNEL_LABELS, CHANNEL_ICONS, FUNNEL_LABELS, VERTICAL_LABELS, RULE_ATT
 import ClassificationQuestionnaire, { type Classification } from "../components/ClassificationQuestionnaire";
 import BaseContentSection from "../components/BaseContentSection";
 import ChannelSpecificRules from "../components/ChannelSpecificRules";
-import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, type PreferenceRule } from "../data/mockData";
+import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, mockTriggers, type PreferenceRule } from "../data/mockData";
 
 type DeliveryMode = "best_channel" | "multi_channel";
 
@@ -30,6 +30,8 @@ export default function CampaignCreate() {
   const [showRuleMenu, setShowRuleMenu] = useState(false);
   const [affiliateId, setAffiliateId] = useState("");
   const [parentAffiliateId, setParentAffiliateId] = useState("");
+  const [activationMethod, setActivationMethod] = useState<"scheduled" | "trigger">("scheduled");
+  const [selectedTriggerId, setSelectedTriggerId] = useState<number | null>(null);
 
   const isMarketingOrNonMarketing = classification && (classification.purpose === "marketing" || (classification.purpose === "non_marketing" && !classification.subPurpose));
   const isTransactional = classification?.subPurpose === "transactional";
@@ -181,6 +183,61 @@ export default function CampaignCreate() {
                 <label className="form-label">Purpose Tag</label>
                 <input className="form-input" placeholder="e.g., deal_discovery" value={purposeTag} onChange={e => setPurposeTag(e.target.value)} />
               </div>
+            </div>
+
+            {/* Activation Method */}
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid var(--color-gray-100)" }}>
+              <label className="form-label" style={{ marginBottom: 8 }}>Activation Method</label>
+              <div className="radio-card-group">
+                <div className={`radio-card ${activationMethod === "scheduled" ? "selected" : ""}`} onClick={() => { setActivationMethod("scheduled"); setSelectedTriggerId(null); }}>
+                  <div className="radio-card-header">
+                    <div className="radio-card-radio" />
+                    <div className="radio-card-title">Scheduled Run</div>
+                  </div>
+                  <div className="radio-card-description">
+                    Campaign runs on a recurring schedule (e.g., daily batch send).
+                  </div>
+                </div>
+                <div className={`radio-card ${activationMethod === "trigger" ? "selected" : ""}`} onClick={() => setActivationMethod("trigger")}>
+                  <div className="radio-card-header">
+                    <div className="radio-card-radio" />
+                    <div className="radio-card-title">Message Trigger</div>
+                  </div>
+                  <div className="radio-card-description">
+                    Campaign fires when a trigger event occurs in real time.
+                  </div>
+                </div>
+              </div>
+
+              {activationMethod === "trigger" && (
+                <div className="tier-selection-appear" style={{ marginTop: 12 }}>
+                  <label className="form-label">Select Trigger</label>
+                  <select
+                    className="form-select"
+                    value={selectedTriggerId ?? ""}
+                    onChange={e => setSelectedTriggerId(e.target.value ? Number(e.target.value) : null)}
+                  >
+                    <option value="">Choose a trigger...</option>
+                    {mockTriggers.filter(t => t.status === "Live").map(t => (
+                      <option key={t.id} value={t.id}>{t.name} ({t.inputTopic})</option>
+                    ))}
+                  </select>
+                  {selectedTriggerId && (() => {
+                    const trigger = mockTriggers.find(t => t.id === selectedTriggerId);
+                    if (!trigger) return null;
+                    return (
+                      <div className="tier-selection-appear" style={{ marginTop: 12, padding: 12, background: "var(--color-gray-50)", borderRadius: "var(--radius-sm)", fontSize: 13 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                          <div><span className="text-muted">Input Topic:</span><br/><strong>{trigger.inputTopic}</strong></div>
+                          <div><span className="text-muted">Daily Volume:</span><br/><strong>{(trigger.dailyVolume / 1000).toFixed(0)}K</strong></div>
+                          <div><span className="text-muted">Type:</span><br/><strong>{trigger.triggerType}</strong></div>
+                        </div>
+                        <div style={{ marginTop: 8 }}><span className="text-muted">Rule:</span> <code style={{ fontSize: 12 }}>{trigger.ruleExpression}</code></div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           </div>
 
