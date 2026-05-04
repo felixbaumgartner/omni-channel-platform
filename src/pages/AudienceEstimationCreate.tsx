@@ -244,9 +244,7 @@ export default function AudienceEstimationCreate() {
             <thead>
               <tr>
                 <th>Channel</th>
-                <th style={{ textAlign: "right" }}>
-                  {orchestrationMode === "best_channel" ? "Subscribers Routed" : "Messages Sent"}
-                </th>
+                <th style={{ textAlign: "right" }}>Audience Size</th>
               </tr>
             </thead>
             <tbody>
@@ -264,12 +262,6 @@ export default function AudienceEstimationCreate() {
               })}
             </tbody>
           </table>
-          <div className="text-muted" style={{ marginTop: 12, fontSize: 12 }}>
-            {orchestrationMode === "best_channel"
-              ? "Each subscriber receives exactly 1 message. The routing engine selects the channel with the highest engagement score per subscriber."
-              : "Each subscriber receives a message on every channel they are reachable on. Total messages exceed unique reach because subscribers are contacted on multiple channels."
-            }
-          </div>
         </div>
       </div>
     );
