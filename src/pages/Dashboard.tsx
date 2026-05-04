@@ -35,14 +35,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Omni-Channel Intelligence Banner */}
-      <div className="info-banner">
-        <span className="info-banner-icon">&#9889;</span>
-        <span>
-          <strong>Omni-Channel Intelligence Active</strong> &mdash; {omniChannelKPIs.bestChannelRouting}% of sends use intelligent channel routing
-        </span>
-      </div>
-
       {/* Omni-Channel KPIs */}
       <div className="omni-kpi-grid">
         <div className="omni-kpi-card">
