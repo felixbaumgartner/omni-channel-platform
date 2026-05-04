@@ -77,7 +77,7 @@ export default function CampaignPriority() {
             return (
               <div key={ch} className="bui-box">
                 <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>
-                  {CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]} Pipeline
+                  {CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}
                 </div>
                 <div className="priority-stack">
                   {channelItems.map(p => (
