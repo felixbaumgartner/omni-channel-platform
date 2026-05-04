@@ -28,7 +28,7 @@ export default function JourneyList() {
     <div className="app-page">
       <div className="page-header">
         <div className="page-header-main">
-          <h1 className="page-title">Cross-Channel Journeys</h1>
+          <h1 className="page-title">Journeys</h1>
           <p className="page-subtitle">Orchestrate multi-step, multi-channel messaging sequences</p>
         </div>
         <div className="page-header-actions">
