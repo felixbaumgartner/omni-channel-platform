@@ -79,7 +79,6 @@ export default function AudienceEstimation() {
               <th>Segment</th>
               <th>Channels</th>
               <th>Orchestration</th>
-              <th>Pipeline</th>
               <th>Status</th>
               <th style={{ textAlign: "right" }}>Estimated Audience</th>
               <th style={{ textAlign: "right" }}>Updated</th>
@@ -104,7 +103,6 @@ export default function AudienceEstimation() {
                     {ORCHESTRATION_LABELS[seg.orchestrationMode]}
                   </span>
                 </td>
-                <td style={{ fontSize: 12, color: "var(--color-gray-600)" }}>{seg.pipeline}</td>
                 <td>
                   <span className={`badge ${STATUS_BADGE[seg.status]}`}>{seg.status}</span>
                 </td>

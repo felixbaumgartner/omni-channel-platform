@@ -714,7 +714,7 @@ export const mockSegments: MockSegment[] = [
     name: "cart_abandon_all_channels",
     description: "Cross-channel cart abandonment recovery targeting active browsers",
     channels: ["push", "email", "whatsapp"],
-    orchestrationMode: "sequential",
+    orchestrationMode: "best_channel",
     pipeline: "Trigger: cart_abandon",
     status: "done",
     rules: [
@@ -768,7 +768,7 @@ export const mockSegments: MockSegment[] = [
     name: "new_user_onboarding_push",
     description: "Push-first onboarding sequence for new app users",
     channels: ["push", "email"],
-    orchestrationMode: "sequential",
+    orchestrationMode: "best_channel",
     pipeline: "Trigger: user_signup",
     status: "draft",
     rules: [
