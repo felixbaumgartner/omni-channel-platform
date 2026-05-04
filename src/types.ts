@@ -193,6 +193,70 @@ export const RULE_ATTRIBUTES = [
   "lifetime_value", "is_new_user", "preferred_currency",
 ] as const;
 
+/* ── Channel-Specific Rules ── */
+
+export type ChannelRuleFieldType = "version_input" | "dropdown" | "toggle" | "multi_select";
+
+export interface ChannelSpecificRuleConfig {
+  id: string;
+  label: string;
+  fieldType: ChannelRuleFieldType;
+  description?: string;
+  options?: string[];
+  platforms?: string[];
+  defaultValue?: string | boolean | string[];
+}
+
+export interface ChannelRuleGroupConfig {
+  channel: MessageChannel;
+  icon: string;
+  badgeLabel: string;
+  rules: ChannelSpecificRuleConfig[];
+}
+
+export interface ChannelSpecificRuleValue {
+  ruleId: string;
+  value: string | boolean | string[] | Record<string, string>;
+  operator?: RuleOperator;
+}
+
+export type ChannelRulesState = Partial<Record<MessageChannel, ChannelSpecificRuleValue[]>>;
+
+export const CHANNEL_SPECIFIC_RULES: ChannelRuleGroupConfig[] = [
+  {
+    channel: "push",
+    icon: "🔔",
+    badgeLabel: "Required for Push",
+    rules: [
+      {
+        id: "min_app_version",
+        label: "Minimum App Version",
+        fieldType: "version_input",
+        platforms: ["Android", "iPhone"],
+        description: "Users below this version will not receive the push",
+      },
+      {
+        id: "device_country_logged_out",
+        label: "Device Country (Logged Out)",
+        fieldType: "dropdown",
+        options: ["United States (us)", "Netherlands (nl)", "United Kingdom (gb)", "Germany (de)", "France (fr)", "Spain (es)", "Italy (it)", "Brazil (br)", "India (in)", "Australia (au)", "Japan (jp)"],
+      },
+      {
+        id: "user_is_logged_in",
+        label: "User is Logged-In (User Id is available)",
+        fieldType: "toggle",
+        defaultValue: false,
+      },
+      {
+        id: "device_language_logged_out",
+        label: "Device Language (Logged Out)",
+        fieldType: "multi_select",
+        options: ["en", "nl", "de", "fr", "es", "it", "pt", "ja", "ko", "zh", "ar", "ru", "pl", "sv", "da", "fi", "no", "th", "vi", "id", "ms", "tr", "cs", "hu", "ro", "el", "he", "hi", "bg", "hr", "sk", "sl", "sr", "uk", "et", "lv", "lt"],
+      },
+    ],
+  },
+];
+
 /* ── Unified Campaign Group ── */
 
 export interface ChannelDelivery {

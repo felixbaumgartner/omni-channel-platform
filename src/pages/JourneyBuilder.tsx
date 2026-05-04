@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CHANNEL_LABELS, CHANNEL_ICONS, type MessageChannel, type JourneyStepType } from "../types";
+import { CHANNEL_LABELS, CHANNEL_ICONS, RULE_ATTRIBUTES, type MessageChannel, type JourneyStepType, type EligibilityRule, type RuleOperator, type ChannelRulesState } from "../types";
 import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, type PreferenceRule } from "../data/mockData";
+import ChannelSpecificRules from "../components/ChannelSpecificRules";
 
 interface Step {
   id: string;
@@ -49,6 +50,8 @@ export default function JourneyBuilder() {
   const [bestChannelPool, setBestChannelPool] = useState<MessageChannel[]>([]);
   const [bestChannelContentEnabled, setBestChannelContentEnabled] = useState(false);
   const [channelExperiments, setChannelExperiments] = useState<Record<string, { enabled: boolean; tag: string; variants: string[] }>>({});
+  const [journeyRules, setJourneyRules] = useState<EligibilityRule[]>([]);
+  const [channelRules, setChannelRules] = useState<ChannelRulesState>({});
 
   function toggleChannelExperiment(ch: MessageChannel) {
     setChannelExperiments(prev => {
@@ -79,6 +82,18 @@ export default function JourneyBuilder() {
       if (variants.length === 0) variants.push("");
       return { ...prev, [ch]: { ...prev[ch], variants } };
     });
+  }
+
+  function addJourneyRule() {
+    setJourneyRules(prev => [...prev, { id: `r${Date.now()}`, attribute: "genius_level", operator: "greater_than" as RuleOperator, value: 1, connector: "AND" }]);
+  }
+
+  function removeJourneyRule(id: string) {
+    setJourneyRules(prev => prev.filter(r => r.id !== id));
+  }
+
+  function updateJourneyRule(id: string, field: keyof EligibilityRule, value: string | number) {
+    setJourneyRules(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
   }
 
   function addStep(type: JourneyStepType) {
@@ -335,6 +350,52 @@ export default function JourneyBuilder() {
               <span className="journey-settings-label">Reporting Label</span>
               <input className="form-input" style={{ width: 150, fontSize: 12 }} placeholder="e.g., post_booking_q2" value={reportingLabel} onChange={e => setReportingLabel(e.target.value)} />
             </div>
+          </div>
+
+          {/* Journey-Level Eligibility Rules */}
+          <div className="bui-box" style={{ marginBottom: 24 }}>
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Eligibility Rules</div>
+            <p className="text-muted" style={{ fontSize: 13, marginBottom: 12 }}>Define audience targeting rules for journey entry.</p>
+
+            <div className="eligibility-subsection">
+              <div className="eligibility-subsection-header">
+                <span style={{ fontWeight: 600, fontSize: 14 }}>Common Rules</span>
+                <span className="text-muted" style={{ fontSize: 12 }}>Applies to all selected channels</span>
+              </div>
+              <div className="rule-builder">
+                {journeyRules.map((r, i) => (
+                  <div key={r.id} className="rule-row">
+                    {i > 0 && (
+                      <select className="form-select" style={{ width: 70, flex: "none" }} value={r.connector} onChange={e => updateJourneyRule(r.id, "connector", e.target.value)}>
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                      </select>
+                    )}
+                    <select className="form-select" value={r.attribute} onChange={e => updateJourneyRule(r.id, "attribute", e.target.value)}>
+                      {RULE_ATTRIBUTES.map(a => (
+                        <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
+                      ))}
+                    </select>
+                    <select className="form-select" style={{ width: 140, flex: "none" }} value={r.operator} onChange={e => updateJourneyRule(r.id, "operator", e.target.value)}>
+                      <option value="equals">equals</option>
+                      <option value="not_equals">not equals</option>
+                      <option value="greater_than">greater than</option>
+                      <option value="less_than">less than</option>
+                      <option value="in">in</option>
+                    </select>
+                    <input className="form-input" style={{ width: 120, flex: "none" }} value={String(r.value)} onChange={e => updateJourneyRule(r.id, "value", e.target.value)} />
+                    <button className="rule-remove-btn" onClick={() => removeJourneyRule(r.id)}>&times;</button>
+                  </div>
+                ))}
+              </div>
+              <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={addJourneyRule}>+ Add Rule</button>
+            </div>
+
+            <ChannelSpecificRules
+              selectedChannels={entryChannel}
+              channelRulesState={channelRules}
+              onChannelRulesChange={setChannelRules}
+            />
           </div>
 
           {/* Journey Flow */}
