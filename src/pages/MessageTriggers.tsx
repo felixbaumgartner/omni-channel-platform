@@ -38,16 +38,6 @@ export default function MessageTriggers() {
           <div className="kpi-value">{formatNum(totalVolume)}</div>
           <div className="kpi-sub">events processed</div>
         </div>
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Omni-Channel Triggers</div>
-          <div className="kpi-value">{omniCount}</div>
-          <div className="kpi-sub">with multi-channel routing</div>
-        </div>
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Channel Routing Active</div>
-          <div className="kpi-value">{Math.round((omniCount / mockTriggers.length) * 100)}%</div>
-          <div className="kpi-sub">of triggers use intelligent routing</div>
-        </div>
       </div>
 
       {/* Omni-channel info */}
