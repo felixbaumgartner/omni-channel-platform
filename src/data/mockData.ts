@@ -668,3 +668,117 @@ export const audienceEstimationData = {
     { hours: 0, label: "Disabled", savedSends: 0, savingsPct: 0 },
   ],
 };
+
+/* ── Audience Segments ── */
+
+import type { OrchestrationMode } from "../types";
+
+export interface MockSegment {
+  id: number;
+  name: string;
+  description: string;
+  channels: MessageChannel[];
+  orchestrationMode: OrchestrationMode;
+  pipeline: string;
+  status: "draft" | "scheduled" | "done";
+  rules: EligibilityRule[];
+  estimatedAudience: number | null;
+  uniqueReach: number | null;
+  totalSends: number | null;
+  lastUpdated: string;
+  createdBy: string;
+}
+
+export const mockSegments: MockSegment[] = [
+  {
+    id: 5001,
+    name: "summer_deals_high_value",
+    description: "High-value travelers for summer promotional campaign",
+    channels: ["email", "push", "sms"],
+    orchestrationMode: "best_channel",
+    pipeline: "Scheduled: Daily EMK",
+    status: "done",
+    rules: [
+      { id: "r1", attribute: "genius_level", operator: "greater_than", value: 1, connector: "AND" },
+      { id: "r2", attribute: "booking_count", operator: "greater_than", value: 3, connector: "AND" },
+      { id: "r3", attribute: "days_since_last_booking", operator: "less_than", value: 60, connector: "AND" },
+    ],
+    estimatedAudience: 4560000,
+    uniqueReach: 4560000,
+    totalSends: 4560000,
+    lastUpdated: "2026-04-28",
+    createdBy: "m.johnson",
+  },
+  {
+    id: 5002,
+    name: "cart_abandon_all_channels",
+    description: "Cross-channel cart abandonment recovery targeting active browsers",
+    channels: ["push", "email", "whatsapp"],
+    orchestrationMode: "sequential",
+    pipeline: "Trigger: cart_abandon",
+    status: "done",
+    rules: [
+      { id: "r1", attribute: "has_app_installed", operator: "equals", value: "true", connector: "AND" },
+      { id: "r2", attribute: "days_since_last_booking", operator: "less_than", value: 30, connector: "AND" },
+    ],
+    estimatedAudience: 2480000,
+    uniqueReach: 2480000,
+    totalSends: 3100000,
+    lastUpdated: "2026-05-01",
+    createdBy: "s.patel",
+  },
+  {
+    id: 5003,
+    name: "genius_upgrade_celebration",
+    description: "Multi-channel notification for Genius level upgrades",
+    channels: ["email", "push", "whatsapp"],
+    orchestrationMode: "multi_channel",
+    pipeline: "Trigger: genius_level_change",
+    status: "done",
+    rules: [
+      { id: "r1", attribute: "genius_level", operator: "greater_than", value: 0, connector: "AND" },
+    ],
+    estimatedAudience: 620000,
+    uniqueReach: 620000,
+    totalSends: 1860000,
+    lastUpdated: "2026-04-30",
+    createdBy: "a.kumar",
+  },
+  {
+    id: 5004,
+    name: "reactivation_lapsed_bookers",
+    description: "Reactivation segment targeting lapsed bookers with high lifetime value",
+    channels: ["email", "sms"],
+    orchestrationMode: "best_channel",
+    pipeline: "Scheduled: Weekly Reactivation",
+    status: "scheduled",
+    rules: [
+      { id: "r1", attribute: "days_since_last_booking", operator: "greater_than", value: 180, connector: "AND" },
+      { id: "r2", attribute: "lifetime_value", operator: "greater_than", value: 5000, connector: "AND" },
+      { id: "r3", attribute: "country", operator: "in", value: ["US", "UK", "DE", "FR", "NL"], connector: "AND" },
+    ],
+    estimatedAudience: 1200000,
+    uniqueReach: 1200000,
+    totalSends: 1200000,
+    lastUpdated: "2026-05-03",
+    createdBy: "m.johnson",
+  },
+  {
+    id: 5005,
+    name: "new_user_onboarding_push",
+    description: "Push-first onboarding sequence for new app users",
+    channels: ["push", "email"],
+    orchestrationMode: "sequential",
+    pipeline: "Trigger: user_signup",
+    status: "draft",
+    rules: [
+      { id: "r1", attribute: "is_new_user", operator: "equals", value: "true", connector: "AND" },
+      { id: "r2", attribute: "has_app_installed", operator: "equals", value: "true", connector: "AND" },
+    ],
+    estimatedAudience: null,
+    uniqueReach: null,
+    totalSends: null,
+    lastUpdated: "2026-05-04",
+    createdBy: "s.patel",
+  },
+];
