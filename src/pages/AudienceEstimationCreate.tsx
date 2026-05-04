@@ -359,7 +359,7 @@ export default function AudienceEstimationCreate() {
                 <div className="radio-card-title">Best Channel</div>
               </div>
               <div className="radio-card-description">
-                System picks one optimal channel per subscriber based on engagement scores. One message per person.
+                Estimates reach assuming the system picks one optimal channel per subscriber based on engagement scores. One message per person.
               </div>
             </div>
             <div className={`radio-card ${orchestrationMode === "multi_channel" ? "selected" : ""}`} onClick={() => setOrchestrationMode("multi_channel")}>
@@ -368,7 +368,7 @@ export default function AudienceEstimationCreate() {
                 <div className="radio-card-title">Multi-Channel</div>
               </div>
               <div className="radio-card-description">
-                All selected channels fire for each eligible subscriber. Reaches users on every available channel.
+                Estimates reach assuming all selected channels fire for each eligible subscriber. Projects total volume across every available channel.
               </div>
             </div>
           </div>
