@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockCampaigns, mockUnifiedGroups } from "../data/mockData";
 import { CHANNEL_ICONS, TYPE_LABELS, ORCHESTRATION_LABELS, type MessageType, type MessageChannel } from "../types";
+import { usePhase } from "../context/PhaseContext";
 
 function StatusBadge({ status }: { status: string }) {
   const cls = status === "Published" || status === "Live" ? "badge badge-published" : status === "Stopped" ? "badge badge-stopped" : status === "Archived" ? "badge badge-archived" : "badge badge-draft";
@@ -23,6 +24,7 @@ const channelClass = (ch: MessageChannel) => ch === "whatsapp" ? "whatsapp" : ch
 
 export default function CampaignList() {
   const navigate = useNavigate();
+  const { showBestChannel } = usePhase();
   const [filterText, setFilterText] = useState("");
   const [filterChannel, setFilterChannel] = useState("all");
   const [filterType, setFilterType] = useState("all");
@@ -164,9 +166,11 @@ export default function CampaignList() {
                     <span className="ucg-card-title">{g.name}</span>
                     <TypeBadge type={g.type} />
                     <StatusBadge status={g.status} />
+                    {(showBestChannel || g.orchestrationMode !== "best_channel") && (
                     <span className={`badge-orchestration badge-orchestration--${g.orchestrationMode}`}>
                       {ORCHESTRATION_LABELS[g.orchestrationMode]}
                     </span>
+                    )}
                     <div className="ucg-card-channels">
                       {g.channels.map(ch => (
                         <span key={ch} className={`ucg-card-channel ucg-card-channel--${channelClass(ch)}`}>
@@ -262,7 +266,7 @@ export default function CampaignList() {
                     {m.unifiedGroupId && (
                       <span className="badge badge-brand" style={{ fontSize: 10 }}>{m.unifiedGroupId}</span>
                     )}
-                    {m.orchestrationMode && (
+                    {m.orchestrationMode && (showBestChannel || m.orchestrationMode !== "best_channel") && (
                       <span className={`badge-orchestration badge-orchestration--${m.orchestrationMode}`} style={{ fontSize: 10 }}>
                         {ORCHESTRATION_LABELS[m.orchestrationMode]}
                       </span>
