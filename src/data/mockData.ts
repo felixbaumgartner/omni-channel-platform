@@ -615,3 +615,56 @@ export const consentGapAnalysis = {
   allChannels: { subscribers: 2400000, pct: 18.4, gapNone: true },
   noConsent: { subscribers: 470000, pct: 3.6 },
 };
+
+/* ── Audience Estimation Data ── */
+
+export const audienceEstimationData = {
+  baseEligible: 6800000,
+  targetingRulesApplied: 4,
+
+  channelReachability: {
+    email: { reachable: 5900000, pct: 86.8 },
+    push: { reachable: 4200000, pct: 61.8 },
+    sms: { reachable: 3100000, pct: 45.6 },
+    whatsapp: { reachable: 2800000, pct: 41.2 },
+  },
+
+  orchestrationModes: {
+    best_channel: {
+      uniqueReach: 5900000,
+      totalSends: 5900000,
+      channelSplit: { email: 52, push: 28, sms: 11, whatsapp: 9 },
+      dedupImpact: { "12h": 0, "24h": 0, "48h": 0, disabled: 0 },
+    },
+    multi_channel: {
+      uniqueReach: 5900000,
+      totalSends: 9400000,
+      channelSplit: { email: 37, push: 26, sms: 19, whatsapp: 18 },
+      dedupImpact: { "12h": 2100000, "24h": 1400000, "48h": 800000, disabled: 0 },
+    },
+    sequential: {
+      uniqueReach: 5900000,
+      totalSends: 7200000,
+      channelSplit: { email: 44, push: 31, sms: 14, whatsapp: 11 },
+      dedupImpact: { "12h": 1600000, "24h": 1100000, "48h": 600000, disabled: 0 },
+    },
+  },
+
+  singleChannelComparison: {
+    emailOnly: { audience: 2100000, channel: "email" as MessageChannel },
+    omniChannel: {
+      uniqueReach: 5900000,
+      totalSends: 5900000,
+      channels: 4,
+      dedupSavings: 640000,
+      reachIncrease: 181,
+    },
+  },
+
+  dedupWindowOptions: [
+    { hours: 12, label: "12 hours", savedSends: 2100000, savingsPct: 22.3 },
+    { hours: 24, label: "24 hours", savedSends: 1400000, savingsPct: 14.9 },
+    { hours: 48, label: "48 hours", savedSends: 800000, savingsPct: 8.5 },
+    { hours: 0, label: "Disabled", savedSends: 0, savingsPct: 0 },
+  ],
+};

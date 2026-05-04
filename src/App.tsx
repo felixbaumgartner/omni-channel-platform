@@ -11,6 +11,7 @@ import MessageTriggers from "./pages/MessageTriggers";
 import TriggerCreate from "./pages/TriggerCreate";
 import HoldoutManagement from "./pages/HoldoutManagement";
 import CampaignPriority from "./pages/CampaignPriority";
+import AudienceEstimation from "./pages/AudienceEstimation";
 
 
 const nav = ({ isActive }: { isActive: boolean }) => (isActive ? "active" : "");
@@ -63,6 +64,9 @@ export default function App() {
           <div className="app-nav-section">
             <div className="app-nav-section-title">Intelligence</div>
             <div className="app-nav-link">
+              <NavLink to="/audience-estimation" className={nav}>Audience Estimation</NavLink>
+            </div>
+            <div className="app-nav-link">
               <NavLink to="/channel-preferences" className={nav}>Channel Preferences</NavLink>
             </div>
             <div className="app-nav-link">
@@ -85,6 +89,7 @@ export default function App() {
             <Route path="/triggers" element={<MessageTriggers />} />
             <Route path="/trigger/new" element={<TriggerCreate />} />
             <Route path="/campaign-priority" element={<CampaignPriority />} />
+            <Route path="/audience-estimation" element={<AudienceEstimation />} />
             <Route path="/holdouts" element={<HoldoutManagement />} />
 
             <Route path="/channel-preferences" element={<ChannelPreferences />} />

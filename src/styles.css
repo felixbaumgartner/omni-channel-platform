@@ -674,3 +674,216 @@ body {
 
 .consent-gap-bar { display: flex; height: 32px; border-radius: var(--radius-sm); overflow: hidden; }
 .consent-gap-segment { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; transition: width 0.3s; }
+
+/* ══════════════════════════════════════════════════════════════
+   Audience Estimation Page
+   ══════════════════════════════════════════════════════════════ */
+
+.estimation-mode-selector {
+  display: flex;
+  gap: 0;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  margin-bottom: 8px;
+}
+
+.estimation-mode-tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+}
+
+.estimation-mode-tab:hover { color: var(--color-gray-700); }
+.estimation-mode-tab--active {
+  background: #fff;
+  color: var(--color-blue-600);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.estimation-mode-description {
+  font-size: 12px;
+  color: var(--color-gray-500);
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+/* Stacked Bar */
+.estimation-bar-container { margin-bottom: 20px; }
+.estimation-stacked-bar {
+  display: flex;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.estimation-bar-segment { transition: width 0.3s ease; }
+.estimation-bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.estimation-bar-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.estimation-bar-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Channel Reach Grid */
+.estimation-channel-reach-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-gray-100);
+}
+.estimation-channel-reach-card {
+  text-align: center;
+  padding: 12px;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-sm);
+}
+.estimation-channel-reach-icon { font-size: 20px; margin-bottom: 4px; }
+.estimation-channel-reach-name { font-size: 11px; color: var(--color-gray-500); text-transform: capitalize; margin-bottom: 4px; }
+.estimation-channel-reach-value { font-size: 16px; font-weight: 700; }
+.estimation-channel-reach-pct { font-size: 11px; color: var(--color-gray-500); }
+
+/* Dedup Selector */
+.estimation-dedup-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.estimation-dedup-option {
+  padding: 16px 12px;
+  border: 2px solid var(--color-gray-100);
+  border-radius: var(--radius-md);
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.estimation-dedup-option:hover { border-color: var(--color-blue-200); }
+.estimation-dedup-option--active {
+  border-color: var(--color-blue-500);
+  background: var(--color-blue-50);
+}
+.estimation-dedup-option-label { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.estimation-dedup-option-value { font-size: 12px; color: var(--color-gray-600); }
+.estimation-dedup-option-pct { font-size: 11px; color: var(--color-green-600); font-weight: 600; margin-top: 2px; }
+
+/* Targeting Rules */
+.estimation-rules-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.estimation-rule-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-200);
+  border-radius: 20px;
+  font-size: 12px;
+}
+.estimation-rule-attr { font-weight: 600; color: var(--color-blue-600); }
+.estimation-rule-op { color: var(--color-gray-500); }
+.estimation-rule-val { font-weight: 600; }
+.estimation-rule-connector {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  background: var(--color-blue-100);
+  color: var(--color-blue-600);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Comparison Grid */
+.estimation-comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 20px;
+  align-items: center;
+}
+.estimation-comparison-card {
+  padding: 24px;
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+.estimation-comparison-card--old {
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-200);
+}
+.estimation-comparison-card--new {
+  background: var(--color-blue-50);
+  border: 1px solid var(--color-blue-200);
+}
+.estimation-comparison-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+.estimation-comparison-card--old .estimation-comparison-badge {
+  background: var(--color-gray-200);
+  color: var(--color-gray-600);
+}
+.estimation-comparison-card--new .estimation-comparison-badge {
+  background: var(--color-blue-200);
+  color: var(--color-blue-700);
+}
+.estimation-comparison-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.estimation-comparison-card--new .estimation-comparison-value { color: var(--color-blue-600); }
+.estimation-comparison-label {
+  font-size: 13px;
+  color: var(--color-gray-500);
+  margin-bottom: 16px;
+}
+.estimation-comparison-details {
+  text-align: left;
+  font-size: 12px;
+  color: var(--color-gray-600);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.estimation-comparison-details div::before {
+  content: "\2022";
+  margin-right: 6px;
+  color: var(--color-gray-300);
+}
+.estimation-comparison-card--new .estimation-comparison-details div::before { color: var(--color-blue-300); }
+.estimation-comparison-arrow {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-gray-300);
+}
