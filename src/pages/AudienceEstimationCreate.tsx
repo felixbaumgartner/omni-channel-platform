@@ -233,18 +233,6 @@ export default function AudienceEstimationCreate() {
                 <td style={{ fontWeight: 600 }}>Estimated Audience</td>
                 <td style={{ fontSize: 20, fontWeight: 700 }}>{formatNum(modeData.uniqueReach)} subscribers</td>
               </tr>
-              {orchestrationMode === "multi_channel" && (
-                <>
-                  <tr>
-                    <td style={{ fontWeight: 600 }}>Total Messages</td>
-                    <td style={{ fontSize: 16, fontWeight: 600 }}>{formatNum(effectiveSends)}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ fontWeight: 600 }}>Messages per Subscriber</td>
-                    <td>{msgsPerSub} avg</td>
-                  </tr>
-                </>
-              )}
             </tbody>
           </table>
         </div>
@@ -261,7 +249,6 @@ export default function AudienceEstimationCreate() {
                 <th style={{ textAlign: "right" }}>
                   {orchestrationMode === "best_channel" ? "Subscribers Routed" : "Messages Sent"}
                 </th>
-                <th style={{ textAlign: "right" }}>% of Total</th>
               </tr>
             </thead>
             <tbody>
@@ -274,7 +261,6 @@ export default function AudienceEstimationCreate() {
                   <tr key={ch}>
                     <td>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</td>
                     <td style={{ textAlign: "right" }}>{formatNum(count)}</td>
-                    <td style={{ textAlign: "right" }}>{pct}%</td>
                   </tr>
                 );
               })}
