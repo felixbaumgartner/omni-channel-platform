@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { mockJourneys } from "../data/mockData";
 import { CHANNEL_ICONS, type MessageChannel } from "../types";
+import { usePhase } from "../context/PhaseContext";
 
 function formatNum(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
@@ -16,6 +17,7 @@ const ORCH_LABELS = {
 
 export default function JourneyList() {
   const navigate = useNavigate();
+  const { showBestChannel } = usePhase();
 
   const totalAudience = mockJourneys.reduce((s, j) => s + (j.audienceSize || 0), 0);
   const activeJourneys = mockJourneys.filter(j => j.status === "Active");
@@ -69,7 +71,7 @@ export default function JourneyList() {
                   <span className={`badge ${j.status === "Active" ? "badge-constructive" : j.status === "Draft" ? "badge-draft" : j.status === "Paused" ? "badge-callout" : "badge-archived"}`}>
                     {j.status}
                   </span>
-                  {j.orchestrationType && (
+                  {j.orchestrationType && (showBestChannel || j.orchestrationType !== "omni_channel") && (
                     <span className={`badge-journey-type badge-journey-type--${j.orchestrationType}`}>
                       {ORCH_LABELS[j.orchestrationType]}
                     </span>
