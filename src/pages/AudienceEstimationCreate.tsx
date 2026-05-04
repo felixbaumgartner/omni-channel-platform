@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { audienceEstimationData } from "../data/mockData";
-import { CHANNEL_ICONS, ORCHESTRATION_LABELS, RULE_ATTRIBUTES, type MessageChannel, type OrchestrationMode } from "../types";
-
-type DedupWindow = "12h" | "24h" | "48h" | "disabled";
+import { CHANNEL_ICONS, CHANNEL_LABELS, RULE_ATTRIBUTES, type MessageChannel, type OrchestrationMode } from "../types";
 
 function formatNum(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
@@ -35,7 +33,6 @@ export default function AudienceEstimationCreate() {
   const [description, setDescription] = useState("");
   const [channels, setChannels] = useState<MessageChannel[]>([]);
   const [orchestrationMode, setOrchestrationMode] = useState<OrchestrationMode>("best_channel");
-  const [dedupWindow, setDedupWindow] = useState<DedupWindow>("24h");
   const [rules, setRules] = useState<RuleRow[]>([
     { id: 1, attribute: "genius_level", operator: "greater_than", value: "1", connector: "AND" },
   ]);
@@ -73,8 +70,7 @@ export default function AudienceEstimationCreate() {
   };
 
   const modeData = audienceEstimationData.orchestrationModes[orchestrationMode];
-  const dedupSavings = modeData.dedupImpact[dedupWindow];
-  const effectiveSends = modeData.totalSends - dedupSavings;
+  const effectiveSends = modeData.totalSends;
 
   return (
     <div className="app-page">
@@ -113,64 +109,52 @@ export default function AudienceEstimationCreate() {
         </div>
       </div>
 
-      {/* Section 2: Channel & Orchestration */}
+      {/* Section 2: Channel Selection */}
       <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Channel & Orchestration</div>
-
-        <div className="form-field">
-          <label className="form-label">Channels *</label>
-          <div className="channel-checkbox-group">
-            {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
-              <label key={ch} className={`channel-checkbox ${channels.includes(ch) ? "channel-checkbox--active" : ""}`}>
-                <input type="checkbox" checked={channels.includes(ch)} onChange={() => toggleChannel(ch)} />
-                <span className="channel-checkbox-icon">{CHANNEL_ICONS[ch]}</span>
-                <span className="channel-checkbox-label">{ch}</span>
-              </label>
-            ))}
-          </div>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Selection</div>
+        <p className="text-muted mb-16">Select which channels to include in the audience estimation.</p>
+        <div className="channel-selector-grid">
+          {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
+            <div
+              key={ch}
+              className={`channel-selector-card ${channels.includes(ch) ? "selected" : ""}`}
+              onClick={() => toggleChannel(ch)}
+            >
+              <div className="channel-selector-check">{channels.includes(ch) ? "✓" : ""}</div>
+              <div className="channel-selector-icon">{CHANNEL_ICONS[ch]}</div>
+              <div className="channel-selector-label">{CHANNEL_LABELS[ch]}</div>
+            </div>
+          ))}
         </div>
+      </div>
 
-        {channels.length > 1 && (
-          <>
-            <div className="form-field" style={{ marginTop: 16 }}>
-              <label className="form-label">Orchestration Mode</label>
-              <div className="estimation-mode-selector">
-                {(["best_channel", "multi_channel", "sequential"] as OrchestrationMode[]).map(m => (
-                  <button
-                    key={m}
-                    className={`estimation-mode-tab ${orchestrationMode === m ? "estimation-mode-tab--active" : ""}`}
-                    onClick={() => { setOrchestrationMode(m); setShowResults(false); }}
-                  >
-                    {ORCHESTRATION_LABELS[m]}
-                  </button>
-                ))}
+      {/* Section 3: Delivery Mode */}
+      {channels.length > 1 && (
+        <div className="bui-box tier-selection-appear">
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Delivery Mode</div>
+          <p className="text-muted mb-16">Choose how messages are routed across the selected channels.</p>
+          <div className="radio-card-group">
+            <div className={`radio-card ${orchestrationMode === "best_channel" ? "selected" : ""}`} onClick={() => { setOrchestrationMode("best_channel"); setShowResults(false); }}>
+              <div className="radio-card-header">
+                <div className="radio-card-radio" />
+                <div className="radio-card-title">Best Channel</div>
               </div>
-              <div className="estimation-mode-description">
-                {orchestrationMode === "best_channel" && "System picks one optimal channel per subscriber based on engagement scores."}
-                {orchestrationMode === "multi_channel" && "All selected channels fire for each subscriber, with deduplication to prevent fatigue."}
-                {orchestrationMode === "sequential" && "Primary channel fires first; fallback channels activate if no engagement within wait period."}
+              <div className="radio-card-description">
+                System picks one optimal channel per subscriber based on engagement scores. One message per person.
               </div>
             </div>
-
-            {orchestrationMode !== "best_channel" && (
-              <div className="form-field" style={{ marginTop: 12 }}>
-                <label className="form-label">Deduplication Window</label>
-                <div className="dedup-inline-options">
-                  {(["12h", "24h", "48h", "disabled"] as DedupWindow[]).map(w => (
-                    <button
-                      key={w}
-                      className={`dedup-inline-btn ${dedupWindow === w ? "dedup-inline-btn--active" : ""}`}
-                      onClick={() => { setDedupWindow(w); setShowResults(false); }}
-                    >
-                      {w === "disabled" ? "Disabled" : w}
-                    </button>
-                  ))}
-                </div>
+            <div className={`radio-card ${orchestrationMode === "multi_channel" ? "selected" : ""}`} onClick={() => { setOrchestrationMode("multi_channel"); setShowResults(false); }}>
+              <div className="radio-card-header">
+                <div className="radio-card-radio" />
+                <div className="radio-card-title">Multi-Channel</div>
               </div>
-            )}
-          </>
-        )}
-      </div>
+              <div className="radio-card-description">
+                All selected channels fire for each eligible subscriber. Reaches users on every available channel.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Section 3: Targeting Rules */}
       <div className="bui-box">
@@ -257,13 +241,6 @@ export default function AudienceEstimationCreate() {
               <div className="kpi-value">{formatNum(effectiveSends)}</div>
               <div className="kpi-sub">across {channels.length} channel{channels.length > 1 ? "s" : ""}</div>
             </div>
-            {dedupSavings > 0 && (
-              <div className="kpi-card">
-                <div className="kpi-label">Dedup Savings</div>
-                <div className="kpi-value">{formatNum(dedupSavings)}</div>
-                <div className="kpi-sub">duplicates prevented</div>
-              </div>
-            )}
           </div>
 
           {/* Channel Distribution */}
