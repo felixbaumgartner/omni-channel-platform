@@ -167,7 +167,7 @@ export default function ChannelSpecificRules({ selectedChannels, channelRulesSta
             <div className="channel-rules-header">
               <span className="channel-rules-icon">{group.icon}</span>
               <span className="channel-rules-hint">
-                There may be <strong>{channelName.toLowerCase()}-specific rules</strong> to configure for this channel.
+                There may be <strong>{channelName.toLowerCase()}-specific rules</strong> to configure.
               </span>
             </div>
 
