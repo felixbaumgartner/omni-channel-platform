@@ -38,14 +38,15 @@ export default function AudienceEstimationCreate() {
   ]);
   const [showResults, setShowResults] = useState(false);
   const [estimating, setEstimating] = useState(false);
+  const [showRuleMenu, setShowRuleMenu] = useState(false);
 
   const toggleChannel = (ch: MessageChannel) => {
     setChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
     setShowResults(false);
   };
 
-  const addRule = () => {
-    setRules(prev => [...prev, { id: Date.now(), attribute: "", operator: "equals", value: "", connector: "AND" }]);
+  const addRule = (attribute: string) => {
+    setRules(prev => [...prev, { id: Date.now(), attribute, operator: "equals", value: "", connector: "AND" }]);
     setShowResults(false);
   };
 
@@ -59,7 +60,7 @@ export default function AudienceEstimationCreate() {
     setShowResults(false);
   };
 
-  const canEstimate = name.trim() && channels.length > 0 && rules.length > 0 && rules.every(r => r.attribute && r.value);
+  const canEstimate = name.trim() && channels.length > 0 && rules.length > 0 && rules.every(r => r.value);
 
   const handleEstimate = () => {
     setEstimating(true);
@@ -156,55 +157,49 @@ export default function AudienceEstimationCreate() {
         </div>
       )}
 
-      {/* Section 3: Targeting Rules */}
+      {/* Section 3: Eligibility Rules */}
       <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Targeting Rules</div>
-        <div className="rules-builder">
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Eligibility Rules</div>
+        <p className="text-muted mb-16">Define audience targeting rules. Rules from PROD eligibility engine (AND/OR logic).</p>
+        <div className="rule-builder">
           {rules.map((rule, idx) => (
             <div key={rule.id} className="rule-row">
               {idx > 0 && (
-                <select
-                  className="rule-connector-select"
-                  value={rule.connector}
-                  onChange={e => updateRule(rule.id, "connector", e.target.value)}
-                >
+                <select className="form-select" style={{ width: 70, flex: "none" }} value={rule.connector} onChange={e => updateRule(rule.id, "connector", e.target.value)}>
                   <option value="AND">AND</option>
                   <option value="OR">OR</option>
                 </select>
               )}
-              <select
-                className="form-select rule-field"
-                value={rule.attribute}
-                onChange={e => updateRule(rule.id, "attribute", e.target.value)}
-              >
-                <option value="">Select attribute...</option>
-                {RULE_ATTRIBUTES.map(a => <option key={a} value={a}>{a}</option>)}
+              <select className="form-select" value={rule.attribute} onChange={e => updateRule(rule.id, "attribute", e.target.value)}>
+                {RULE_ATTRIBUTES.map(a => (
+                  <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
+                ))}
               </select>
-              <select
-                className="form-select rule-op"
-                value={rule.operator}
-                onChange={e => updateRule(rule.id, "operator", e.target.value)}
-              >
+              <select className="form-select" style={{ width: 140, flex: "none" }} value={rule.operator} onChange={e => updateRule(rule.id, "operator", e.target.value)}>
                 {OPERATORS.map(op => <option key={op} value={op}>{op.replace(/_/g, " ")}</option>)}
               </select>
-              <input
-                type="text"
-                className="form-input rule-value"
-                placeholder="Value"
-                value={rule.value}
-                onChange={e => updateRule(rule.id, "value", e.target.value)}
-              />
-              {rules.length > 1 && (
-                <button className="btn btn-icon-danger" onClick={() => removeRule(rule.id)} title="Remove rule">
-                  &times;
-                </button>
-              )}
+              <input className="form-input" style={{ width: 120, flex: "none" }} value={rule.value} onChange={e => updateRule(rule.id, "value", e.target.value)} placeholder="Value" />
+              <button className="rule-remove-btn" onClick={() => removeRule(rule.id)}>&times;</button>
             </div>
           ))}
         </div>
-        <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={addRule}>
-          + Add Rule
-        </button>
+        <div style={{ position: "relative", marginTop: 12 }}>
+          <button className="btn btn-secondary" onClick={() => setShowRuleMenu(!showRuleMenu)}>+ Add Rule</button>
+          {showRuleMenu && (
+            <div className="channel-rules-menu tier-selection-appear">
+              {RULE_ATTRIBUTES.map(a => (
+                <div key={a} className="channel-rules-menu-item" onClick={() => { addRule(a); setShowRuleMenu(false); }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        {rules.length > 0 && (
+          <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
+            Preview: {rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute.replace(/_/g, " ")} ${r.operator.replace(/_/g, " ")} ${r.value}`).join("")}
+          </div>
+        )}
       </div>
 
       {/* Estimate Button */}
