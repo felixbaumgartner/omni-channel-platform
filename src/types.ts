@@ -255,6 +255,50 @@ export const CHANNEL_SPECIFIC_RULES: ChannelRuleGroupConfig[] = [
   },
 ];
 
+/* ── Channel Eligibility Rules (Appendix A model) ── */
+
+export interface ChannelEligibilityRuleConfig {
+  id: string;
+  label: string;
+  description: string;
+  autoPopulated: boolean;
+  type: "prerequisite" | "custom" | "experiment";
+}
+
+export interface ChannelEligibilityGroup {
+  channel: MessageChannel;
+  icon: string;
+  label: string;
+  rules: ChannelEligibilityRuleConfig[];
+}
+
+export const CHANNEL_ELIGIBILITY_RULES: ChannelEligibilityGroup[] = [
+  {
+    channel: "email",
+    icon: "✉",
+    label: "Email",
+    rules: [],
+  },
+  {
+    channel: "push",
+    icon: "🔔",
+    label: "Push Notification",
+    rules: [],
+  },
+  {
+    channel: "sms",
+    icon: "📱",
+    label: "SMS",
+    rules: [],
+  },
+  {
+    channel: "whatsapp",
+    icon: "📨",
+    label: "WhatsApp",
+    rules: [],
+  },
+];
+
 /* ── Unified Campaign Group ── */
 
 export interface ChannelDelivery {

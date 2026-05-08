@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, FUNNEL_LABELS, VERTICAL_LABELS, RULE_ATTRIBUTES, type MessageChannel, type Funnel, type Vertical, type EligibilityRule, type RuleOperator, type ChannelRulesState } from "../types";
 import ClassificationQuestionnaire, { type Classification } from "../components/ClassificationQuestionnaire";
 import BaseContentSection from "../components/BaseContentSection";
-import ChannelSpecificRules from "../components/ChannelSpecificRules";
+import ChannelSpecificRules, { ChannelEligibilityRules } from "../components/ChannelSpecificRules";
 import { usePhase } from "../context/PhaseContext";
 import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, mockTriggers, type PreferenceRule } from "../data/mockData";
 
-type DeliveryMode = "best_channel" | "multi_channel";
+type DeliveryMode = "best_channel" | "multi_channel" | "experiment";
 
 export default function CampaignCreate() {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ export default function CampaignCreate() {
   const [description, setDescription] = useState("");
   const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>([]);
   const [channelPriority, setChannelPriority] = useState<MessageChannel[]>([]);
-  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("best_channel");
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>(showBestChannel ? "best_channel" : "multi_channel");
 
   const [heuristicRules] = useState<PreferenceRule[]>(defaultHeuristicRules.filter(r => r.active));
   const [bestChannelContentEnabled, setBestChannelContentEnabled] = useState(false);
@@ -35,15 +35,38 @@ export default function CampaignCreate() {
   const [activationMethod, setActivationMethod] = useState<"scheduled" | "trigger">("scheduled");
   const [selectedTriggerId, setSelectedTriggerId] = useState<number | null>(null);
 
+  // Channel Eligibility Rules state (Appendix A model)
+  const [eligibilityRulesEnabled, setEligibilityRulesEnabled] = useState<Record<string, boolean>>({});
+  const [experimentValues, setExperimentValues] = useState<Record<string, string>>({});
+  const [addedCustomRules, setAddedCustomRules] = useState<Record<string, { id: string; label: string; description: string }[]>>({});
+  const [smsWhatsappAcknowledged, setSmsWhatsappAcknowledged] = useState(false);
+
+  const campaignRuleMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showRuleMenu) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (campaignRuleMenuRef.current && !campaignRuleMenuRef.current.contains(e.target as Node)) {
+        setShowRuleMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showRuleMenu]);
+
   const isMarketingOrNonMarketing = classification && (classification.purpose === "marketing" || (classification.purpose === "non_marketing" && !classification.subPurpose));
   const isTransactional = classification?.subPurpose === "transactional";
   const purposeLabel = classification?.purpose === "marketing" ? "Marketing" : isTransactional ? "Transactional" : "Non-marketing";
+
+  const hasCostlyChannel = selectedChannels.includes("sms") || selectedChannels.includes("whatsapp");
 
   function toggleChannel(ch: MessageChannel) {
     setSelectedChannels(prev => {
       const next = prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch];
       setChannelPriority(p => {
-        if (next.includes(ch)) return [...p, ch];
+        if (next.includes(ch)) {
+          return p.includes(ch) ? p : [...p, ch];
+        }
         return p.filter(c => c !== ch);
       });
       return next;
@@ -77,6 +100,28 @@ export default function CampaignCreate() {
     setRules(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
   }
 
+  function handleToggleEligibilityRule(ruleId: string) {
+    setEligibilityRulesEnabled(prev => ({ ...prev, [ruleId]: !prev[ruleId] }));
+  }
+
+  function handleExperimentChange(ruleId: string, value: string) {
+    setExperimentValues(prev => ({ ...prev, [ruleId]: value }));
+  }
+
+  function handleAddCustomRule(channel: MessageChannel, rule: { id: string; label: string; description: string }) {
+    setAddedCustomRules(prev => ({
+      ...prev,
+      [channel]: [...(prev[channel] || []), rule],
+    }));
+  }
+
+  function handleRemoveCustomRule(channel: MessageChannel, ruleId: string) {
+    setAddedCustomRules(prev => ({
+      ...prev,
+      [channel]: (prev[channel] || []).filter(r => r.id !== ruleId),
+    }));
+  }
+
   if (saved) {
     return (
       <div className="app-page">
@@ -102,7 +147,7 @@ export default function CampaignCreate() {
     <div className="app-page">
       <div className="page-header">
         <div className="page-header-main">
-          <h1 className="page-title">New Omni-Channel Campaign</h1>
+          <h1 className="page-title">New Campaign</h1>
           {classification && (
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
               {selectedChannels.map(ch => (
@@ -121,17 +166,12 @@ export default function CampaignCreate() {
         </div>
       </div>
 
-      {/* Classification */}
+      {/* Classification -- hidden once classified as marketing/non-marketing */}
+      {!isMarketingOrNonMarketing && (
       <div className="bui-box">
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Message Classification</div>
         <p className="text-muted mb-16">Determines routing priority, delivery SLOs, and retry policies.</p>
         <ClassificationQuestionnaire mode="inline" onChange={c => setClassification(c)} />
-        {isMarketingOrNonMarketing && (
-          <div className="alert alert-info tier-selection-appear" style={{ marginTop: 16 }}>
-            <div className="alert-title">Classified as {purposeLabel}</div>
-            {classification.purpose === "marketing" ? "Standard marketing delivery pipeline." : "Subscription categories apply. Marketing holdout does not apply."} Fill out the campaign details below.
-          </div>
-        )}
         {isTransactional && (
           <div className="tier-selection-appear" style={{ marginTop: 16, padding: 16, background: "var(--color-green-100)", borderLeft: "4px solid var(--color-green-600)", borderRadius: "var(--radius-md)", color: "var(--color-green-600)" }}>
             <div style={{ fontWeight: 700, marginBottom: 8 }}>Validated as Transactional</div>
@@ -140,10 +180,11 @@ export default function CampaignCreate() {
           </div>
         )}
       </div>
+      )}
 
-      {/* Campaign form — marketing / non-marketing */}
+      {/* Campaign form -- marketing / non-marketing */}
       {isMarketingOrNonMarketing && (
-        <div className="tier-selection-appear">
+        <div className="tier-selection-appear" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Basic Info */}
           <div className="bui-box">
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Basic Information</div>
@@ -225,18 +266,7 @@ export default function CampaignCreate() {
                     ))}
                   </select>
                   {selectedTriggerId && (() => {
-                    const trigger = mockTriggers.find(t => t.id === selectedTriggerId);
-                    if (!trigger) return null;
-                    return (
-                      <div className="tier-selection-appear" style={{ marginTop: 12, padding: 12, background: "var(--color-gray-50)", borderRadius: "var(--radius-sm)", fontSize: 13 }}>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                          <div><span className="text-muted">Input Topic:</span><br/><strong>{trigger.inputTopic}</strong></div>
-                          <div><span className="text-muted">Daily Volume:</span><br/><strong>{(trigger.dailyVolume / 1000).toFixed(0)}K</strong></div>
-                          <div><span className="text-muted">Type:</span><br/><strong>{trigger.triggerType}</strong></div>
-                        </div>
-                        <div style={{ marginTop: 8 }}><span className="text-muted">Rule:</span> <code style={{ fontSize: 12 }}>{trigger.ruleExpression}</code></div>
-                      </div>
-                    );
+                    return null;
                   })()}
                 </div>
               )}
@@ -275,17 +305,20 @@ export default function CampaignCreate() {
                 {bestChannelContentEnabled && (
                   <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Content templates for all 4 channels will be available below. The system decides which channel to use at send time.</div>
                 )}
-                <div style={{ fontSize: 13, marginTop: 12, marginBottom: 4 }}>Rule-based routing (evaluated in order):</div>
+                <div style={{ fontSize: 13, marginTop: 12, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                  Rule-based routing (evaluated in order):
+                  <span className="info-tooltip-trigger" style={{ cursor: "help", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: "var(--color-blue-100)", color: "var(--color-blue-600)", fontSize: 11, fontWeight: 700, position: "relative" }}>
+                    i
+                    <span className="info-tooltip-content">Recency-weighted click rate across 7d / 30d / 90d windows. Recent activity counts more, but long-term patterns outweigh a single recent interaction. If no rule matches, the platform default priority order is used. If delivery fails, the system retries the next channel in order. All channels exhausted = suppressed.</span>
+                  </span>
+                </div>
                 <ol style={{ margin: "4px 0 4px 18px", padding: 0, fontSize: 13, lineHeight: 1.7 }}>
                   {defaultHeuristicRules.filter(r => r.active).map(r => (
-                    <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
+                    <li key={r.id}><strong>{r.name}</strong></li>
                   ))}
                 </ol>
-                <div style={{ fontSize: 13, marginTop: 10, padding: "8px 12px", background: "rgba(0,53,128,0.06)", borderRadius: 6 }}>
-                  If no rule matches, the platform default priority order is used: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" \u2192 ")}</strong>. If delivery fails, the system retries the next channel in order. All channels exhausted = suppressed.
-                </div>
-                <div style={{ fontSize: 12, marginTop: 8 }}>
-                  <a href="/channel-preferences" style={{ color: "var(--color-blue-600)", textDecoration: "underline" }}>Customize rules and fallback order in Channel Preferences</a>
+                <div style={{ fontSize: 13, marginTop: 6, padding: "6px 12px", background: "rgba(0,53,128,0.06)", borderRadius: 6 }}>
+                  Fallback order: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" > ")}</strong> &middot; <a href="/channel-preferences" style={{ color: "var(--color-blue-600)" }}>Customize</a>
                 </div>
               </div>
             </div>
@@ -296,7 +329,7 @@ export default function CampaignCreate() {
             <div className="channel-selector-grid">
               {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
                 <div key={ch} className={`channel-selector-card ${selectedChannels.includes(ch) ? "selected" : ""}`} onClick={() => toggleChannel(ch)}>
-                  <div className="channel-selector-check">{selectedChannels.includes(ch) ? "\u2713" : ""}</div>
+                  <div className="channel-selector-check">{selectedChannels.includes(ch) ? "✓" : ""}</div>
                   <div className="channel-selector-icon">{CHANNEL_ICONS[ch]}</div>
                   <div className="channel-selector-label">{CHANNEL_LABELS[ch]}</div>
                 </div>
@@ -323,182 +356,253 @@ export default function CampaignCreate() {
                 </span>
               </div>
             )}
-          </div>
 
-          {/* Delivery Mode (P0: Campaign Delivery Mode) */}
-          {showBestChannel && selectedChannels.length > 1 && (
-            <div className="bui-box tier-selection-appear">
-              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Delivery Mode</div>
-              <p className="text-muted mb-16">Choose how messages are routed across the selected channels.</p>
-              <div className="radio-card-group">
-                <div className={`radio-card ${deliveryMode === "best_channel" ? "selected" : ""}`} onClick={() => setDeliveryMode("best_channel")}>
-                  <div className="radio-card-header">
-                    <div className="radio-card-radio" />
-                    <div className="radio-card-title">Best Channel</div>
-                  </div>
-                  <div className="radio-card-description">
-                    Rule-based routing selects the best channel per subscriber. Falls back to the channel priority order below when no match is found.
-                  </div>
-                </div>
-                <div className={`radio-card ${deliveryMode === "multi_channel" ? "selected" : ""}`} onClick={() => setDeliveryMode("multi_channel")}>
-                  <div className="radio-card-header">
-                    <div className="radio-card-radio" />
-                    <div className="radio-card-title">Multi-Channel</div>
-                  </div>
-                  <div className="radio-card-description">
-                    Deliver across all selected channels simultaneously. Suited for high-priority campaigns, time-sensitive promotions, and re-engagement. Consent and frequency caps enforced per channel.
+            {/* SMS/WhatsApp Cost Warning */}
+            {hasCostlyChannel && (
+              <div className="alert alert-warning tier-selection-appear" style={{ marginTop: 16 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <span style={{ fontSize: 20 }}>&#9888;</span>
+                  <div>
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>Cost Advisory</div>
+                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                      SMS and WhatsApp incur per-message costs that vary by geography. Unlike email and push, these channels have direct carrier/platform charges.
+                    </p>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                      <input type="checkbox" checked={smsWhatsappAcknowledged} onChange={() => setSmsWhatsappAcknowledged(!smsWhatsappAcknowledged)} />
+                      <span>I have reviewed the cost implications of using SMS and WhatsApp</span>
+                    </label>
                   </div>
                 </div>
               </div>
+            )}
+          </div>
 
+          {/* ════════════════════════════════════════════════════════════════
+              3-STAGE ELIGIBILITY PIPELINE (Appendix A)
+              ════════════════════════════════════════════════════════════════ */}
+          {selectedChannels.length > 0 && (
+            <div className="bui-box tier-selection-appear">
 
-              {/* Channel Send Spacing — Multi-Channel Mode Only */}
-              {deliveryMode === "multi_channel" && (
-                <div className="tier-selection-appear" style={{ marginTop: 16 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Send Spacing</div>
-                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>All selected channels fire within a single send event. A platform-level minimum spacing of <strong>5 minutes</strong> is enforced between successive channel dispatches to the same subscriber.</p>
-                  <div className="fallback-chain">
-                    {channelPriority.map((ch, i) => (
-                      <div key={ch}>
-                        <div className="fallback-chain-item">
-                          <span className="fallback-chain-number">{i + 1}</span>
-                          <span style={{ fontSize: 18 }}>{CHANNEL_ICONS[ch]}</span>
-                          <strong>{CHANNEL_LABELS[ch]}</strong>
-                        </div>
-                        {i < channelPriority.length - 1 && (
-                          <div className="fallback-chain-arrow">&#8595; 5 min spacing</div>
-                        )}
-                      </div>
-                    ))}
+              {/* ── Campaign Eligibility Rules ── */}
+              <div className="eligibility-stage" style={{ marginTop: 8 }}>
+                <div className="eligibility-stage-header">
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Campaign Eligibility Rules</div>
+                    <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Users who fail these rules are excluded from the campaign entirely.</div>
                   </div>
-                  <p className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>Channels dispatch in the order shown above. This spacing is a delivery hygiene guardrail — it is not configurable, does not introduce conditional logic, and all selected channels will always fire.</p>
                 </div>
-              )}
 
-              {/* Active Routing Rule — Best Channel Mode Only */}
-              {deliveryMode === "best_channel" && (
-                <div className="tier-selection-appear" style={{ marginTop: 16 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Active Routing Rule</div>
-                  {heuristicRules.map(rule => (
-                    <div key={rule.id} className="rule-card" style={{ marginBottom: 8 }}>
-                      <div className="rule-card-header">
-                        <div className="rule-card-priority">P{rule.priority}</div>
-                        <div className="rule-card-info">
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{rule.name}</div>
-                          <div className="text-muted" style={{ fontSize: 13 }}>{rule.description}</div>
-                        </div>
-                      </div>
-                      <div className="rule-card-logic">
-                        <code>{rule.logic}</code>
-                      </div>
+                <div className="rule-builder" style={{ marginTop: 12 }}>
+                  {rules.map((r, i) => (
+                    <div key={r.id} className="rule-row">
+                      {i > 0 && (
+                        <select className="form-select" style={{ width: 70, flex: "none" }} value={r.connector} onChange={e => updateRule(r.id, "connector", e.target.value)}>
+                          <option value="AND">AND</option>
+                          <option value="OR">OR</option>
+                        </select>
+                      )}
+                      <select className="form-select" value={r.attribute} onChange={e => updateRule(r.id, "attribute", e.target.value)}>
+                        {RULE_ATTRIBUTES.map(a => (
+                          <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
+                        ))}
+                      </select>
+                      <select className="form-select" style={{ width: 140, flex: "none" }} value={r.operator} onChange={e => updateRule(r.id, "operator", e.target.value)}>
+                        <option value="equals">equals</option>
+                        <option value="not_equals">not equals</option>
+                        <option value="greater_than">greater than</option>
+                        <option value="less_than">less than</option>
+                        <option value="in">in</option>
+                      </select>
+                      <input className="form-input" style={{ width: 120, flex: "none" }} value={String(r.value)} onChange={e => updateRule(r.id, "value", e.target.value)} />
+                      <button className="rule-remove-btn" onClick={() => removeRule(r.id)}>&times;</button>
                     </div>
                   ))}
-                  <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>If this rule has no match for a subscriber, the fallback channel order below is used.</p>
                 </div>
-              )}
-
-              {/* Channel Priority & Retry — Best Channel Mode Only (P0) */}
-              {deliveryMode === "best_channel" && (
-                <div className="tier-selection-appear" style={{ marginTop: 16 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Priority & Retry</div>
-                  <p className="text-muted mb-8" style={{ fontSize: 13 }}>When the routing rule above has no answer, channels are tried in this order. Only used when delivery retry for the chosen channel fails.</p>
-                  <div className="form-group">
-                    <label className="form-label">Fallback Channel Order</label>
-                    <div className="fallback-sequence">
-                      {channelPriority.map((ch, i) => (
-                        <div key={ch} className="fallback-item" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span className="fallback-number">{i + 1}</span>
-                          <span>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
-                          {i === 0 && <span className="badge badge-brand" style={{ fontSize: 10 }}>Primary</span>}
-                          {i > 0 && <span className="badge badge-outline" style={{ fontSize: 10 }}>Fallback</span>}
-                          <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
-                            <button
-                              className="btn btn-secondary"
-                              style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === 0 ? 0.3 : 1 }}
-                              disabled={i === 0}
-                              onClick={() => moveChannelPriority(i, "up")}
-                              title="Move up"
-                            >&#9650;</button>
-                            <button
-                              className="btn btn-secondary"
-                              style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === channelPriority.length - 1 ? 0.3 : 1 }}
-                              disabled={i === channelPriority.length - 1}
-                              onClick={() => moveChannelPriority(i, "down")}
-                              title="Move down"
-                            >&#9660;</button>
-                          </div>
+                <div ref={campaignRuleMenuRef} style={{ position: "relative", marginTop: 12 }}>
+                  <button className="btn btn-secondary" onClick={() => setShowRuleMenu(!showRuleMenu)}>+ Add Rule</button>
+                  {showRuleMenu && (
+                    <div className="channel-rules-menu tier-selection-appear">
+                      {RULE_ATTRIBUTES.map(a => (
+                        <div key={a} className="channel-rules-menu-item" onClick={() => addRule(a)}>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
                         </div>
                       ))}
                     </div>
+                  )}
+                </div>
+                {rules.length > 0 && (
+                  <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
+                    Preview: {rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute} ${r.operator.replace("_", " ")} ${r.value}`).join("")}
                   </div>
+                )}
+              </div>
+
+              {/* ── Channel Eligibility Rules ── */}
+              <div className="eligibility-stage" style={{ marginTop: 16 }}>
+                <div className="eligibility-stage-header">
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Channel Eligibility Rules</div>
+                    <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Per-channel rules that determine which channels a qualified user can receive.</div>
+                  </div>
+                </div>
+
+                <ChannelEligibilityRules
+                  selectedChannels={selectedChannels}
+                  enabledRules={eligibilityRulesEnabled}
+                  onToggleRule={handleToggleEligibilityRule}
+                  experimentValues={experimentValues}
+                  onExperimentChange={handleExperimentChange}
+                  addedCustomRules={addedCustomRules}
+                  onAddCustomRule={handleAddCustomRule}
+                  onRemoveCustomRule={handleRemoveCustomRule}
+                />
+
+              </div>
+
+              {/* ── Channel Selection (Delivery Mode) ── */}
+              {selectedChannels.length > 1 && (
+                <div className="eligibility-stage" style={{ marginTop: 16 }}>
+                  <div className="eligibility-stage-header">
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>Channel Selection</div>
+                      <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Of the eligible channels, how should the system choose which to send?</div>
+                    </div>
+                  </div>
+
+                  <div className="radio-card-group" style={{ marginTop: 12 }}>
+                    {showBestChannel && (
+                    <div className={`radio-card ${deliveryMode === "best_channel" ? "selected" : ""}`} onClick={() => setDeliveryMode("best_channel")}>
+                      <div className="radio-card-header">
+                        <div className="radio-card-radio" />
+                        <div className="radio-card-title">Best Channel</div>
+                      </div>
+                      <div className="radio-card-description">
+                        Rule-based routing selects the best channel per subscriber. Falls back to the channel priority order below when no match is found.
+                      </div>
+                    </div>
+                    )}
+                    <div className={`radio-card ${deliveryMode === "multi_channel" ? "selected" : ""}`} onClick={() => setDeliveryMode("multi_channel")}>
+                      <div className="radio-card-header">
+                        <div className="radio-card-radio" />
+                        <div className="radio-card-title">Multi-Channel</div>
+                      </div>
+                      <div className="radio-card-description">
+                        Deliver across all eligible channels simultaneously. Consent and frequency caps enforced per channel.
+                      </div>
+                    </div>
+                    {!showBestChannel && (
+                    <div className={`radio-card ${deliveryMode === "experiment" ? "selected" : ""}`} onClick={() => setDeliveryMode("experiment")}>
+                      <div className="radio-card-header">
+                        <div className="radio-card-radio" />
+                        <div className="radio-card-title">Channel Experiment</div>
+                      </div>
+                      <div className="radio-card-description">
+                        Run an A/B test between channels to measure which performs best for this audience.
+                      </div>
+                    </div>
+                    )}
+                  </div>
+
+                  {/* Channel Send Spacing -- Multi-Channel Mode Only */}
+                  {deliveryMode === "multi_channel" && (
+                    <div className="tier-selection-appear" style={{ marginTop: 16 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Send Spacing</div>
+                      <p className="text-muted mb-8" style={{ fontSize: 13 }}>All eligible channels fire within a single send event. A platform-level minimum spacing of <strong>5 minutes</strong> is enforced between successive channel dispatches.</p>
+                      <div className="fallback-chain">
+                        {channelPriority.map((ch, i) => (
+                          <div key={ch}>
+                            <div className="fallback-chain-item">
+                              <span className="fallback-chain-number">{i + 1}</span>
+                              <span style={{ fontSize: 18 }}>{CHANNEL_ICONS[ch]}</span>
+                              <strong>{CHANNEL_LABELS[ch]}</strong>
+                            </div>
+                            {i < channelPriority.length - 1 && (
+                              <div className="fallback-chain-arrow">&#8595; 5 min spacing</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Active Routing Rule -- Best Channel Mode Only */}
+                  {deliveryMode === "best_channel" && (
+                    <div className="tier-selection-appear" style={{ marginTop: 16 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Active Routing Rule</div>
+                      {heuristicRules.map(rule => (
+                        <div key={rule.id} className="rule-card" style={{ marginBottom: 8 }}>
+                          <div className="rule-card-header">
+                            <div className="rule-card-priority">P{rule.priority}</div>
+                            <div className="rule-card-info">
+                              <div style={{ fontWeight: 600, fontSize: 14 }}>{rule.name}</div>
+                              <div className="text-muted" style={{ fontSize: 13 }}>{rule.description}</div>
+                            </div>
+                          </div>
+                          <div className="rule-card-logic">
+                            <code>{rule.logic}</code>
+                          </div>
+                        </div>
+                      ))}
+                      <p className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>If this rule has no match for a subscriber, the fallback channel order below is used.</p>
+                    </div>
+                  )}
+
+                  {/* Channel Priority & Retry -- Best Channel Mode Only */}
+                  {deliveryMode === "best_channel" && (
+                    <div className="tier-selection-appear" style={{ marginTop: 16 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Priority & Retry</div>
+                      <p className="text-muted mb-8" style={{ fontSize: 13 }}>When the routing rule above has no answer, channels are tried in this order.</p>
+                      <div className="form-group">
+                        <label className="form-label">Fallback Channel Order</label>
+                        <div className="fallback-sequence">
+                          {channelPriority.map((ch, i) => (
+                            <div key={ch} className="fallback-item" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <span className="fallback-number">{i + 1}</span>
+                              <span>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
+                              {i === 0 && <span className="badge badge-brand" style={{ fontSize: 10 }}>Primary</span>}
+                              {i > 0 && <span className="badge badge-outline" style={{ fontSize: 10 }}>Fallback</span>}
+                              <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === 0 ? 0.3 : 1 }}
+                                  disabled={i === 0}
+                                  onClick={() => moveChannelPriority(i, "up")}
+                                  title="Move up"
+                                >&#9650;</button>
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ padding: "4px 8px", fontSize: 12, lineHeight: 1, opacity: i === channelPriority.length - 1 ? 0.3 : 1 }}
+                                  disabled={i === channelPriority.length - 1}
+                                  onClick={() => moveChannelPriority(i, "down")}
+                                  title="Move down"
+                                >&#9660;</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Channel Experiment Config */}
+                  {deliveryMode === "experiment" && (
+                    <div className="tier-selection-appear" style={{ marginTop: 16 }}>
+                      <div className="form-group">
+                        <label className="form-label">Experiment Tag</label>
+                        <input
+                          className="form-input"
+                          placeholder="e.g., channel_test_summer_2026"
+                          value={experimentValues["channel_experiment_tag"] || ""}
+                          onChange={e => setExperimentValues(prev => ({ ...prev, channel_experiment_tag: e.target.value }))}
+                        />
+                        <div className="text-muted" style={{ fontSize: 11, marginTop: 4 }}>Used to track and measure this channel experiment in analytics.</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
-
-          {/* Eligibility Rules */}
-          <div className="bui-box">
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Eligibility Rules</div>
-            <p className="text-muted mb-16">Define audience targeting rules. Rules from PROD eligibility engine (AND/OR logic).</p>
-
-            {/* Common Rules */}
-            <div className="eligibility-subsection">
-              <div className="eligibility-subsection-header">
-                <span style={{ fontWeight: 600, fontSize: 14 }}>Common Rules</span>
-                <span className="text-muted" style={{ fontSize: 12 }}>Applies to all selected channels</span>
-              </div>
-              <div className="rule-builder">
-                {rules.map((r, i) => (
-                  <div key={r.id} className="rule-row">
-                    {i > 0 && (
-                      <select className="form-select" style={{ width: 70, flex: "none" }} value={r.connector} onChange={e => updateRule(r.id, "connector", e.target.value)}>
-                        <option value="AND">AND</option>
-                        <option value="OR">OR</option>
-                      </select>
-                    )}
-                    <select className="form-select" value={r.attribute} onChange={e => updateRule(r.id, "attribute", e.target.value)}>
-                      {RULE_ATTRIBUTES.map(a => (
-                        <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
-                      ))}
-                    </select>
-                    <select className="form-select" style={{ width: 140, flex: "none" }} value={r.operator} onChange={e => updateRule(r.id, "operator", e.target.value)}>
-                      <option value="equals">equals</option>
-                      <option value="not_equals">not equals</option>
-                      <option value="greater_than">greater than</option>
-                      <option value="less_than">less than</option>
-                      <option value="in">in</option>
-                    </select>
-                    <input className="form-input" style={{ width: 120, flex: "none" }} value={String(r.value)} onChange={e => updateRule(r.id, "value", e.target.value)} />
-                    <button className="rule-remove-btn" onClick={() => removeRule(r.id)}>&times;</button>
-                  </div>
-                ))}
-              </div>
-              <div style={{ position: "relative", marginTop: 12 }}>
-                <button className="btn btn-secondary" onClick={() => setShowRuleMenu(!showRuleMenu)}>+ Add Rule</button>
-                {showRuleMenu && (
-                  <div className="channel-rules-menu tier-selection-appear">
-                    {RULE_ATTRIBUTES.map(a => (
-                      <div key={a} className="channel-rules-menu-item" onClick={() => addRule(a)}>
-                        <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {rules.length > 0 && (
-                <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
-                  Preview: {rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute} ${r.operator.replace("_", " ")} ${r.value}`).join("")}
-                </div>
-              )}
-            </div>
-
-            {/* Channel-Specific Rules */}
-            <ChannelSpecificRules
-              selectedChannels={selectedChannels}
-              channelRulesState={channelRules}
-              onChannelRulesChange={setChannelRules}
-            />
-          </div>
 
           {/* Base Content */}
           <BaseContentSection selectedChannels={selectedChannels.length > 0 ? selectedChannels : bestChannelContentEnabled ? (["email", "push", "sms", "whatsapp"] as MessageChannel[]) : []} />

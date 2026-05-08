@@ -91,7 +91,7 @@ body {
 /* ── Content ── */
 
 .app-layout-content { flex-grow: 1; z-index: 10; overflow: auto; display: flex; flex-direction: column; }
-.app-page { display: flex; flex-direction: column; gap: 24px; max-width: 1200px; padding: 28px 32px; }
+.app-page { display: flex; flex-direction: column; gap: 16px; max-width: 1200px; padding: 24px 32px; }
 
 /* ── Page Header ── */
 
@@ -103,7 +103,7 @@ body {
 
 /* ── Cards & Boxes ── */
 
-.bui-box { background: var(--card-bg); border-radius: var(--radius-md); padding: 24px; }
+.bui-box { background: var(--card-bg); border-radius: var(--radius-md); padding: 20px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 
 /* ── List Cards ── */
@@ -154,7 +154,7 @@ body {
 
 /* ── Forms ── */
 
-.form-group { margin-bottom: 16px; }
+.form-group { margin-bottom: 12px; }
 .form-label { display: flex; align-items: flex-end; padding: 0 0 4px; color: var(--color-gray-900); font-size: 14px; font-weight: 500; line-height: 20px; }
 .form-input { width: 100%; padding: 4px 8px; height: 36px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-sm); font-size: 14px; font-family: var(--font-family); background: var(--card-bg); outline: none; }
 .form-input:focus { border-width: 2px; border-color: var(--color-blue-500); }
@@ -1037,4 +1037,301 @@ textarea.form-input { resize: vertical; font-family: inherit; }
   0% { width: 0; }
   60% { width: 70%; }
   100% { width: 100%; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   3-Stage Pipeline Indicator (Appendix A)
+   ═══════════════════════════════════════════════════════════ */
+
+.pipeline-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.pipeline-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-100);
+  min-width: 140px;
+}
+
+.pipeline-stage--active {
+  background: var(--color-blue-50);
+  border-color: var(--color-blue-500);
+}
+
+.pipeline-stage-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-blue-500);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pipeline-stage-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.pipeline-stage-desc {
+  font-size: 11px;
+  color: var(--color-gray-500);
+}
+
+.pipeline-connector {
+  font-size: 18px;
+  color: var(--color-gray-300);
+  padding: 0 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Eligibility Stage Sections
+   ═══════════════════════════════════════════════════════════ */
+
+.eligibility-stage {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-gray-100);
+}
+
+.eligibility-stage-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.eligibility-stage-badge {
+  background: var(--color-blue-500);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.eligibility-stage-failure-mode {
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.eligibility-stage-failure-mode--campaign {
+  background: var(--color-red-100);
+  color: var(--color-red-600);
+  border-left: 3px solid var(--color-red-600);
+}
+
+.eligibility-stage-failure-mode--channel {
+  background: var(--color-yellow-100);
+  color: var(--color-yellow-600);
+  border-left: 3px solid var(--color-yellow-600);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Channel Eligibility Rules (new Appendix A component)
+   ═══════════════════════════════════════════════════════════ */
+
+.channel-eligibility-container {
+  margin-top: 12px;
+}
+
+.channel-eligibility-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--color-gray-100);
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.channel-eligibility-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s ease;
+}
+
+.channel-eligibility-tab:hover {
+  color: var(--color-gray-800);
+  background: var(--color-gray-50);
+}
+
+.channel-eligibility-tab--active {
+  color: var(--color-blue-500);
+  border-bottom-color: var(--color-blue-500);
+  font-weight: 600;
+}
+
+.channel-eligibility-tab-count {
+  font-size: 10px;
+  background: var(--color-gray-100);
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  color: var(--color-gray-500);
+}
+
+.channel-eligibility-tab--active .channel-eligibility-tab-count {
+  background: var(--color-blue-100);
+  color: var(--color-blue-500);
+}
+
+.channel-eligibility-panel {
+  padding: 16px 0;
+}
+
+.channel-eligibility-section {
+  margin-bottom: 16px;
+}
+
+.channel-eligibility-section:last-child {
+  margin-bottom: 0;
+}
+
+.channel-eligibility-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--color-gray-100);
+}
+
+.channel-eligibility-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.channel-eligibility-rule-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-gray-100);
+}
+
+.channel-eligibility-rule-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.channel-eligibility-rule-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-gray-800);
+}
+
+.channel-eligibility-rule-desc {
+  font-size: 11px;
+  color: var(--color-gray-500);
+  margin-top: 1px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Audience Overlap Section
+   ═══════════════════════════════════════════════════════════ */
+
+.audience-overlap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.audience-overlap-card {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-100);
+  text-align: center;
+}
+
+.audience-overlap-card--email { border-left: 3px solid var(--color-email); }
+.audience-overlap-card--push { border-left: 3px solid var(--color-push); }
+.audience-overlap-card--sms { border-left: 3px solid var(--color-sms); }
+.audience-overlap-card--whatsapp { border-left: 3px solid var(--color-whatsapp); }
+.audience-overlap-card--total { border-left: 3px solid var(--color-blue-500); background: var(--color-blue-50); }
+
+.audience-overlap-card-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-gray-900);
+}
+
+.audience-overlap-card-label {
+  font-size: 11px;
+  color: var(--color-gray-500);
+  margin-top: 2px;
+}
+
+.audience-overlap-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-gray-100);
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.audience-overlap-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Info Tooltip
+   ═══════════════════════════════════════════════════════════ */
+
+.info-tooltip-trigger {
+  position: relative;
+}
+
+.info-tooltip-content {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  padding: 10px 12px;
+  background: var(--color-gray-900);
+  color: white;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.info-tooltip-trigger:hover .info-tooltip-content {
+  display: block;
 }

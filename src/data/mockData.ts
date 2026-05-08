@@ -685,6 +685,8 @@ export interface MockSegment {
   estimatedAudience: number | null;
   uniqueReach: number | null;
   totalSends: number | null;
+  channelReach?: Partial<Record<MessageChannel, number>>;
+  overlapCount?: number;
   lastUpdated: string;
   createdBy: string;
 }
@@ -706,6 +708,8 @@ export const mockSegments: MockSegment[] = [
     estimatedAudience: 4560000,
     uniqueReach: 4560000,
     totalSends: 4560000,
+    channelReach: { email: 3520000, push: 2180000, sms: 1450000 },
+    overlapCount: 2590000,
     lastUpdated: "2026-04-28",
     createdBy: "m.johnson",
   },
@@ -724,6 +728,8 @@ export const mockSegments: MockSegment[] = [
     estimatedAudience: 2480000,
     uniqueReach: 2480000,
     totalSends: 3100000,
+    channelReach: { push: 2100000, email: 2480000, whatsapp: 890000 },
+    overlapCount: 1990000,
     lastUpdated: "2026-05-01",
     createdBy: "s.patel",
   },
@@ -741,6 +747,8 @@ export const mockSegments: MockSegment[] = [
     estimatedAudience: 620000,
     uniqueReach: 620000,
     totalSends: 1860000,
+    channelReach: { email: 620000, push: 580000, whatsapp: 420000 },
+    overlapCount: 540000,
     lastUpdated: "2026-04-30",
     createdBy: "a.kumar",
   },
