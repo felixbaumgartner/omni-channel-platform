@@ -8,8 +8,6 @@ export default function TransactionalCreate() {
   const [campaignName, setCampaignName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedChannels, setSelectedChannels] = useState<MessageChannel[]>([]);
-  const [experimentEnabled, setExperimentEnabled] = useState(false);
-  const [experimentTag, setExperimentTag] = useState("");
   const [affiliateId, setAffiliateId] = useState("");
   const [parentAffiliateId, setParentAffiliateId] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -160,25 +158,6 @@ export default function TransactionalCreate() {
 
       {/* Base Content */}
       <BaseContentSection selectedChannels={selectedChannels} />
-
-      {/* Experiment */}
-      <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Experiment</div>
-        {!experimentEnabled ? (
-          <div style={{ padding: 24, border: "1px dashed var(--border-color)", borderRadius: "var(--radius-md)", textAlign: "center" }}>
-            <p className="text-muted" style={{ marginBottom: 12 }}>No experiment configured. Set up an A/B test to compare content or channel routing variants.</p>
-            <button className="btn btn-secondary" onClick={() => setExperimentEnabled(true)}>Setup Experiment</button>
-          </div>
-        ) : (
-          <div className="tier-selection-appear">
-            <div className="form-group">
-              <label className="form-label">Experiment Tag</label>
-              <input className="form-input" placeholder="e.g., emk_booking_conf_experiment" value={experimentTag} onChange={e => setExperimentTag(e.target.value)} />
-            </div>
-            <button className="btn btn-secondary btn-destructive" onClick={() => { setExperimentEnabled(false); setExperimentTag(""); }}>Remove Experiment</button>
-          </div>
-        )}
-      </div>
 
       {/* Reporting */}
       <div className="bui-box">
