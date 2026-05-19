@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { audienceEstimationData } from "../data/mockData";
 import { CHANNEL_ICONS, CHANNEL_LABELS, ORCHESTRATION_LABELS, RULE_ATTRIBUTES, type MessageChannel, type OrchestrationMode } from "../types";
 import { usePhase } from "../context/PhaseContext";
+import { ChannelEligibilityRules } from "../components/ChannelSpecificRules";
 
 type Step = "form" | "saved" | "scheduling" | "estimated";
 
@@ -42,6 +43,33 @@ export default function AudienceEstimationCreate() {
   const [showRuleMenu, setShowRuleMenu] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduling, setScheduling] = useState(false);
+
+  // Channel Eligibility Rules state (mirrors CampaignCreate / Appendix A model)
+  const [eligibilityRulesEnabled, setEligibilityRulesEnabled] = useState<Record<string, boolean>>({});
+  const [experimentValues, setExperimentValues] = useState<Record<string, string>>({});
+  const [addedCustomRules, setAddedCustomRules] = useState<Record<string, { id: string; label: string; description: string }[]>>({});
+
+  const handleToggleEligibilityRule = (ruleId: string) => {
+    setEligibilityRulesEnabled(prev => ({ ...prev, [ruleId]: !prev[ruleId] }));
+  };
+
+  const handleExperimentChange = (ruleId: string, value: string) => {
+    setExperimentValues(prev => ({ ...prev, [ruleId]: value }));
+  };
+
+  const handleAddCustomRule = (channel: MessageChannel, rule: { id: string; label: string; description: string }) => {
+    setAddedCustomRules(prev => ({
+      ...prev,
+      [channel]: [...(prev[channel] || []), rule],
+    }));
+  };
+
+  const handleRemoveCustomRule = (channel: MessageChannel, ruleId: string) => {
+    setAddedCustomRules(prev => ({
+      ...prev,
+      [channel]: (prev[channel] || []).filter(r => r.id !== ruleId),
+    }));
+  };
 
   const toggleChannel = (ch: MessageChannel) => {
     setChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
@@ -355,50 +383,82 @@ export default function AudienceEstimationCreate() {
         </div>
       )}
 
-      {/* Section 4: Eligibility Rules */}
-      <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Eligibility Rules</div>
-        <p className="text-muted mb-16">Define audience targeting rules. Rules from PROD eligibility engine (AND/OR logic).</p>
-        <div className="rule-builder">
-          {rules.map((rule, idx) => (
-            <div key={rule.id} className="rule-row">
-              {idx > 0 && (
-                <select className="form-select" style={{ width: 70, flex: "none" }} value={rule.connector} onChange={e => updateRule(rule.id, "connector", e.target.value)}>
-                  <option value="AND">AND</option>
-                  <option value="OR">OR</option>
-                </select>
-              )}
-              <select className="form-select" value={rule.attribute} onChange={e => updateRule(rule.id, "attribute", e.target.value)}>
-                {RULE_ATTRIBUTES.map(a => (
-                  <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
-                ))}
-              </select>
-              <select className="form-select" style={{ width: 140, flex: "none" }} value={rule.operator} onChange={e => updateRule(rule.id, "operator", e.target.value)}>
-                {OPERATORS.map(op => <option key={op} value={op}>{op.replace(/_/g, " ")}</option>)}
-              </select>
-              <input className="form-input" style={{ width: 120, flex: "none" }} value={rule.value} onChange={e => updateRule(rule.id, "value", e.target.value)} placeholder="Value" />
-              <button className="rule-remove-btn" onClick={() => removeRule(rule.id)}>&times;</button>
+      {/* Section 4: Eligibility Pipeline (Campaign + Channel) */}
+      {channels.length > 0 && (
+        <div className="bui-box tier-selection-appear">
+
+          {/* ── Campaign Eligibility Rules ── */}
+          <div className="eligibility-stage" style={{ marginTop: 8 }}>
+            <div className="eligibility-stage-header">
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>Campaign Eligibility Rules</div>
+                <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Users who fail these rules are excluded from the estimation entirely.</div>
+              </div>
             </div>
-          ))}
-        </div>
-        <div style={{ position: "relative", marginTop: 12 }}>
-          <button className="btn btn-secondary" onClick={() => setShowRuleMenu(!showRuleMenu)}>+ Add Rule</button>
-          {showRuleMenu && (
-            <div className="channel-rules-menu tier-selection-appear">
-              {RULE_ATTRIBUTES.map(a => (
-                <div key={a} className="channel-rules-menu-item" onClick={() => { addRule(a); setShowRuleMenu(false); }}>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
+
+            <div className="rule-builder" style={{ marginTop: 12 }}>
+              {rules.map((rule, idx) => (
+                <div key={rule.id} className="rule-row">
+                  {idx > 0 && (
+                    <select className="form-select" style={{ width: 70, flex: "none" }} value={rule.connector} onChange={e => updateRule(rule.id, "connector", e.target.value)}>
+                      <option value="AND">AND</option>
+                      <option value="OR">OR</option>
+                    </select>
+                  )}
+                  <select className="form-select" value={rule.attribute} onChange={e => updateRule(rule.id, "attribute", e.target.value)}>
+                    {RULE_ATTRIBUTES.map(a => (
+                      <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
+                    ))}
+                  </select>
+                  <select className="form-select" style={{ width: 140, flex: "none" }} value={rule.operator} onChange={e => updateRule(rule.id, "operator", e.target.value)}>
+                    {OPERATORS.map(op => <option key={op} value={op}>{op.replace(/_/g, " ")}</option>)}
+                  </select>
+                  <input className="form-input" style={{ width: 120, flex: "none" }} value={rule.value} onChange={e => updateRule(rule.id, "value", e.target.value)} placeholder="Value" />
+                  <button className="rule-remove-btn" onClick={() => removeRule(rule.id)}>&times;</button>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-        {rules.length > 0 && (
-          <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
-            Preview: {rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute.replace(/_/g, " ")} ${r.operator.replace(/_/g, " ")} ${r.value}`).join("")}
+            <div style={{ position: "relative", marginTop: 12 }}>
+              <button className="btn btn-secondary" onClick={() => setShowRuleMenu(!showRuleMenu)}>+ Add Rule</button>
+              {showRuleMenu && (
+                <div className="channel-rules-menu tier-selection-appear">
+                  {RULE_ATTRIBUTES.map(a => (
+                    <div key={a} className="channel-rules-menu-item" onClick={() => { addRule(a); setShowRuleMenu(false); }}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {rules.length > 0 && (
+              <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
+                Preview: {rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute.replace(/_/g, " ")} ${r.operator.replace(/_/g, " ")} ${r.value}`).join("")}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          {/* ── Channel Eligibility Rules ── */}
+          <div className="eligibility-stage" style={{ marginTop: 16 }}>
+            <div className="eligibility-stage-header">
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>Channel Eligibility Rules</div>
+                <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Per-channel rules that determine which channels a qualified user can receive.</div>
+              </div>
+            </div>
+
+            <ChannelEligibilityRules
+              selectedChannels={channels}
+              enabledRules={eligibilityRulesEnabled}
+              onToggleRule={handleToggleEligibilityRule}
+              experimentValues={experimentValues}
+              onExperimentChange={handleExperimentChange}
+              addedCustomRules={addedCustomRules}
+              onAddCustomRule={handleAddCustomRule}
+              onRemoveCustomRule={handleRemoveCustomRule}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Save Button */}
       <div className="btn-group">

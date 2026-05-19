@@ -3,3 +3,5 @@ dist/
 .DS_Store
 *.local
 .vercel
+.claude/
+targeting_ref.png
