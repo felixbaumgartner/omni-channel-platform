@@ -832,8 +832,8 @@ export default function JourneyBuilder() {
                           {/* ── Branches list ── */}
                           {ds.branches.map((branch, branchIdx) => (
                             <div key={branch.id} style={{ border: "1px solid var(--color-gray-200, #e5e7eb)", borderRadius: 6, padding: 16, marginBottom: 12 }}>
-                              <div style={{ display: "grid", gridTemplateColumns: "160px 1fr auto auto", gap: 12, alignItems: "center" }}>
-                                <label className="form-label" style={{ marginBottom: 0, fontWeight: 700 }}>
+                              <div style={{ display: "grid", gridTemplateColumns: "110px 1fr auto auto", gap: 8, alignItems: "center" }}>
+                                <label className="form-label" style={{ marginBottom: 0, fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>
                                   Branch {branchIdx + 1} Label <span style={{ color: "var(--color-red-600, #dc2626)" }}>*</span>
                                 </label>
                                 <input
@@ -841,10 +841,11 @@ export default function JourneyBuilder() {
                                   placeholder="Eligible for incentive"
                                   value={branch.label}
                                   onChange={e => updateBranch(step.id, branch.id, { label: e.target.value })}
+                                  style={{ minWidth: 0 }}
                                 />
                                 <button
                                   className="btn btn-link"
-                                  style={{ color: "var(--color-blue-600, #2563eb)", fontWeight: 600, padding: "0 8px", background: "none", border: "none", cursor: "pointer" }}
+                                  style={{ color: "var(--color-blue-600, #2563eb)", fontWeight: 600, fontSize: 12, padding: "4px 6px", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
                                   onClick={() => updateBranch(step.id, branch.id, { showRules: !branch.showRules })}
                                 >
                                   {branch.showRules ? "Hide Rules" : "Show Rules"}
@@ -951,8 +952,8 @@ export default function JourneyBuilder() {
 
                           {/* ── Remainder Branch ── */}
                           <div style={{ border: "1px solid var(--color-gray-200, #e5e7eb)", borderRadius: 6, padding: 16 }}>
-                            <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 12, alignItems: "center", marginBottom: 12 }}>
-                              <label className="form-label" style={{ marginBottom: 0, fontWeight: 700 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 8, alignItems: "center", marginBottom: 12 }}>
+                              <label className="form-label" style={{ marginBottom: 0, fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>
                                 Remainder Branch <span style={{ color: "var(--color-red-600, #dc2626)" }}>*</span>
                               </label>
                               <input
@@ -960,10 +961,11 @@ export default function JourneyBuilder() {
                                 placeholder="Not Eligible for incentive"
                                 value={ds.remainderLabel}
                                 onChange={e => updateDecisionState(step.id, { remainderLabel: e.target.value })}
+                                style={{ minWidth: 0 }}
                               />
                             </div>
-                            <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 12, alignItems: "center" }}>
-                              <label className="form-label" style={{ marginBottom: 0, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 8, alignItems: "center" }}>
+                              <label className="form-label" style={{ marginBottom: 0, fontWeight: 700, fontSize: 13, lineHeight: 1.2, display: "flex", alignItems: "center", gap: 6 }}>
                                 Remainder Wait <span title="Time to wait before sending users down the remainder branch" style={{ color: "var(--color-gray-500, #6b7280)", cursor: "help" }}>&#9432;</span>
                               </label>
                               <div style={{ display: "flex", alignItems: "stretch", border: "1px solid var(--color-gray-300, #d1d5db)", borderRadius: 6, overflow: "hidden" }}>
