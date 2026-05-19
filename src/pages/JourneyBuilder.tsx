@@ -64,24 +64,35 @@ export default function JourneyBuilder() {
   const [experimentValues, setExperimentValues] = useState<Record<string, string>>({});
   const [addedCustomRules, setAddedCustomRules] = useState<Record<string, { id: string; label: string; description: string }[]>>({});
 
-  // Decision Split per-step state (mirrors Campaign Eligibility Rules pattern)
+  // Decision Split per-step state (multi-branch, with applied snapshot for canvas)
+  interface DecisionBranch {
+    id: string;
+    label: string;
+    rules: EligibilityRule[];
+    showRules: boolean;
+    showRuleMenu: boolean;
+  }
+  interface AppliedDecisionSplit {
+    branchLabels: string[];
+    remainderLabel: string;
+  }
   interface DecisionSplitState {
-    branchLabel: string;
+    branches: DecisionBranch[];
     remainderLabel: string;
     remainderWaitDays: number;
-    showRules: boolean;
-    rules: EligibilityRule[];
-    showRuleMenu: boolean;
-    showDebug: boolean;
+    applied?: AppliedDecisionSplit;
   }
+  const makeBranch = (n: number): DecisionBranch => ({
+    id: `b_${Date.now()}_${n}`,
+    label: "",
+    rules: [],
+    showRules: false,
+    showRuleMenu: false,
+  });
   const defaultDecisionState = (): DecisionSplitState => ({
-    branchLabel: "",
+    branches: [makeBranch(1)],
     remainderLabel: "",
     remainderWaitDays: 0,
-    showRules: false,
-    rules: [],
-    showRuleMenu: false,
-    showDebug: false,
   });
   const [decisionStates, setDecisionStates] = useState<Record<string, DecisionSplitState>>({});
 
@@ -91,21 +102,97 @@ export default function JourneyBuilder() {
   function updateDecisionState(stepId: string, patch: Partial<DecisionSplitState>) {
     setDecisionStates(prev => ({ ...prev, [stepId]: { ...getDecisionState(stepId), ...patch } }));
   }
-  function addDecisionRule(stepId: string, attribute: string) {
-    const current = getDecisionState(stepId);
-    const newRule: EligibilityRule = { id: `dr_${Date.now()}`, attribute, operator: "equals" as RuleOperator, value: "", connector: "AND" };
-    setDecisionStates(prev => ({ ...prev, [stepId]: { ...current, rules: [...current.rules, newRule], showRuleMenu: false } }));
-  }
-  function removeDecisionRule(stepId: string, ruleId: string) {
-    const current = getDecisionState(stepId);
-    setDecisionStates(prev => ({ ...prev, [stepId]: { ...current, rules: current.rules.filter(r => r.id !== ruleId) } }));
-  }
-  function updateDecisionRuleField(stepId: string, ruleId: string, field: keyof EligibilityRule, value: string | number) {
+  function updateBranch(stepId: string, branchId: string, patch: Partial<DecisionBranch>) {
     const current = getDecisionState(stepId);
     setDecisionStates(prev => ({
       ...prev,
-      [stepId]: { ...current, rules: current.rules.map(r => r.id === ruleId ? { ...r, [field]: value } : r) },
+      [stepId]: { ...current, branches: current.branches.map(b => b.id === branchId ? { ...b, ...patch } : b) },
     }));
+  }
+  function addBranch(stepId: string) {
+    const current = getDecisionState(stepId);
+    setDecisionStates(prev => ({
+      ...prev,
+      [stepId]: { ...current, branches: [...current.branches, makeBranch(current.branches.length + 1)] },
+    }));
+  }
+  function removeBranch(stepId: string, branchId: string) {
+    const current = getDecisionState(stepId);
+    if (current.branches.length <= 1) return;
+    setDecisionStates(prev => ({
+      ...prev,
+      [stepId]: { ...current, branches: current.branches.filter(b => b.id !== branchId) },
+    }));
+  }
+  function addBranchRule(stepId: string, branchId: string, attribute: string) {
+    const current = getDecisionState(stepId);
+    const newRule: EligibilityRule = { id: `dr_${Date.now()}`, attribute, operator: "equals" as RuleOperator, value: "", connector: "AND" };
+    setDecisionStates(prev => ({
+      ...prev,
+      [stepId]: {
+        ...current,
+        branches: current.branches.map(b => b.id === branchId ? { ...b, rules: [...b.rules, newRule], showRuleMenu: false } : b),
+      },
+    }));
+  }
+  function removeBranchRule(stepId: string, branchId: string, ruleId: string) {
+    const current = getDecisionState(stepId);
+    setDecisionStates(prev => ({
+      ...prev,
+      [stepId]: {
+        ...current,
+        branches: current.branches.map(b => b.id === branchId ? { ...b, rules: b.rules.filter(r => r.id !== ruleId) } : b),
+      },
+    }));
+  }
+  function updateBranchRuleField(stepId: string, branchId: string, ruleId: string, field: keyof EligibilityRule, value: string | number) {
+    const current = getDecisionState(stepId);
+    setDecisionStates(prev => ({
+      ...prev,
+      [stepId]: {
+        ...current,
+        branches: current.branches.map(b => b.id === branchId
+          ? { ...b, rules: b.rules.map(r => r.id === ruleId ? { ...r, [field]: value } : r) }
+          : b),
+      },
+    }));
+  }
+  function decisionHasErrors(s: DecisionSplitState): boolean {
+    if (s.branches.some(b => !b.label.trim())) return true;
+    if (!s.remainderLabel.trim()) return true;
+    if (s.branches.some(b => b.rules.some(r => String(r.value).trim() === ""))) return true;
+    return false;
+  }
+  function applyDecisionChanges(stepId: string) {
+    const current = getDecisionState(stepId);
+    const applied: AppliedDecisionSplit = {
+      branchLabels: current.branches.map(b => b.label.trim()).filter(Boolean),
+      remainderLabel: current.remainderLabel.trim(),
+    };
+    setDecisionStates(prev => ({ ...prev, [stepId]: { ...current, applied } }));
+    setToast("Decision split applied");
+    setTimeout(() => setToast(null), 2000);
+  }
+  function cancelDecisionChanges(stepId: string) {
+    const current = getDecisionState(stepId);
+    if (current.applied) {
+      setDecisionStates(prev => ({
+        ...prev,
+        [stepId]: {
+          ...current,
+          branches: current.applied!.branchLabels.length > 0
+            ? current.applied!.branchLabels.map((label, i) => ({ ...makeBranch(i + 1), label }))
+            : [makeBranch(1)],
+          remainderLabel: current.applied!.remainderLabel,
+        },
+      }));
+    } else {
+      setDecisionStates(prev => {
+        const { [stepId]: _, ...rest } = prev;
+        return rest;
+      });
+    }
+    setSelectedStep(null);
   }
 
   function handleToggleEligibilityRule(ruleId: string) {
@@ -458,6 +545,52 @@ export default function JourneyBuilder() {
                       <span title="Auto-added from entry channel selection" style={{ fontSize: 10, color: "var(--color-gray-400)", marginLeft: "auto", paddingRight: 8 }}>&#128274;</span>
                     )}
                   </div>
+                  {step.type === "condition" && decisionStates[step.id]?.applied && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 0 0 36px" }}>
+                      {decisionStates[step.id].applied!.branchLabels.map((label, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "6px 10px",
+                            background: "var(--color-gray-50, #f9fafb)",
+                            border: "1px solid var(--color-gray-200, #e5e7eb)",
+                            borderRadius: 6,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: "var(--color-gray-700, #374151)",
+                            width: "fit-content",
+                          }}
+                        >
+                          <span style={{ color: "var(--color-blue-600, #2563eb)" }}>&#x2192;</span>
+                          {label}
+                        </div>
+                      ))}
+                      {decisionStates[step.id].applied!.remainderLabel && (
+                        <div
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "6px 10px",
+                            background: "var(--color-gray-50, #f9fafb)",
+                            border: "1px dashed var(--color-gray-300, #d1d5db)",
+                            borderRadius: 6,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: "var(--color-gray-600, #4b5563)",
+                            width: "fit-content",
+                          }}
+                        >
+                          <span style={{ color: "var(--color-gray-400, #9ca3af)" }}>&#x2192;</span>
+                          {decisionStates[step.id].applied!.remainderLabel}
+                          <span style={{ fontSize: 11, fontWeight: 400, color: "var(--color-gray-500, #6b7280)" }}>(remainder)</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {i < steps.length - 1 && (
                     <div className="journey-connector">
                       <div className="journey-connector-line" />
@@ -613,53 +746,60 @@ export default function JourneyBuilder() {
                     )}
                     {step.type === "condition" && (() => {
                       const ds = getDecisionState(step.id);
+                      const hasErrors = decisionHasErrors(ds);
                       return (
                         <>
                           <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Branches</div>
 
-                          {/* ── Branch 1 ── */}
-                          <div style={{ border: "1px solid var(--color-gray-200, #e5e7eb)", borderRadius: 6, padding: 16, marginBottom: 12 }}>
-                            <div style={{ display: "grid", gridTemplateColumns: "160px 1fr auto", gap: 12, alignItems: "center" }}>
-                              <label className="form-label" style={{ marginBottom: 0, fontWeight: 700 }}>
-                                Branch 1 Label <span style={{ color: "var(--color-red-600, #dc2626)" }}>*</span>
-                              </label>
-                              <input
-                                className="form-input"
-                                placeholder="Eligible for incentive"
-                                value={ds.branchLabel}
-                                onChange={e => updateDecisionState(step.id, { branchLabel: e.target.value })}
-                              />
-                              <button
-                                className="btn btn-link"
-                                style={{ color: "var(--color-blue-600, #2563eb)", fontWeight: 600, padding: "0 8px", background: "none", border: "none", cursor: "pointer" }}
-                                onClick={() => updateDecisionState(step.id, { showRules: !ds.showRules })}
-                              >
-                                {ds.showRules ? "Hide Rules" : "Show Rules"}
-                              </button>
-                            </div>
+                          {/* ── Branches list ── */}
+                          {ds.branches.map((branch, branchIdx) => (
+                            <div key={branch.id} style={{ border: "1px solid var(--color-gray-200, #e5e7eb)", borderRadius: 6, padding: 16, marginBottom: 12 }}>
+                              <div style={{ display: "grid", gridTemplateColumns: "160px 1fr auto auto", gap: 12, alignItems: "center" }}>
+                                <label className="form-label" style={{ marginBottom: 0, fontWeight: 700 }}>
+                                  Branch {branchIdx + 1} Label <span style={{ color: "var(--color-red-600, #dc2626)" }}>*</span>
+                                </label>
+                                <input
+                                  className="form-input"
+                                  placeholder="Eligible for incentive"
+                                  value={branch.label}
+                                  onChange={e => updateBranch(step.id, branch.id, { label: e.target.value })}
+                                />
+                                <button
+                                  className="btn btn-link"
+                                  style={{ color: "var(--color-blue-600, #2563eb)", fontWeight: 600, padding: "0 8px", background: "none", border: "none", cursor: "pointer" }}
+                                  onClick={() => updateBranch(step.id, branch.id, { showRules: !branch.showRules })}
+                                >
+                                  {branch.showRules ? "Hide Rules" : "Show Rules"}
+                                </button>
+                                {ds.branches.length > 1 ? (
+                                  <button
+                                    className="rule-remove-btn"
+                                    title="Remove branch"
+                                    onClick={() => removeBranch(step.id, branch.id)}
+                                  >
+                                    &times;
+                                  </button>
+                                ) : <span />}
+                              </div>
 
-                            {/* ── Rules (when expanded) ── */}
-                            {ds.showRules && (
-                              <div className="tier-selection-appear" style={{ marginTop: 16 }}>
-                                <div style={{ textAlign: "right", marginBottom: 12 }}>
-                                  <a href="#" onClick={e => e.preventDefault()} style={{ color: "var(--color-blue-600, #2563eb)", fontWeight: 600, fontSize: 13, textDecoration: "none" }}>
-                                    &#x2197; Open in Full Screen
-                                  </a>
-                                </div>
+                              {/* ── Rules (when expanded, Campaign Eligibility Rules pattern) ── */}
+                              {branch.showRules && (
+                                <div className="tier-selection-appear" style={{ marginTop: 16 }}>
+                                  <div style={{ textAlign: "right", marginBottom: 12 }}>
+                                    <a href="#" onClick={e => e.preventDefault()} style={{ color: "var(--color-blue-600, #2563eb)", fontWeight: 600, fontSize: 13, textDecoration: "none" }}>
+                                      &#x2197; Open in Full Screen
+                                    </a>
+                                  </div>
 
-                                {/* Rule list (Campaign Eligibility Rules pattern) */}
-                                {ds.rules.length === 0 ? (
-                                  <div className="text-muted" style={{ fontSize: 14, marginBottom: 16 }}>No rules yet</div>
-                                ) : (
                                   <div className="rule-builder" style={{ marginBottom: 12 }}>
-                                    {ds.rules.map((r, i) => (
+                                    {branch.rules.map((r, i) => (
                                       <div key={r.id} className="rule-row">
                                         {i > 0 && (
                                           <select
                                             className="form-select"
                                             style={{ width: 70, flex: "none" }}
                                             value={r.connector}
-                                            onChange={e => updateDecisionRuleField(step.id, r.id, "connector", e.target.value)}
+                                            onChange={e => updateBranchRuleField(step.id, branch.id, r.id, "connector", e.target.value)}
                                           >
                                             <option value="AND">AND</option>
                                             <option value="OR">OR</option>
@@ -668,7 +808,7 @@ export default function JourneyBuilder() {
                                         <select
                                           className="form-select"
                                           value={r.attribute}
-                                          onChange={e => updateDecisionRuleField(step.id, r.id, "attribute", e.target.value)}
+                                          onChange={e => updateBranchRuleField(step.id, branch.id, r.id, "attribute", e.target.value)}
                                         >
                                           {RULE_ATTRIBUTES.map(a => (
                                             <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
@@ -678,7 +818,7 @@ export default function JourneyBuilder() {
                                           className="form-select"
                                           style={{ width: 140, flex: "none" }}
                                           value={r.operator}
-                                          onChange={e => updateDecisionRuleField(step.id, r.id, "operator", e.target.value)}
+                                          onChange={e => updateBranchRuleField(step.id, branch.id, r.id, "operator", e.target.value)}
                                         >
                                           <option value="equals">equals</option>
                                           <option value="not_equals">not equals</option>
@@ -690,79 +830,45 @@ export default function JourneyBuilder() {
                                           className="form-input"
                                           style={{ width: 120, flex: "none" }}
                                           value={String(r.value)}
-                                          onChange={e => updateDecisionRuleField(step.id, r.id, "value", e.target.value)}
+                                          onChange={e => updateBranchRuleField(step.id, branch.id, r.id, "value", e.target.value)}
                                           placeholder="Value"
                                         />
-                                        <button className="rule-remove-btn" onClick={() => removeDecisionRule(step.id, r.id)}>&times;</button>
+                                        <button className="rule-remove-btn" onClick={() => removeBranchRule(step.id, branch.id, r.id)}>&times;</button>
                                       </div>
                                     ))}
                                   </div>
-                                )}
 
-                                {/* Action row */}
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginTop: 8 }}>
-                                  <div style={{ display: "flex", gap: 8, position: "relative" }}>
+                                  <div style={{ position: "relative" }}>
                                     <button
                                       className="btn btn-secondary"
-                                      onClick={() => updateDecisionState(step.id, { showRuleMenu: !ds.showRuleMenu })}
+                                      onClick={() => updateBranch(step.id, branch.id, { showRuleMenu: !branch.showRuleMenu })}
                                     >
                                       + Add Rule
                                     </button>
-                                    <button
-                                      className="btn btn-secondary"
-                                      onClick={() => setToast("Rule groups coming soon")}
-                                    >
-                                      &#128193; Add Group
-                                    </button>
-                                    {ds.showRuleMenu && (
+                                    {branch.showRuleMenu && (
                                       <div className="channel-rules-menu tier-selection-appear" style={{ top: "100%", left: 0 }}>
                                         {RULE_ATTRIBUTES.map(a => (
-                                          <div key={a} className="channel-rules-menu-item" onClick={() => addDecisionRule(step.id, a)}>
+                                          <div key={a} className="channel-rules-menu-item" onClick={() => addBranchRule(step.id, branch.id, a)}>
                                             <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
                                           </div>
                                         ))}
                                       </div>
                                     )}
                                   </div>
-                                  <button
-                                    className="btn btn-secondary"
-                                    onClick={() => setToast("Create CDP Segment opens external tool")}
-                                  >
-                                    &#x2197; Create CDP Segment
-                                  </button>
                                 </div>
+                              )}
+                            </div>
+                          ))}
 
-                                {/* Show Payloads (Debug) */}
-                                <div style={{ marginTop: 16, border: "1px solid var(--color-gray-200, #e5e7eb)", borderRadius: 6 }}>
-                                  <button
-                                    onClick={() => updateDecisionState(step.id, { showDebug: !ds.showDebug })}
-                                    style={{
-                                      width: "100%",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "space-between",
-                                      padding: "10px 14px",
-                                      background: "none",
-                                      border: "none",
-                                      cursor: "pointer",
-                                      fontSize: 13,
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                      <span style={{ fontFamily: "monospace", color: "var(--color-gray-500, #6b7280)" }}>&#123;/&#125;</span>
-                                      Show Payloads (Debug)
-                                    </span>
-                                    <span style={{ color: "var(--color-gray-500, #6b7280)" }}>{ds.showDebug ? "▲" : "▼"}</span>
-                                  </button>
-                                  {ds.showDebug && (
-                                    <pre style={{ margin: 0, padding: 14, background: "var(--color-gray-50, #f9fafb)", fontSize: 12, borderTop: "1px solid var(--color-gray-200, #e5e7eb)", overflow: "auto" }}>
-{JSON.stringify({ branchLabel: ds.branchLabel, rules: ds.rules }, null, 2)}
-                                    </pre>
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                          {/* ── Add Branch button ── */}
+                          <div style={{ marginBottom: 12 }}>
+                            <button
+                              className="btn btn-secondary"
+                              style={{ color: "var(--color-blue-600, #2563eb)", borderColor: "var(--color-blue-600, #2563eb)", fontWeight: 600 }}
+                              onClick={() => addBranch(step.id)}
+                            >
+                              + Add Branch
+                            </button>
                           </div>
 
                           {/* ── Remainder Branch ── */}
@@ -799,6 +905,51 @@ export default function JourneyBuilder() {
                               <span style={{ color: "var(--color-gray-500, #6b7280)" }}>&#9432;</span>
                               Remainder branch contains all users that had not fulfilled conditions from other branches in this node
                             </div>
+                          </div>
+
+                          {/* ── Apply / Cancel ── */}
+                          <div style={{ display: "flex", gap: 12, marginTop: 20, alignItems: "center" }}>
+                            <button
+                              className="btn btn-primary"
+                              disabled={hasErrors}
+                              onClick={() => applyDecisionChanges(step.id)}
+                              style={hasErrors ? { background: "var(--color-gray-200, #e5e7eb)", color: "var(--color-gray-500, #6b7280)", cursor: "not-allowed" } : undefined}
+                            >
+                              Apply Changes
+                            </button>
+                            {hasErrors && (
+                              <button
+                                onClick={() => applyDecisionChanges(step.id)}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                  background: "white",
+                                  border: "1px solid var(--color-red-600, #dc2626)",
+                                  color: "var(--color-red-600, #dc2626)",
+                                  fontWeight: 600,
+                                  padding: "8px 16px",
+                                  borderRadius: 6,
+                                  cursor: "pointer",
+                                }}
+                              >
+                                &#9888; Apply (with errors)
+                              </button>
+                            )}
+                            <button
+                              onClick={() => cancelDecisionChanges(step.id)}
+                              style={{
+                                background: "white",
+                                border: "1px solid var(--color-blue-600, #2563eb)",
+                                color: "var(--color-blue-600, #2563eb)",
+                                fontWeight: 600,
+                                padding: "8px 16px",
+                                borderRadius: 6,
+                                cursor: "pointer",
+                              }}
+                            >
+                              Cancel
+                            </button>
                           </div>
                         </>
                       );
