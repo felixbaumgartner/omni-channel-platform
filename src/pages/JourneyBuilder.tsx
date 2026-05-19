@@ -64,58 +64,24 @@ export default function JourneyBuilder() {
   const [experimentValues, setExperimentValues] = useState<Record<string, string>>({});
   const [addedCustomRules, setAddedCustomRules] = useState<Record<string, { id: string; label: string; description: string }[]>>({});
 
-  // Decision Split per-step state (matches reference: branches + rules + remainder)
-  type DecisionRuleKind = "toggle" | "in_list" | "dropdown";
-  interface DecisionRule {
-    id: string;
-    label: string;
-    kind: DecisionRuleKind;
-    enabled: boolean;
-    passWhenMissing: boolean;
-    listSelected?: number;
-    listTotal?: number;
-    dropdownValue?: string;
-    helpUrl?: string;
-  }
+  // Decision Split per-step state (mirrors Campaign Eligibility Rules pattern)
   interface DecisionSplitState {
     branchLabel: string;
     remainderLabel: string;
     remainderWaitDays: number;
     showRules: boolean;
-    rules: DecisionRule[];
+    rules: EligibilityRule[];
+    showRuleMenu: boolean;
+    showDebug: boolean;
   }
   const defaultDecisionState = (): DecisionSplitState => ({
     branchLabel: "",
     remainderLabel: "",
     remainderWaitDays: 0,
     showRules: false,
-    rules: [
-      {
-        id: "r1",
-        label: "Has flight reservation on searched dates (only works with combined_trigger_for_flight_sa_ca_email and combined_trigger_for_flight_sa_ca_notification)",
-        kind: "toggle",
-        enabled: false,
-        passWhenMissing: true,
-      },
-      {
-        id: "r2",
-        label: "User Country (Logged In)",
-        kind: "in_list",
-        enabled: true,
-        passWhenMissing: false,
-        listSelected: 29,
-        listTotal: 243,
-      },
-      {
-        id: "r3",
-        label: "Subscription Preference (Push)",
-        kind: "dropdown",
-        enabled: true,
-        passWhenMissing: false,
-        dropdownValue: "Trip Planning and Support (was: travel_ideas)",
-        helpUrl: "#",
-      },
-    ],
+    rules: [],
+    showRuleMenu: false,
+    showDebug: false,
   });
   const [decisionStates, setDecisionStates] = useState<Record<string, DecisionSplitState>>({});
 
@@ -125,11 +91,20 @@ export default function JourneyBuilder() {
   function updateDecisionState(stepId: string, patch: Partial<DecisionSplitState>) {
     setDecisionStates(prev => ({ ...prev, [stepId]: { ...getDecisionState(stepId), ...patch } }));
   }
-  function updateDecisionRule(stepId: string, ruleId: string, patch: Partial<DecisionRule>) {
+  function addDecisionRule(stepId: string, attribute: string) {
+    const current = getDecisionState(stepId);
+    const newRule: EligibilityRule = { id: `dr_${Date.now()}`, attribute, operator: "equals" as RuleOperator, value: "", connector: "AND" };
+    setDecisionStates(prev => ({ ...prev, [stepId]: { ...current, rules: [...current.rules, newRule], showRuleMenu: false } }));
+  }
+  function removeDecisionRule(stepId: string, ruleId: string) {
+    const current = getDecisionState(stepId);
+    setDecisionStates(prev => ({ ...prev, [stepId]: { ...current, rules: current.rules.filter(r => r.id !== ruleId) } }));
+  }
+  function updateDecisionRuleField(stepId: string, ruleId: string, field: keyof EligibilityRule, value: string | number) {
     const current = getDecisionState(stepId);
     setDecisionStates(prev => ({
       ...prev,
-      [stepId]: { ...current, rules: current.rules.map(r => r.id === ruleId ? { ...r, ...patch } : r) },
+      [stepId]: { ...current, rules: current.rules.map(r => r.id === ruleId ? { ...r, [field]: value } : r) },
     }));
   }
 
@@ -672,90 +647,120 @@ export default function JourneyBuilder() {
                                   </a>
                                 </div>
 
-                                {ds.rules.map(rule => (
-                                  <div
-                                    key={rule.id}
-                                    style={{
-                                      border: "1px solid var(--color-gray-200, #e5e7eb)",
-                                      borderRadius: 6,
-                                      padding: 16,
-                                      marginBottom: 12,
-                                      display: "grid",
-                                      gridTemplateColumns: "minmax(0, 1fr) auto 1fr",
-                                      gap: 16,
-                                      alignItems: "start",
-                                    }}
-                                  >
-                                    <div style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.4, wordBreak: "break-word" }}>{rule.label}</div>
-                                    <span title="Info" style={{ color: "var(--color-gray-500, #6b7280)", cursor: "help" }}>&#9432;</span>
-
-                                    <div>
-                                      {rule.kind === "toggle" && (
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                                            <input
-                                              type="checkbox"
-                                              role="switch"
-                                              checked={rule.enabled}
-                                              onChange={e => updateDecisionRule(step.id, rule.id, { enabled: e.target.checked })}
-                                            />
-                                            <span style={{ fontSize: 13, color: "var(--color-gray-600, #4b5563)" }}>{rule.enabled ? "Yes" : "No"}</span>
-                                          </label>
-                                          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 12, fontSize: 13 }}>
-                                            <input
-                                              type="checkbox"
-                                              checked={rule.passWhenMissing}
-                                              onChange={e => updateDecisionRule(step.id, rule.id, { passWhenMissing: e.target.checked })}
-                                            />
-                                            Pass when value is missing
-                                          </label>
-                                        </div>
-                                      )}
-
-                                      {rule.kind === "in_list" && (
-                                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                          <select className="form-select" style={{ width: 140 }} defaultValue="In List">
-                                            <option>In List</option>
-                                            <option>Not In List</option>
-                                          </select>
-                                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                            <select className="form-select" style={{ flex: 1 }}>
-                                              <option>{rule.listSelected} of {rule.listTotal}</option>
-                                            </select>
-                                            <button title="Preview" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-gray-500, #6b7280)" }}>&#128065;</button>
-                                            <button title="Copy" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-gray-500, #6b7280)" }}>&#128203;</button>
-                                          </div>
-                                          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-                                            <input
-                                              type="checkbox"
-                                              checked={rule.passWhenMissing}
-                                              onChange={e => updateDecisionRule(step.id, rule.id, { passWhenMissing: e.target.checked })}
-                                            />
-                                            Pass when value is missing
-                                          </label>
-                                        </div>
-                                      )}
-
-                                      {rule.kind === "dropdown" && (
-                                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                {/* Rule list (Campaign Eligibility Rules pattern) */}
+                                {ds.rules.length === 0 ? (
+                                  <div className="text-muted" style={{ fontSize: 14, marginBottom: 16 }}>No rules yet</div>
+                                ) : (
+                                  <div className="rule-builder" style={{ marginBottom: 12 }}>
+                                    {ds.rules.map((r, i) => (
+                                      <div key={r.id} className="rule-row">
+                                        {i > 0 && (
                                           <select
                                             className="form-select"
-                                            value={rule.dropdownValue || ""}
-                                            onChange={e => updateDecisionRule(step.id, rule.id, { dropdownValue: e.target.value })}
+                                            style={{ width: 70, flex: "none" }}
+                                            value={r.connector}
+                                            onChange={e => updateDecisionRuleField(step.id, r.id, "connector", e.target.value)}
                                           >
-                                            <option>Trip Planning and Support (was: travel_ideas)</option>
-                                            <option>Trip Updates</option>
-                                            <option>Promotions</option>
-                                            <option>Account &amp; Security</option>
+                                            <option value="AND">AND</option>
+                                            <option value="OR">OR</option>
                                           </select>
-                                          <a href={rule.helpUrl || "#"} onClick={e => e.preventDefault()} style={{ color: "var(--color-blue-600, #2563eb)", fontSize: 13, textDecoration: "none" }}>
-                                            How to choose the category &#x2197;
-                                          </a>
-                                        </div>
-                                      )}
-                                    </div>
+                                        )}
+                                        <select
+                                          className="form-select"
+                                          value={r.attribute}
+                                          onChange={e => updateDecisionRuleField(step.id, r.id, "attribute", e.target.value)}
+                                        >
+                                          {RULE_ATTRIBUTES.map(a => (
+                                            <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
+                                          ))}
+                                        </select>
+                                        <select
+                                          className="form-select"
+                                          style={{ width: 140, flex: "none" }}
+                                          value={r.operator}
+                                          onChange={e => updateDecisionRuleField(step.id, r.id, "operator", e.target.value)}
+                                        >
+                                          <option value="equals">equals</option>
+                                          <option value="not_equals">not equals</option>
+                                          <option value="greater_than">greater than</option>
+                                          <option value="less_than">less than</option>
+                                          <option value="in">in</option>
+                                        </select>
+                                        <input
+                                          className="form-input"
+                                          style={{ width: 120, flex: "none" }}
+                                          value={String(r.value)}
+                                          onChange={e => updateDecisionRuleField(step.id, r.id, "value", e.target.value)}
+                                          placeholder="Value"
+                                        />
+                                        <button className="rule-remove-btn" onClick={() => removeDecisionRule(step.id, r.id)}>&times;</button>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
+                                )}
+
+                                {/* Action row */}
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginTop: 8 }}>
+                                  <div style={{ display: "flex", gap: 8, position: "relative" }}>
+                                    <button
+                                      className="btn btn-secondary"
+                                      onClick={() => updateDecisionState(step.id, { showRuleMenu: !ds.showRuleMenu })}
+                                    >
+                                      + Add Rule
+                                    </button>
+                                    <button
+                                      className="btn btn-secondary"
+                                      onClick={() => setToast("Rule groups coming soon")}
+                                    >
+                                      &#128193; Add Group
+                                    </button>
+                                    {ds.showRuleMenu && (
+                                      <div className="channel-rules-menu tier-selection-appear" style={{ top: "100%", left: 0 }}>
+                                        {RULE_ATTRIBUTES.map(a => (
+                                          <div key={a} className="channel-rules-menu-item" onClick={() => addDecisionRule(step.id, a)}>
+                                            <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setToast("Create CDP Segment opens external tool")}
+                                  >
+                                    &#x2197; Create CDP Segment
+                                  </button>
+                                </div>
+
+                                {/* Show Payloads (Debug) */}
+                                <div style={{ marginTop: 16, border: "1px solid var(--color-gray-200, #e5e7eb)", borderRadius: 6 }}>
+                                  <button
+                                    onClick={() => updateDecisionState(step.id, { showDebug: !ds.showDebug })}
+                                    style={{
+                                      width: "100%",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "space-between",
+                                      padding: "10px 14px",
+                                      background: "none",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      fontSize: 13,
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                      <span style={{ fontFamily: "monospace", color: "var(--color-gray-500, #6b7280)" }}>&#123;/&#125;</span>
+                                      Show Payloads (Debug)
+                                    </span>
+                                    <span style={{ color: "var(--color-gray-500, #6b7280)" }}>{ds.showDebug ? "▲" : "▼"}</span>
+                                  </button>
+                                  {ds.showDebug && (
+                                    <pre style={{ margin: 0, padding: 14, background: "var(--color-gray-50, #f9fafb)", fontSize: 12, borderTop: "1px solid var(--color-gray-200, #e5e7eb)", overflow: "auto" }}>
+{JSON.stringify({ branchLabel: ds.branchLabel, rules: ds.rules }, null, 2)}
+                                    </pre>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>
