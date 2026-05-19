@@ -73,7 +73,7 @@ export default function JourneyBuilder() {
     showRuleMenu: boolean;
   }
   interface AppliedDecisionSplit {
-    branchLabels: string[];
+    branches: { id: string; label: string }[];
     remainderLabel: string;
   }
   interface DecisionSplitState {
@@ -166,7 +166,9 @@ export default function JourneyBuilder() {
   function applyDecisionChanges(stepId: string) {
     const current = getDecisionState(stepId);
     const applied: AppliedDecisionSplit = {
-      branchLabels: current.branches.map(b => b.label.trim()).filter(Boolean),
+      branches: current.branches
+        .filter(b => b.label.trim())
+        .map(b => ({ id: b.id, label: b.label.trim() })),
       remainderLabel: current.remainderLabel.trim(),
     };
     setDecisionStates(prev => ({ ...prev, [stepId]: { ...current, applied } }));
@@ -180,8 +182,8 @@ export default function JourneyBuilder() {
         ...prev,
         [stepId]: {
           ...current,
-          branches: current.applied!.branchLabels.length > 0
-            ? current.applied!.branchLabels.map((label, i) => ({ ...makeBranch(i + 1), label }))
+          branches: current.applied!.branches.length > 0
+            ? current.applied!.branches.map(b => ({ ...makeBranch(0), id: b.id, label: b.label }))
             : [makeBranch(1)],
           remainderLabel: current.applied!.remainderLabel,
         },
@@ -193,6 +195,25 @@ export default function JourneyBuilder() {
       });
     }
     setSelectedStep(null);
+  }
+
+  // Per-branch sub-flow steps (rendered as columns under the Decision Split on the canvas)
+  const REMAINDER_KEY = "__remainder__";
+  const [branchSteps, setBranchSteps] = useState<Record<string, Step[]>>({});
+  const [branchAddMenu, setBranchAddMenu] = useState<string | null>(null);
+  function branchKey(condStepId: string, branchId: string) {
+    return `${condStepId}::${branchId}`;
+  }
+  function addStepToBranch(condStepId: string, branchId: string, type: JourneyStepType) {
+    const key = branchKey(condStepId, branchId);
+    const opt = STEP_OPTIONS.find(o => o.type === type);
+    const newStep: Step = { id: makeId(), type, label: opt?.label || "Step" };
+    setBranchSteps(prev => ({ ...prev, [key]: [...(prev[key] || []), newStep] }));
+    setBranchAddMenu(null);
+  }
+  function removeStepFromBranch(condStepId: string, branchId: string, stepId: string) {
+    const key = branchKey(condStepId, branchId);
+    setBranchSteps(prev => ({ ...prev, [key]: (prev[key] || []).filter(s => s.id !== stepId) }));
   }
 
   function handleToggleEligibilityRule(ruleId: string) {
@@ -545,82 +566,139 @@ export default function JourneyBuilder() {
                       <span title="Auto-added from entry channel selection" style={{ fontSize: 10, color: "var(--color-gray-400)", marginLeft: "auto", paddingRight: 8 }}>&#128274;</span>
                     )}
                   </div>
-                  {step.type === "condition" && decisionStates[step.id]?.applied && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 0 0 36px" }}>
-                      {decisionStates[step.id].applied!.branchLabels.map((label, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 8,
-                            padding: "6px 10px",
-                            background: "var(--color-gray-50, #f9fafb)",
-                            border: "1px solid var(--color-gray-200, #e5e7eb)",
-                            borderRadius: 6,
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: "var(--color-gray-700, #374151)",
-                            width: "fit-content",
-                          }}
-                        >
-                          <span style={{ color: "var(--color-blue-600, #2563eb)" }}>&#x2192;</span>
-                          {label}
+                  {step.type === "condition" && decisionStates[step.id]?.applied && (() => {
+                    const applied = decisionStates[step.id].applied!;
+                    const allBranches: { id: string; label: string; isRemainder: boolean }[] = [
+                      ...applied.branches.map(b => ({ id: b.id, label: b.label, isRemainder: false })),
+                      ...(applied.remainderLabel ? [{ id: REMAINDER_KEY, label: applied.remainderLabel, isRemainder: true }] : []),
+                    ];
+                    return (
+                      <div style={{ marginTop: 8 }}>
+                        {/* Fork connector line */}
+                        <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+                          <div style={{ width: 2, height: 16, background: "var(--color-gray-300, #d1d5db)" }} />
                         </div>
-                      ))}
-                      {decisionStates[step.id].applied!.remainderLabel && (
-                        <div
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 8,
-                            padding: "6px 10px",
-                            background: "var(--color-gray-50, #f9fafb)",
-                            border: "1px dashed var(--color-gray-300, #d1d5db)",
-                            borderRadius: 6,
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: "var(--color-gray-600, #4b5563)",
-                            width: "fit-content",
-                          }}
-                        >
-                          <span style={{ color: "var(--color-gray-400, #9ca3af)" }}>&#x2192;</span>
-                          {decisionStates[step.id].applied!.remainderLabel}
-                          <span style={{ fontSize: 11, fontWeight: 400, color: "var(--color-gray-500, #6b7280)" }}>(remainder)</span>
+
+                        {/* Branch columns */}
+                        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", overflowX: "auto", paddingBottom: 8 }}>
+                          {allBranches.map(b => {
+                            const key = branchKey(step.id, b.id);
+                            const subSteps = branchSteps[key] || [];
+                            const menuKey = `${step.id}::${b.id}`;
+                            const isMenuOpen = branchAddMenu === menuKey;
+                            return (
+                              <div key={b.id} style={{ flex: "1 1 220px", minWidth: 200, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                                {/* Branch label chip */}
+                                <div
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    padding: "8px 12px",
+                                    background: b.isRemainder ? "var(--color-gray-50, #f9fafb)" : "white",
+                                    border: b.isRemainder ? "1px dashed var(--color-gray-300, #d1d5db)" : "1px solid var(--color-gray-200, #e5e7eb)",
+                                    borderRadius: 6,
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    color: b.isRemainder ? "var(--color-gray-600, #4b5563)" : "var(--color-gray-700, #374151)",
+                                    width: "fit-content",
+                                    maxWidth: "100%",
+                                  }}
+                                >
+                                  <span style={{ color: b.isRemainder ? "var(--color-gray-400, #9ca3af)" : "var(--color-blue-600, #2563eb)" }}>&#x2192;</span>
+                                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.label}</span>
+                                  {b.isRemainder && <span style={{ fontSize: 11, fontWeight: 400, color: "var(--color-gray-500, #6b7280)" }}>(remainder)</span>}
+                                </div>
+
+                                {/* Sub-steps for this branch */}
+                                {subSteps.map(subStep => (
+                                  <div key={subStep.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%" }}>
+                                    <div style={{ width: 2, height: 12, background: "var(--color-gray-300, #d1d5db)" }} />
+                                    <div
+                                      className={`journey-step journey-step--${subStep.type} ${selectedStep === subStep.id ? "journey-step--selected" : ""}`}
+                                      onClick={() => setSelectedStep(subStep.id)}
+                                      style={{ width: "100%" }}
+                                    >
+                                      <span className="journey-step-icon">{getStepIcon(subStep.type)}</span>
+                                      <div className="journey-step-info">
+                                        <div className="journey-step-label">{subStep.label}</div>
+                                        <div className="journey-step-type">{subStep.type}</div>
+                                      </div>
+                                      <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStepFromBranch(step.id, b.id, subStep.id); }}>&times;</button>
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {/* Add Step button for this branch */}
+                                <div style={{ width: 2, height: 12, background: "var(--color-gray-300, #d1d5db)" }} />
+                                <div style={{ position: "relative", width: "100%" }}>
+                                  <button
+                                    className="journey-add-btn"
+                                    style={{ width: "100%" }}
+                                    onClick={() => setBranchAddMenu(isMenuOpen ? null : menuKey)}
+                                  >
+                                    + Add Step
+                                  </button>
+                                  {isMenuOpen && (
+                                    <div className="journey-add-menu tier-selection-appear" style={{ left: 0, right: 0 }}>
+                                      {STEP_OPTIONS.filter(opt => (showBestChannel || opt.type !== "best_channel") && opt.type !== "condition").map(opt => (
+                                        <div key={opt.type} className="journey-add-option" onClick={() => addStepToBranch(step.id, b.id, opt.type)}>
+                                          <span className="journey-add-option-icon">{opt.icon}</span>
+                                          <div>
+                                            <div style={{ fontWeight: 600, fontSize: 13 }}>{opt.label}</div>
+                                            <div className="text-muted" style={{ fontSize: 12 }}>{opt.description}</div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      )}
-                    </div>
-                  )}
+                      </div>
+                    );
+                  })()}
                   {i < steps.length - 1 && (
                     <div className="journey-connector">
                       <div className="journey-connector-line" />
-                      <div className="journey-connector-arrow">\u25BC</div>
+                      <div className="journey-connector-arrow">{"\u25BC"}</div>
                     </div>
                   )}
                 </div>
               ))}
 
-              {/* Add Step Button */}
-              <div className="journey-connector">
-                <div className="journey-connector-line" />
-                <div className="journey-connector-arrow">\u25BC</div>
-              </div>
-              <div style={{ position: "relative" }}>
-                <button className="journey-add-btn" onClick={() => setShowAddMenu(!showAddMenu)}>+ Add Step</button>
-                {showAddMenu && (
-                  <div className="journey-add-menu tier-selection-appear">
-                    {STEP_OPTIONS.filter(opt => showBestChannel || opt.type !== "best_channel").map(opt => (
-                      <div key={opt.type} className="journey-add-option" onClick={() => addStep(opt.type)}>
-                        <span className="journey-add-option-icon">{opt.icon}</span>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{opt.label}</div>
-                          <div className="text-muted" style={{ fontSize: 12 }}>{opt.description}</div>
+              {/* Add Step Button (hidden when journey ends in an applied Decision Split \u2014 branches own their own Add Step) */}
+              {(() => {
+                const lastStep = steps[steps.length - 1];
+                const journeyEndsInFork = lastStep?.type === "condition" && !!decisionStates[lastStep.id]?.applied;
+                if (journeyEndsInFork) return null;
+                return (
+                  <>
+                    <div className="journey-connector">
+                      <div className="journey-connector-line" />
+                      <div className="journey-connector-arrow">{"\u25BC"}</div>
+                    </div>
+                    <div style={{ position: "relative" }}>
+                      <button className="journey-add-btn" onClick={() => setShowAddMenu(!showAddMenu)}>+ Add Step</button>
+                      {showAddMenu && (
+                        <div className="journey-add-menu tier-selection-appear">
+                          {STEP_OPTIONS.filter(opt => showBestChannel || opt.type !== "best_channel").map(opt => (
+                            <div key={opt.type} className="journey-add-option" onClick={() => addStep(opt.type)}>
+                              <span className="journey-add-option-icon">{opt.icon}</span>
+                              <div>
+                                <div style={{ fontWeight: 600, fontSize: 13 }}>{opt.label}</div>
+                                <div className="text-muted" style={{ fontSize: 12 }}>{opt.description}</div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
