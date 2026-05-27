@@ -28,8 +28,10 @@ export default function TriggerCreate() {
   // Input configuration
   const [inputTopic, setInputTopic] = useState("");
   const [additionalTopics, setAdditionalTopics] = useState<string[]>([]);
-  const [consentCheck, setConsentCheck] = useState(true);
+  const [consentCheck, setConsentCheck] = useState(false);
+  const [enableTimeWindow, setEnableTimeWindow] = useState(false);
   const [joiningWindow, setJoiningWindow] = useState("300");
+  const [enableEvalDelay, setEnableEvalDelay] = useState(false);
   const [delayMinutes, setDelayMinutes] = useState("0");
 
   // Rules
@@ -287,50 +289,84 @@ export default function TriggerCreate() {
         </button>
 
         {/* Consent Check */}
-        <div className="form-group">
+        <div className="form-group" style={{ marginBottom: 12 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}>
             <input
               type="checkbox"
               checked={consentCheck}
               onChange={e => setConsentCheck(e.target.checked)}
             />
-            Enable direct marketing consent check
+            Enable Consent Check
           </label>
-          <div className="text-muted" style={{ marginTop: 4, fontSize: 12, marginLeft: 24 }}>
-            When enabled, consent is validated when the event reaches the message trigger, via Janet subscription API per channel.
-          </div>
+          {consentCheck && (
+            <div className="text-muted" style={{ marginTop: 4, fontSize: 12, marginLeft: 24 }}>
+              Consent is validated when the event reaches the message trigger, via Janet subscription API per channel.
+            </div>
+          )}
         </div>
 
-        {/* Timing Configuration */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div className="form-group">
-            <label className="form-label">Event Window (seconds)</label>
+        {/* Set event time window */}
+        <div className="form-group" style={{ marginBottom: 12 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}>
             <input
-              className="form-input"
-              type="number"
-              min="0"
-              max="86400"
-              value={joiningWindow}
-              onChange={e => setJoiningWindow(e.target.value)}
+              type="checkbox"
+              checked={enableTimeWindow}
+              onChange={e => setEnableTimeWindow(e.target.checked)}
             />
-            <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
+            Set event time window
+          </label>
+          {enableTimeWindow && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, marginLeft: 24, fontSize: 14 }}>
+              <span>Track topics in the last</span>
+              <input
+                className="form-input"
+                type="number"
+                min="0"
+                max="86400"
+                value={joiningWindow}
+                onChange={e => setJoiningWindow(e.target.value)}
+                style={{ width: 120 }}
+              />
+              <span>seconds</span>
+            </div>
+          )}
+          {enableTimeWindow && (
+            <div className="text-muted" style={{ marginTop: 4, fontSize: 12, marginLeft: 24 }}>
               Tracking window for event correlation. 0 = evaluate immediately.
             </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Event Evaluation Delay (minutes)</label>
+          )}
+        </div>
+
+        {/* Set event evaluation delay */}
+        <div className="form-group" style={{ marginBottom: 0 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}>
             <input
-              className="form-input"
-              type="number"
-              min="0"
-              max="360"
-              value={delayMinutes}
-              onChange={e => setDelayMinutes(e.target.value)}
+              type="checkbox"
+              checked={enableEvalDelay}
+              onChange={e => setEnableEvalDelay(e.target.checked)}
             />
-            <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
-              Delay before evaluating the trigger. 0 = no delay. Max 360 minutes (6 hours).
+            Set event evaluation delay
+          </label>
+          {enableEvalDelay && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, marginLeft: 24, fontSize: 14 }}>
+              <span>Delay evaluation by</span>
+              <input
+                className="form-input"
+                type="number"
+                min="0"
+                max="360"
+                value={delayMinutes}
+                onChange={e => setDelayMinutes(e.target.value)}
+                style={{ width: 120 }}
+              />
+              <span>minutes</span>
             </div>
-          </div>
+          )}
+          {enableEvalDelay && (
+            <div className="text-muted" style={{ marginTop: 4, fontSize: 12, marginLeft: 24 }}>
+              Delay before evaluating the trigger. Max 360 minutes (6 hours).
+            </div>
+          )}
         </div>
       </div>
 
