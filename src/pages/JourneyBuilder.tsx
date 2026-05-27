@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, RULE_ATTRIBUTES, type MessageChannel, type JourneyStepType, type EligibilityRule, type RuleOperator } from "../types";
 import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, mockTriggers, type PreferenceRule } from "../data/mockData";
 import { ChannelEligibilityRules } from "../components/ChannelSpecificRules";
+import BaseContentSection from "../components/BaseContentSection";
 import { usePhase } from "../context/PhaseContext";
 
 interface Step {
@@ -18,6 +19,7 @@ const STEP_OPTIONS: { type: JourneyStepType; label: string; icon: string; descri
   { type: "push", label: "Send Push", icon: "\uD83D\uDD14", description: "Send a push notification" },
   { type: "sms", label: "Send SMS", icon: "\uD83D\uDCF1", description: "Send an SMS message" },
   { type: "whatsapp", label: "WhatsApp Message", icon: "\uD83D\uDCE8", description: "Show an WhatsApp card" },
+  { type: "multi_channel", label: "Multi-Channel", icon: "\uD83C\uDF10", description: "Send across multiple channels" },
   { type: "best_channel", label: "Best Channel Send", icon: "\u2728", description: "Auto-select best channel" },
   { type: "delay", label: "Wait / Delay", icon: "\u23F3", description: "Wait before next step" },
   { type: "condition", label: "Decision Split", icon: "\u2753", description: "Branch based on behavior" },
@@ -201,6 +203,40 @@ export default function JourneyBuilder() {
   const REMAINDER_KEY = "__remainder__";
   const [branchSteps, setBranchSteps] = useState<Record<string, Step[]>>({});
   const [branchAddMenu, setBranchAddMenu] = useState<string | null>(null);
+
+  // Per-step Multi-Channel state — which channels this multi-channel send fans out to.
+  const [multiChannelStates, setMultiChannelStates] = useState<Record<string, MessageChannel[]>>({});
+
+  function getMultiChannelChannels(stepId: string): MessageChannel[] {
+    return multiChannelStates[stepId] || [];
+  }
+  function toggleMultiChannelChannel(stepId: string, ch: MessageChannel) {
+    setMultiChannelStates(prev => {
+      const current = prev[stepId] || [];
+      const next = current.includes(ch) ? current.filter(c => c !== ch) : [...current, ch];
+      return { ...prev, [stepId]: next };
+    });
+  }
+
+  /**
+   * Decide which channels a freshly-added Multi-Channel step starts with.
+   *
+   * Inputs available:
+   *   - entryChannel: MessageChannel[]   journey-level entry channels selected above
+   * Return: MessageChannel[]             initial channel selection for the new step
+   *
+   * Trade-offs to consider:
+   *   - Empty array: forces user to make an explicit decision (zero-magic, more clicks).
+   *   - All four channels: maximalist default (matches "Configure content for all channels").
+   *   - entryChannel: keeps the multi-channel step consistent with the journey's
+   *     entry — but if entryChannel has only 1 channel, "Multi" is misleading.
+   *   - Hybrid: use entryChannel when 2+, otherwise fall back to all four.
+   */
+  function getInitialMultiChannelChannels(): MessageChannel[] {
+    return entryChannel.length >= 2
+      ? entryChannel
+      : (["email", "push", "sms", "whatsapp"] as MessageChannel[]);
+  }
   function branchKey(condStepId: string, branchId: string) {
     return `${condStepId}::${branchId}`;
   }
@@ -209,6 +245,9 @@ export default function JourneyBuilder() {
     const opt = STEP_OPTIONS.find(o => o.type === type);
     const newStep: Step = { id: makeId(), type, label: opt?.label || "Step" };
     setBranchSteps(prev => ({ ...prev, [key]: [...(prev[key] || []), newStep] }));
+    if (type === "multi_channel") {
+      setMultiChannelStates(prev => ({ ...prev, [newStep.id]: getInitialMultiChannelChannels() }));
+    }
     setBranchAddMenu(null);
   }
   function removeStepFromBranch(condStepId: string, branchId: string, stepId: string) {
@@ -278,7 +317,11 @@ export default function JourneyBuilder() {
 
   function addStep(type: JourneyStepType) {
     const opt = STEP_OPTIONS.find(s => s.type === type)!;
-    setSteps(prev => [...prev, { id: makeId(), type, label: opt.label }]);
+    const id = makeId();
+    setSteps(prev => [...prev, { id, type, label: opt.label }]);
+    if (type === "multi_channel") {
+      setMultiChannelStates(prev => ({ ...prev, [id]: getInitialMultiChannelChannels() }));
+    }
     setShowAddMenu(false);
   }
 
@@ -364,6 +407,7 @@ export default function JourneyBuilder() {
       case "delay": return "\u23F3";
       case "condition": return "\u2753";
       case "best_channel": return "\u2728";
+      case "multi_channel": return "\uD83C\uDF10";
       default: return "\u26A1";
     }
   };
@@ -822,6 +866,57 @@ export default function JourneyBuilder() {
                         </div>
                       </div>
                     )}
+                    {step.type === "multi_channel" && (() => {
+                      const stepChannels = getMultiChannelChannels(step.id);
+                      return (
+                        <div className="tier-selection-appear">
+                          {/* Channel Selection */}
+                          <div className="form-group">
+                            <label className="form-label">Channels</label>
+                            <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>
+                              Select the channels this step will fan out to. Each channel gets its own content below.
+                            </p>
+                            <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+                              {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
+                                <div
+                                  key={ch}
+                                  className={`channel-selector-card ${stepChannels.includes(ch) ? "selected" : ""}`}
+                                  style={{ padding: 10 }}
+                                  onClick={() => toggleMultiChannelChannel(step.id, ch)}
+                                >
+                                  <div className="channel-selector-check">{stepChannels.includes(ch) ? "✓" : ""}</div>
+                                  <div className="channel-selector-icon" style={{ fontSize: 20, marginBottom: 4 }}>{CHANNEL_ICONS[ch]}</div>
+                                  <div className="channel-selector-label" style={{ fontSize: 11 }}>{CHANNEL_LABELS[ch]}</div>
+                                </div>
+                              ))}
+                            </div>
+                            {stepChannels.length === 0 && (
+                              <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                                <span className="info-banner-icon">&#9432;</span>
+                                <span>Pick at least one channel to configure its content.</span>
+                              </div>
+                            )}
+                            {stepChannels.length === 1 && (
+                              <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                                <span className="info-banner-icon">&#128274;</span>
+                                <span><strong>Single channel</strong> &mdash; only {CHANNEL_LABELS[stepChannels[0]]}. Add more channels to fan out.</span>
+                              </div>
+                            )}
+                            {stepChannels.length >= 2 && (
+                              <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                                <span className="info-banner-icon">&#9989;</span>
+                                <span><strong>Multi-Channel</strong> &mdash; the message fans out to {stepChannels.length} channels ({stepChannels.map(c => CHANNEL_LABELS[c]).join(", ")}) within this single step.</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Per-channel Base Content (reused from Campaign create) */}
+                          {stepChannels.length > 0 && (
+                            <BaseContentSection key={step.id} selectedChannels={stepChannels} />
+                          )}
+                        </div>
+                      );
+                    })()}
                     {step.type === "condition" && (() => {
                       const ds = getDecisionState(step.id);
                       const hasErrors = decisionHasErrors(ds);

@@ -382,7 +382,7 @@ export interface Campaign {
 export type JourneyStepType =
   | "trigger" | "email" | "push" | "sms" | "whatsapp"
   | "delay" | "condition"
-  | "best_channel";
+  | "best_channel" | "multi_channel";
 
 export type JourneyOrchestrationType = "single_channel" | "cross_channel" | "omni_channel";
 
