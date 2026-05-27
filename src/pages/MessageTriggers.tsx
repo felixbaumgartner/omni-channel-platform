@@ -40,14 +40,6 @@ export default function MessageTriggers() {
         </div>
       </div>
 
-      {/* Omni-channel info */}
-      <div className="info-banner">
-        <span className="info-banner-icon">&#9889;</span>
-        <span>
-          <strong>Omni-Channel Triggers:</strong> In PROD, each trigger routes to a single channel. With omni-channel, a single trigger event can route to multiple channels with per-channel conditions and deduplication.
-        </span>
-      </div>
-
       {/* Trigger List */}
       <div className="results-card">
         <div className="results-header">
