@@ -47,6 +47,14 @@ function PhaseSelector() {
 export default function App() {
   return (
     <PhaseProvider>
+      <AppLayout />
+    </PhaseProvider>
+  );
+}
+
+function AppLayout() {
+  const { showChannelPreferences } = usePhase();
+  return (
     <div className="app-layout">
       {/* Header */}
       <div className="app-layout-header">
@@ -95,9 +103,11 @@ export default function App() {
             <div className="app-nav-link">
               <NavLink to="/audience-estimation" className={nav}>Audience Estimation</NavLink>
             </div>
-            <div className="app-nav-link">
-              <NavLink to="/channel-preferences" className={nav}>Channel Preferences</NavLink>
-            </div>
+            {showChannelPreferences && (
+              <div className="app-nav-link">
+                <NavLink to="/channel-preferences" className={nav}>Channel Preferences</NavLink>
+              </div>
+            )}
             <div className="app-nav-link">
               <NavLink to="/analytics" className={nav}>Analytics</NavLink>
             </div>
@@ -123,12 +133,14 @@ export default function App() {
             <Route path="/audience-estimation/new" element={<AudienceEstimationCreate />} />
             <Route path="/holdouts" element={<HoldoutManagement />} />
 
-            <Route path="/channel-preferences" element={<ChannelPreferences />} />
+            <Route
+              path="/channel-preferences"
+              element={showChannelPreferences ? <ChannelPreferences /> : <Navigate to="/dashboard" replace />}
+            />
             <Route path="/analytics" element={<Analytics />} />
           </Routes>
         </div>
       </div>
     </div>
-    </PhaseProvider>
   );
 }

@@ -6,14 +6,16 @@ interface PhaseContextValue {
   phase: Phase;
   setPhase: (p: Phase) => void;
   showBestChannel: boolean;
+  showChannelPreferences: boolean;
 }
 
-const PhaseContext = createContext<PhaseContextValue>({ phase: "all", setPhase: () => {}, showBestChannel: true });
+const PhaseContext = createContext<PhaseContextValue>({ phase: "all", setPhase: () => {}, showBestChannel: true, showChannelPreferences: true });
 
 export function PhaseProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<Phase>("all");
   const showBestChannel = phase !== "phase1";
-  return <PhaseContext.Provider value={{ phase, setPhase, showBestChannel }}>{children}</PhaseContext.Provider>;
+  const showChannelPreferences = phase !== "phase1";
+  return <PhaseContext.Provider value={{ phase, setPhase, showBestChannel, showChannelPreferences }}>{children}</PhaseContext.Provider>;
 }
 
 export function usePhase() { return useContext(PhaseContext); }
