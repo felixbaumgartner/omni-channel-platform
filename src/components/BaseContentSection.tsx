@@ -260,7 +260,10 @@ export default function BaseContentSection({ selectedChannels }: BaseContentSect
   }
 
   function updateState(ch: string, patch: Partial<ChannelState>) {
-    setChannelStates(prev => ({ ...prev, [ch]: { ...getState(ch), ...patch } }));
+    setChannelStates(prev => {
+      const current = prev[ch] || { contentId: null, messageCategory: "", trackingLabel: "", voucherEnabled: false, experimentEnabled: false, experimentTag: "" };
+      return { ...prev, [ch]: { ...current, ...patch } };
+    });
   }
 
   // Keep active tab in sync with selected channels
