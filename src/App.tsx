@@ -53,7 +53,7 @@ export default function App() {
 }
 
 function AppLayout() {
-  const { showChannelPreferences } = usePhase();
+  const { showChannelPreferences, showAnalytics } = usePhase();
   return (
     <div className="app-layout">
       {/* Header */}
@@ -108,9 +108,11 @@ function AppLayout() {
                 <NavLink to="/channel-preferences" className={nav}>Channel Preferences</NavLink>
               </div>
             )}
-            <div className="app-nav-link">
-              <NavLink to="/analytics" className={nav}>Analytics</NavLink>
-            </div>
+            {showAnalytics && (
+              <div className="app-nav-link">
+                <NavLink to="/analytics" className={nav}>Analytics</NavLink>
+              </div>
+            )}
           </div>
 
           <PhaseSelector />
@@ -137,7 +139,7 @@ function AppLayout() {
               path="/channel-preferences"
               element={showChannelPreferences ? <ChannelPreferences /> : <Navigate to="/dashboard" replace />}
             />
-            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/analytics" element={showAnalytics ? <Analytics /> : <Navigate to="/dashboard" replace />} />
           </Routes>
         </div>
       </div>
