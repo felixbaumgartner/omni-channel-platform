@@ -173,15 +173,6 @@ export default function TriggerCreate() {
         </div>
       </div>
 
-      {/* Info banner */}
-      <div className="info-banner">
-        <span className="info-banner-icon">&#9889;</span>
-        <span>
-          Triggers are channel-agnostic event processors. Define the event source, rules, and output fields.
-          The system automatically resolves identities from the event payload &mdash; channel routing is handled at campaign creation time.
-        </span>
-      </div>
-
       {/* Basic Information */}
       <div className="bui-box">
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Basic Information</div>
