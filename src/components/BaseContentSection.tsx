@@ -205,13 +205,19 @@ function ChannelContentPanel({
         </a>
       </div>
 
-      {/* Experiment */}
-      <div style={{ marginTop: 24 }}>
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>Experiment</div>
+      {/* Experiment — per channel */}
+      <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--border-color)" }}>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+          <span>{CHANNEL_ICONS[channel]}</span>
+          <span>{CHANNEL_LABELS[channel]} Experiment</span>
+        </div>
+        <div className="text-muted" style={{ fontSize: 12, marginBottom: 12 }}>
+          A/B test for this channel only. Each channel has its own experiment.
+        </div>
         {!experimentEnabled ? (
           <div className="content-empty-state">
-            <p className="text-muted" style={{ margin: "8px 0" }}>No experiment configured. Set up an A/B test to compare content variants.</p>
-            <button className="btn btn-secondary" onClick={() => onExperimentToggle(true)}>Setup Experiment</button>
+            <p className="text-muted" style={{ margin: "8px 0" }}>No experiment configured for {CHANNEL_LABELS[channel]}. Set up an A/B test to compare content variants.</p>
+            <button className="btn btn-secondary" onClick={() => onExperimentToggle(true)}>Setup {CHANNEL_LABELS[channel]} Experiment</button>
           </div>
         ) : (
           <div className="tier-selection-appear">
@@ -228,7 +234,7 @@ function ChannelContentPanel({
                 <button className="btn btn-secondary" style={{ fontSize: 12, padding: "4px 12px" }}>Select Variant Content</button>
               </div>
             </div>
-            <button className="btn btn-tertiary btn-destructive" style={{ fontSize: 13 }} onClick={() => { onExperimentToggle(false); onExperimentTagChange(""); }}>Remove Experiment</button>
+            <button className="btn btn-tertiary btn-destructive" style={{ fontSize: 13 }} onClick={() => { onExperimentToggle(false); onExperimentTagChange(""); }}>Remove {CHANNEL_LABELS[channel]} Experiment</button>
           </div>
         )}
       </div>
@@ -284,6 +290,7 @@ export default function BaseContentSection({ selectedChannels }: BaseContentSect
           {selectedChannels.map(ch => {
             const state = getState(ch);
             const hasContent = state.contentId !== null;
+            const hasExperiment = state.experimentEnabled;
             return (
               <button
                 key={ch}
@@ -292,6 +299,14 @@ export default function BaseContentSection({ selectedChannels }: BaseContentSect
               >
                 {CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}
                 {hasContent && <span className="content-tab-dot" />}
+                {hasExperiment && (
+                  <span
+                    title={`${CHANNEL_LABELS[ch]} experiment configured`}
+                    style={{ marginLeft: 4, fontSize: 10, padding: "1px 6px", borderRadius: 8, background: "var(--color-blue-100, #dbeafe)", color: "var(--color-blue-600, #2563eb)", fontWeight: 700 }}
+                  >
+                    A/B
+                  </span>
+                )}
               </button>
             );
           })}
