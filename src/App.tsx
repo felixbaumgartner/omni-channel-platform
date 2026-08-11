@@ -21,7 +21,7 @@ const nav = ({ isActive }: { isActive: boolean }) => (isActive ? "active" : "");
 const PHASE_OPTIONS: { value: Phase; label: string }[] = [
   { value: "all", label: "All" },
   { value: "phase1", label: "Phase 1" },
-  { value: "phase2", label: "Phase 2" },
+  { value: "phase2", label: "Phase 2/3" },
 ];
 
 function PhaseSelector() {
