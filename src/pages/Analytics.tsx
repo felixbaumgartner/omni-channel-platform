@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { channelMetrics, dailySends, mockCampaigns, mockUnifiedGroups, omniChannelKPIs, channelOverlap } from "../data/mockData";
+import { channelMetrics, dailySends, mockCampaigns, mockUnifiedGroups, channelOverlap } from "../data/mockData";
 import { CHANNEL_ICONS, ORCHESTRATION_LABELS, type MessageChannel } from "../types";
 
 function formatNum(n: number): string {
@@ -37,20 +37,6 @@ export default function Analytics() {
             <option value="30d">Last 30 Days</option>
             <option value="90d">Last 90 Days</option>
           </select>
-        </div>
-      </div>
-
-      {/* Omni-Channel Intelligence Metrics */}
-      <div className="omni-kpi-grid">
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Routing Lift <span className="info-icon" data-tooltip="Improvement in click rate when using intelligent channel routing vs. sending on a random channel. Measures the benefit of picking the right channel for each user.">&#9432;</span></div>
-          <div className="kpi-value">+{omniChannelKPIs.routingLift}%</div>
-          <div className="kpi-sub">click rate vs. random channel</div>
-        </div>
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Cross-Channel Lift <span className="info-icon" data-tooltip="Improvement in conversion rate when using multiple channels together vs. a single channel. Measures the combined effect of reaching users across more than one channel.">&#9432;</span></div>
-          <div className="kpi-value">+{omniChannelKPIs.crossChannelConversionLift}%</div>
-          <div className="kpi-sub">conversion vs single-channel</div>
         </div>
       </div>
 

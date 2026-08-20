@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { mockCampaigns, mockJourneys, channelMetrics, dailySends, mockUnifiedGroups, omniChannelKPIs } from "../data/mockData";
+import { mockCampaigns, mockJourneys, channelMetrics, dailySends, mockUnifiedGroups } from "../data/mockData";
 import { CHANNEL_ICONS, ORCHESTRATION_LABELS, type MessageChannel } from "../types";
-import { usePhase } from "../context/PhaseContext";
 
 function formatNum(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
@@ -16,7 +15,6 @@ const channelClass = (ch: MessageChannel) =>
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { showBestChannel } = usePhase();
   const liveCampaigns = mockCampaigns.filter(c => c.status === "Live");
   const activeJourneys = mockJourneys.filter(j => j.status === "Active");
   const totalSent = channelMetrics.reduce((s, m) => s + m.sent, 0);
@@ -33,27 +31,6 @@ export default function Dashboard() {
         <div className="page-header-actions">
           <button className="btn btn-primary" onClick={() => navigate("/campaign/new")}>+ New Campaign</button>
           <button className="btn btn-secondary" onClick={() => navigate("/journey/new")}>+ New Journey</button>
-        </div>
-      </div>
-
-      {/* Omni-Channel KPIs */}
-      <div className="omni-kpi-grid">
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Unified Campaign Groups <span className="info-icon" data-tooltip="A Unified Campaign Group ties together individual channel campaigns (Email, Push, SMS, WhatsApp) under a single cross-channel strategy with shared targeting, reporting, and orchestration.">&#9432;</span></div>
-          <div className="kpi-value">{omniChannelKPIs.unifiedGroupCount}</div>
-          <div className="kpi-sub">spanning {mockCampaigns.filter(c => c.unifiedGroupId).length} channel campaigns</div>
-        </div>
-        {showBestChannel && (
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Best Channel Routing <span className="info-icon" data-tooltip="Percentage of sends where a routing rule (e.g., Last Engaged Channel) selected the optimal channel for each subscriber, rather than defaulting to the static fallback channel order.">&#9432;</span></div>
-          <div className="kpi-value">{omniChannelKPIs.bestChannelRouting}%</div>
-          <div className="kpi-sub">of sends via intelligent routing</div>
-        </div>
-        )}
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Multi-Channel Reach <span className="info-icon" data-tooltip="Percentage of subscribers who are reachable on two or more channels (e.g., both Email and Push). Higher reach means more routing flexibility and better fallback coverage.">&#9432;</span></div>
-          <div className="kpi-value">{omniChannelKPIs.multiChannelReachability}%</div>
-          <div className="kpi-sub">subscribers on 2+ channels</div>
         </div>
       </div>
 
