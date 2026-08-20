@@ -19,13 +19,6 @@ export default function JourneyList() {
   const navigate = useNavigate();
   const { showBestChannel } = usePhase();
 
-  const totalAudience = mockJourneys.reduce((s, j) => s + (j.audienceSize || 0), 0);
-  const activeJourneys = mockJourneys.filter(j => j.status === "Active");
-  const avgConversion = activeJourneys.length > 0
-    ? activeJourneys.reduce((s, j) => s + (j.conversionRate || 0), 0) / activeJourneys.length
-    : 0;
-  const totalHandoffs = mockJourneys.reduce((s, j) => s + (j.crossChannelHandoffs || 0), 0);
-
   return (
     <div className="app-page">
       <div className="page-header">
@@ -35,26 +28,6 @@ export default function JourneyList() {
         </div>
         <div className="page-header-actions">
           <button className="btn btn-primary" onClick={() => navigate("/journey/new")}>+ New Journey</button>
-        </div>
-      </div>
-
-      {/* Metrics Summary */}
-      <div className="metrics-summary-bar">
-        <div className="metrics-summary-item">
-          <div className="metrics-summary-value">{activeJourneys.length}</div>
-          <div className="metrics-summary-label">Active Journeys</div>
-        </div>
-        <div className="metrics-summary-item">
-          <div className="metrics-summary-value">{formatNum(totalAudience)}</div>
-          <div className="metrics-summary-label">Total Audience</div>
-        </div>
-        <div className="metrics-summary-item">
-          <div className="metrics-summary-value">{avgConversion.toFixed(1)}%</div>
-          <div className="metrics-summary-label">Avg Conversion</div>
-        </div>
-        <div className="metrics-summary-item">
-          <div className="metrics-summary-value">{formatNum(totalHandoffs)}</div>
-          <div className="metrics-summary-label">Cross-Channel Handoffs</div>
         </div>
       </div>
 
