@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "build:bpages": "BPAGES=1 VITE_HASH_ROUTER=1 npm run build"
+    "build:bpages": "BPAGES_BASE=/PvOXn/omni-channel-platform/ VITE_HASH_ROUTER=1 npm run build"
   },
   "dependencies": {
     "react": "^18.2.0",
