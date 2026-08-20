@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { audienceEstimationData } from "../data/mockData";
 import { CHANNEL_ICONS, CHANNEL_LABELS, ORCHESTRATION_LABELS, RULE_ATTRIBUTES, type MessageChannel, type OrchestrationMode } from "../types";
@@ -38,11 +38,17 @@ export default function AudienceEstimationCreate() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [channels, setChannels] = useState<MessageChannel[]>([]);
-  const [orchestrationMode, setOrchestrationMode] = useState<OrchestrationMode>("best_channel");
+  const [orchestrationMode, setOrchestrationMode] = useState<OrchestrationMode>(showBestChannel ? "best_channel" : "multi_channel");
   const [rules, setRules] = useState<RuleRow[]>([]);
   const [showRuleMenu, setShowRuleMenu] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduling, setScheduling] = useState(false);
+
+  // Mirrors CampaignCreate: keep a visible mode selected when the phase toggle hides
+  // Best Channel after mount.
+  useEffect(() => {
+    if (!showBestChannel && orchestrationMode === "best_channel") setOrchestrationMode("sequential");
+  }, [showBestChannel, orchestrationMode]);
 
   // Channel Eligibility Rules state (mirrors CampaignCreate / Appendix A model)
   const [eligibilityRulesEnabled, setEligibilityRulesEnabled] = useState<Record<string, boolean>>({});
@@ -377,6 +383,15 @@ export default function AudienceEstimationCreate() {
               </div>
               <div className="radio-card-description">
                 Estimates reach assuming all selected channels fire for each eligible subscriber. Projects total volume across every available channel.
+              </div>
+            </div>
+            <div className={`radio-card ${orchestrationMode === "sequential" ? "selected" : ""}`} onClick={() => setOrchestrationMode("sequential")}>
+              <div className="radio-card-header">
+                <div className="radio-card-radio" />
+                <div className="radio-card-title">Sequential Fallback</div>
+              </div>
+              <div className="radio-card-description">
+                Estimates reach assuming channels are walked in priority order and each subscriber receives exactly one message on the first channel they consent to. Same reach as Best Channel, but volume concentrates on the top channel.
               </div>
             </div>
           </div>

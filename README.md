@@ -25,7 +25,7 @@ Each page shows both the PROD-aligned baseline and the omni-channel enhancements
 | Page | Route | Description |
 |------|-------|-------------|
 | **Campaigns** | `/campaigns` | Unified view (grouped by UCG) vs per-channel view toggle, orchestration mode badges, expandable channel deliveries |
-| **Campaign Create** | `/campaign/new` | Classification questionnaire, campaign metadata (funnel/vertical), eligibility rules builder, 3 delivery modes (Best Channel / Multi-Channel / Sequential), cross-channel dedup, compliance |
+| **Campaign Create** | `/campaign/new` | Classification questionnaire, campaign metadata (funnel/vertical), eligibility rules builder, 3 delivery modes (Best Channel / Multi-Channel / Sequential Fallback), cross-channel dedup, compliance |
 | **Transactional Create** | `/campaign/new/transactional` | SLA priority tiers (P0/P1/P2), transactional fallback chain with per-channel SLA, idempotency dedup |
 | **Journeys** | `/journeys` | Orchestration type badges (Single/Cross-Channel/Omni), channel effectiveness bars, cross-channel handoff metrics |
 | **Journey Builder** | `/journey/new` | Best Channel Send and Cross-Channel Eligibility step types, journey-level dedup/frequency settings |
@@ -55,7 +55,7 @@ A UCG links channel-specific campaigns under one ID (e.g., `UCG-2026-001`). In P
 ### Delivery Modes
 - **Best Channel** — System picks one optimal channel per subscriber using CDP signals + ML
 - **Multi-Channel** — All channels fire simultaneously (consent enforced per-channel)
-- **Sequential** — Channels fire in priority order with configurable wait periods
+- **Sequential Fallback** — Channels are walked in priority order; the first channel the subscriber consents to and is reachable on receives the message. Exactly one message per subscriber, so nothing needs deduplicating. Configurable wait periods between hops are a Phase 2 follow-up, gated behind the tracking and no-send contract.
 
 ### Cross-Channel Deduplication
 Prevents the same subscriber from receiving the same message on multiple channels. Configurable window (hours), strategy (content similarity, exact match, category match).

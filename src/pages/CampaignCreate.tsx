@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { CHANNEL_LABELS, CHANNEL_ICONS, FUNNEL_LABELS, VERTICAL_LABELS, RULE_ATTRIBUTES, type MessageChannel, type Funnel, type Vertical, type EligibilityRule, type RuleOperator, type ChannelRulesState } from "../types";
+import { CHANNEL_LABELS, CHANNEL_ICONS, FUNNEL_LABELS, VERTICAL_LABELS, RULE_ATTRIBUTES, ORCHESTRATION_LABELS, type MessageChannel, type Funnel, type Vertical, type EligibilityRule, type RuleOperator, type ChannelRulesState } from "../types";
 import ClassificationQuestionnaire, { type Classification } from "../components/ClassificationQuestionnaire";
 import BaseContentSection from "../components/BaseContentSection";
 import ChannelSpecificRules, { ChannelEligibilityRules } from "../components/ChannelSpecificRules";
 import { usePhase } from "../context/PhaseContext";
 import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, mockTriggers, type PreferenceRule } from "../data/mockData";
 
-type DeliveryMode = "best_channel" | "multi_channel" | "experiment";
+type DeliveryMode = "best_channel" | "multi_channel" | "sequential" | "experiment";
 
 export default function CampaignCreate() {
   const navigate = useNavigate();
@@ -42,6 +42,14 @@ export default function CampaignCreate() {
   const [smsWhatsappAcknowledged, setSmsWhatsappAcknowledged] = useState(false);
 
   const campaignRuleMenuRef = useRef<HTMLDivElement>(null);
+
+  // The phase toggle can hide Best Channel after mount, which would leave no mode selected
+  // and leak its heuristic routing block into Phase 1. Fall back to the deterministic
+  // waterfall: it preserves the one-message-per-subscriber intent, whereas falling back to
+  // Multi-Channel would silently turn the campaign into a blast.
+  useEffect(() => {
+    if (!showBestChannel && deliveryMode === "best_channel") setDeliveryMode("sequential");
+  }, [showBestChannel, deliveryMode]);
 
   useEffect(() => {
     if (!showRuleMenu) return;
@@ -130,7 +138,7 @@ export default function CampaignCreate() {
           <div style={{ fontSize: 48, marginBottom: 16 }}>&#10003;</div>
           <h2 style={{ marginBottom: 8 }}>Omni-Channel Campaign Created</h2>
           <p className="text-muted mb-16">"{campaignName}" has been saved as a {purposeLabel} campaign{selectedChannels.length > 0 ? ` targeting ${selectedChannels.map(ch => CHANNEL_LABELS[ch]).join(", ")}` : " with system-decided channel routing"}.</p>
-          <p className="text-muted mb-16">Delivery Mode: <strong>{selectedChannels.length === 0 ? "Best Channel (System Decides)" : selectedChannels.length === 1 ? "Fixed Channel" : deliveryMode === "best_channel" ? "Best Channel" : "Multi-Channel"}</strong></p>
+          <p className="text-muted mb-16">Delivery Mode: <strong>{selectedChannels.length === 0 ? "Best Channel (System Decides)" : selectedChannels.length === 1 ? "Fixed Channel" : deliveryMode === "experiment" ? "Channel Experiment" : ORCHESTRATION_LABELS[deliveryMode]}</strong></p>
           {selectedChannels.length > 1 && (
             <p className="text-muted mb-16">Unified Campaign Group: <span className="badge badge-brand">UCG-2026-{String(Math.floor(Math.random() * 900) + 100)}</span></p>
           )}
@@ -309,7 +317,7 @@ export default function CampaignCreate() {
                   Rule-based routing (evaluated in order):
                   <span className="info-tooltip-trigger" style={{ cursor: "help", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: "var(--color-blue-100)", color: "var(--color-blue-600)", fontSize: 11, fontWeight: 700, position: "relative" }}>
                     i
-                    <span className="info-tooltip-content">Recency-weighted click rate across 7d / 30d / 90d windows. Recent activity counts more, but long-term patterns outweigh a single recent interaction. If no rule matches, the platform default priority order is used. If delivery fails, the system retries the next channel in order. All channels exhausted = suppressed.</span>
+                    <span className="info-tooltip-content">Recency-weighted click rate across 7d / 30d / 90d windows. Recent activity counts more, but long-term patterns outweigh a single recent interaction. If no rule matches, the platform default priority order is used, and the first channel the subscriber is opted in to and reachable on is selected. If no channel qualifies, the message is suppressed.</span>
                   </span>
                 </div>
                 <ol style={{ margin: "4px 0 4px 18px", padding: 0, fontSize: 13, lineHeight: 1.7 }}>
@@ -490,6 +498,15 @@ export default function CampaignCreate() {
                         Deliver across all eligible channels simultaneously. Consent and frequency caps enforced per channel.
                       </div>
                     </div>
+                    <div className={`radio-card ${deliveryMode === "sequential" ? "selected" : ""}`} onClick={() => setDeliveryMode("sequential")}>
+                      <div className="radio-card-header">
+                        <div className="radio-card-radio" />
+                        <div className="radio-card-title">Sequential Fallback</div>
+                      </div>
+                      <div className="radio-card-description">
+                        Channels are evaluated in the priority order you set. The first channel the subscriber is opted in to and reachable on receives the message &mdash; exactly one message per subscriber.
+                      </div>
+                    </div>
                     {!showBestChannel && (
                     <div className={`radio-card ${deliveryMode === "experiment" ? "selected" : ""}`} onClick={() => setDeliveryMode("experiment")}>
                       <div className="radio-card-header">
@@ -547,13 +564,19 @@ export default function CampaignCreate() {
                     </div>
                   )}
 
-                  {/* Channel Priority & Retry -- Best Channel Mode Only */}
-                  {deliveryMode === "best_channel" && (
+                  {/* Channel Priority -- Best Channel (as fallback) and Sequential (as the decision itself) */}
+                  {(deliveryMode === "best_channel" || deliveryMode === "sequential") && (
                     <div className="tier-selection-appear" style={{ marginTop: 16 }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Priority & Retry</div>
-                      <p className="text-muted mb-8" style={{ fontSize: 13 }}>When the routing rule above has no answer, channels are tried in this order.</p>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>
+                        {deliveryMode === "sequential" ? "Channel Priority Order" : "Channel Priority & Retry"}
+                      </div>
+                      <p className="text-muted mb-8" style={{ fontSize: 13 }}>
+                        {deliveryMode === "sequential"
+                          ? "This order is the routing decision, not a fallback for a rule. The list is walked top-down and the first channel the subscriber is opted in to and reachable on receives the message."
+                          : "When the routing rule above has no answer, channels are tried in this order."}
+                      </p>
                       <div className="form-group">
-                        <label className="form-label">Fallback Channel Order</label>
+                        <label className="form-label">{deliveryMode === "sequential" ? "Priority Order" : "Fallback Channel Order"}</label>
                         <div className="fallback-sequence">
                           {channelPriority.map((ch, i) => (
                             <div key={ch} className="fallback-item" style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -581,6 +604,14 @@ export default function CampaignCreate() {
                           ))}
                         </div>
                       </div>
+                      {deliveryMode === "sequential" && (
+                        <div className="info-banner" style={{ marginTop: 4 }}>
+                          <span className="info-banner-icon">&#9993;</span>
+                          <span>
+                            <strong>One message per subscriber.</strong> Evaluation stops at the first qualifying channel &mdash; later channels are not sent, so there is nothing to deduplicate. A subscriber with no consented, reachable channel in this list is suppressed.
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
 

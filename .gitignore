@@ -5,3 +5,4 @@ dist/
 .vercel
 .claude/
 targeting_ref.png
+.gstack/
