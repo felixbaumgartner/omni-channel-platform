@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CHANNEL_LABELS, CHANNEL_ICONS, RULE_ATTRIBUTES, type MessageChannel, type JourneyStepType, type EligibilityRule, type RuleOperator } from "../types";
+import { CHANNEL_LABELS, CHANNEL_ICONS, RULE_ATTRIBUTES, ORCHESTRATION_LABELS, type MessageChannel, type JourneyStepType, type EligibilityRule, type RuleOperator, type OrchestrationMode } from "../types";
 import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, mockTriggers, type PreferenceRule } from "../data/mockData";
 import { ChannelEligibilityRules } from "../components/ChannelSpecificRules";
 import BaseContentSection from "../components/BaseContentSection";
@@ -236,6 +236,51 @@ export default function JourneyBuilder() {
     return entryChannel.length >= 2
       ? entryChannel
       : (["email", "push", "sms", "whatsapp"] as MessageChannel[]);
+  }
+
+  /**
+   * A Multi-Channel step carries one of two orchestration modes.
+   *
+   *   multi_channel  fans the message out to every selected channel (current behaviour)
+   *   sequential     walks the priority order and stops at the first consented,
+   *                  reachable channel, so exactly one message is sent
+   *
+   * Mirrors the delivery-mode semantics on the Campaign create page so the same
+   * concept means the same thing on both surfaces.
+   */
+  type StepOrchestrationMode = Extract<OrchestrationMode, "multi_channel" | "sequential">;
+  const [multiChannelModes, setMultiChannelModes] = useState<Record<string, StepOrchestrationMode>>({});
+  const [multiChannelPriority, setMultiChannelPriority] = useState<Record<string, MessageChannel[]>>({});
+
+  function getMultiChannelMode(stepId: string): StepOrchestrationMode {
+    return multiChannelModes[stepId] || "multi_channel";
+  }
+
+  function changeMultiChannelMode(stepId: string, mode: StepOrchestrationMode) {
+    setMultiChannelModes(prev => ({ ...prev, [stepId]: mode }));
+    // The canvas node reads step.label, so keep it in sync with the chosen mode.
+    setSteps(prev => prev.map(s => s.id === stepId ? { ...s, label: ORCHESTRATION_LABELS[mode] } : s));
+  }
+
+  /**
+   * The ladder is always the selected channels, ordered. Any channel the user has
+   * explicitly reordered keeps its position; newly selected channels are appended
+   * in the platform default order.
+   */
+  function getChannelPriority(stepId: string): MessageChannel[] {
+    const selected = getMultiChannelChannels(stepId);
+    const kept = (multiChannelPriority[stepId] || []).filter(c => selected.includes(c));
+    const added = DEFAULT_CHANNEL_ORDER.filter(c => selected.includes(c) && !kept.includes(c));
+    return [...kept, ...added];
+  }
+
+  function moveChannelPriority(stepId: string, index: number, dir: "up" | "down") {
+    const current = getChannelPriority(stepId);
+    const target = dir === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= current.length) return;
+    const next = [...current];
+    [next[index], next[target]] = [next[target], next[index]];
+    setMultiChannelPriority(prev => ({ ...prev, [stepId]: next }));
   }
   function branchKey(condStepId: string, branchId: string) {
     return `${condStepId}::${branchId}`;
@@ -601,7 +646,7 @@ export default function JourneyBuilder() {
                     <span className="journey-step-icon">{getStepIcon(step.type)}</span>
                     <div className="journey-step-info">
                       <div className="journey-step-label">{step.label}</div>
-                      <div className="journey-step-type">{step.type === "trigger" ? "Eligibility Rules" : step.type}</div>
+                      <div className="journey-step-type">{step.type === "trigger" ? "Eligibility Rules" : step.type === "multi_channel" ? getMultiChannelMode(step.id) : step.type}</div>
                     </div>
                     {step.type !== "trigger" && step.id !== AUTO_BEST_CHANNEL_ID && (
                       <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStep(step.id); }}>&times;</button>
@@ -769,7 +814,25 @@ export default function JourneyBuilder() {
                           {step.type !== "trigger" && (
                             <div className="form-group">
                               <label className="form-label">Step Label</label>
-                              <input className="form-input" value={step.label} onChange={e => setSteps(prev => prev.map(s => s.id === step.id ? { ...s, label: e.target.value } : s))} />
+                              {step.type === "multi_channel" ? (
+                                <>
+                                  <select
+                                    className="form-select"
+                                    value={getMultiChannelMode(step.id)}
+                                    onChange={e => changeMultiChannelMode(step.id, e.target.value as StepOrchestrationMode)}
+                                  >
+                                    <option value="multi_channel">{ORCHESTRATION_LABELS.multi_channel}</option>
+                                    <option value="sequential">{ORCHESTRATION_LABELS.sequential}</option>
+                                  </select>
+                                  <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
+                                    {getMultiChannelMode(step.id) === "sequential"
+                                      ? "Channels are walked in the priority order you set. The first channel the subscriber is opted in to and reachable on receives the message."
+                                      : "The message fans out to every selected channel within this single step."}
+                                  </div>
+                                </>
+                              ) : (
+                                <input className="form-input" value={step.label} onChange={e => setSteps(prev => prev.map(s => s.id === step.id ? { ...s, label: e.target.value } : s))} />
+                              )}
                             </div>
                           )}
                     {(step.type === "email" || step.type === "push" || step.type === "sms" || step.type === "whatsapp") && (
@@ -868,13 +931,18 @@ export default function JourneyBuilder() {
                     )}
                     {step.type === "multi_channel" && (() => {
                       const stepChannels = getMultiChannelChannels(step.id);
+                      const mode = getMultiChannelMode(step.id);
+                      const isSequential = mode === "sequential";
+                      const priority = getChannelPriority(step.id);
                       return (
                         <div className="tier-selection-appear">
                           {/* Channel Selection */}
                           <div className="form-group">
                             <label className="form-label">Channels</label>
                             <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>
-                              Select the channels this step will fan out to. Each channel gets its own content below.
+                              {isSequential
+                                ? "Select the channels that make up the fallback ladder, then order them below. Each channel gets its own content."
+                                : "Select the channels this step will fan out to. Each channel gets its own content below."}
                             </p>
                             <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
                               {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
@@ -896,23 +964,78 @@ export default function JourneyBuilder() {
                                 <span>Pick at least one channel to configure its content.</span>
                               </div>
                             )}
-                            {stepChannels.length === 1 && (
+                            {stepChannels.length === 1 && !isSequential && (
                               <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                                 <span className="info-banner-icon">&#128274;</span>
                                 <span><strong>Single channel</strong> &mdash; only {CHANNEL_LABELS[stepChannels[0]]}. Add more channels to fan out.</span>
                               </div>
                             )}
-                            {stepChannels.length >= 2 && (
+                            {stepChannels.length === 1 && isSequential && (
+                              <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                                <span className="info-banner-icon">&#128274;</span>
+                                <span><strong>Single rung.</strong> Only {CHANNEL_LABELS[stepChannels[0]]}, so there is nothing to fall back to. Add more channels to build a ladder.</span>
+                              </div>
+                            )}
+                            {stepChannels.length >= 2 && !isSequential && (
                               <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                                 <span className="info-banner-icon">&#9989;</span>
                                 <span><strong>Multi-Channel</strong> &mdash; the message fans out to {stepChannels.length} channels ({stepChannels.map(c => CHANNEL_LABELS[c]).join(", ")}) within this single step.</span>
                               </div>
                             )}
+                            {stepChannels.length >= 2 && isSequential && (
+                              <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                                <span className="info-banner-icon">&#9989;</span>
+                                <span><strong>Sequential Fallback.</strong> {priority.length} channels in the ladder ({priority.map(c => CHANNEL_LABELS[c]).join(" > ")}). Exactly one of them delivers.</span>
+                              </div>
+                            )}
                           </div>
+
+                          {/* Channel Priority Order -- Sequential Fallback only */}
+                          {isSequential && stepChannels.length > 0 && (
+                            <div className="form-group tier-selection-appear">
+                              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Channel Priority Order</div>
+                              <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>
+                                This order is the routing decision, not a fallback for a rule. The list is walked top-down and the first channel the subscriber is opted in to and reachable on receives the message.
+                              </p>
+                              <label className="form-label">Priority Order</label>
+                              <div className="fallback-sequence">
+                                {priority.map((ch, i) => (
+                                  <div key={ch} className="fallback-item" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <span className="fallback-number">{i + 1}</span>
+                                    <span style={{ fontSize: 13 }}>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
+                                    {i === 0 && <span className="badge badge-brand" style={{ fontSize: 9 }}>Primary</span>}
+                                    {i > 0 && <span className="badge badge-outline" style={{ fontSize: 9 }}>Fallback</span>}
+                                    <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
+                                      <button
+                                        className="btn btn-secondary"
+                                        style={{ padding: "2px 6px", fontSize: 10, lineHeight: 1, opacity: i === 0 ? 0.3 : 1 }}
+                                        disabled={i === 0}
+                                        onClick={() => moveChannelPriority(step.id, i, "up")}
+                                        title="Move up"
+                                      >&#9650;</button>
+                                      <button
+                                        className="btn btn-secondary"
+                                        style={{ padding: "2px 6px", fontSize: 10, lineHeight: 1, opacity: i === priority.length - 1 ? 0.3 : 1 }}
+                                        disabled={i === priority.length - 1}
+                                        onClick={() => moveChannelPriority(step.id, i, "down")}
+                                        title="Move down"
+                                      >&#9660;</button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="info-banner" style={{ marginTop: 8, fontSize: 11 }}>
+                                <span className="info-banner-icon">&#9993;</span>
+                                <span>
+                                  <strong>One message per subscriber.</strong> Evaluation stops at the first qualifying channel, so later channels are never sent and there is nothing to deduplicate. A subscriber with no consented, reachable channel in this list is suppressed.
+                                </span>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Per-channel Base Content (reused from Campaign create) */}
                           {stepChannels.length > 0 && (
-                            <BaseContentSection key={step.id} selectedChannels={stepChannels} />
+                            <BaseContentSection key={step.id} selectedChannels={isSequential ? priority : stepChannels} />
                           )}
                         </div>
                       );
