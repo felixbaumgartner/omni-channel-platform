@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, RULE_ATTRIBUTES, ORCHESTRATION_LABELS, type MessageChannel, type JourneyStepType, type EligibilityRule, type RuleOperator, type OrchestrationMode } from "../types";
 import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, mockTriggers, type PreferenceRule } from "../data/mockData";
@@ -239,26 +239,6 @@ export default function JourneyBuilder() {
       : (["email", "push", "sms", "whatsapp"] as MessageChannel[]);
   }
 
-  /**
-   * Channels the journey actually delivers on, derived from the steps on the
-   * canvas (top-level and inside Decision Split branches). In Phase 1 this is
-   * what scopes the Channel Eligibility Rules, replacing the Entry Channel pool.
-   */
-  const usedChannels = useMemo<MessageChannel[]>(() => {
-    const found = new Set<MessageChannel>();
-    const visit = (list: Step[]) => {
-      for (const st of list) {
-        if (st.type === "email" || st.type === "push" || st.type === "sms" || st.type === "whatsapp") found.add(st.type);
-        else if (st.type === "multi_channel") (multiChannelStates[st.id] || []).forEach(c => found.add(c));
-        else if (st.type === "best_channel") bestChannelPool.forEach(c => found.add(c));
-      }
-    };
-    visit(steps);
-    Object.values(branchSteps).forEach(visit);
-    return DEFAULT_CHANNEL_ORDER.filter(c => found.has(c));
-  }, [steps, branchSteps, multiChannelStates, bestChannelPool]);
-
-  const effectiveChannels = showBestChannel ? entryChannel : usedChannels;
 
   /**
    * A Multi-Channel step carries one of two orchestration modes.
@@ -336,6 +316,31 @@ export default function JourneyBuilder() {
 
   function handleRemoveCustomRule(channel: MessageChannel, ruleId: string) {
     setAddedCustomRules(prev => ({ ...prev, [channel]: (prev[channel] || []).filter(r => r.id !== ruleId) }));
+  }
+
+  /** Per-channel consent / reachability rules, rendered inside the step that delivers on those channels. */
+  function renderChannelEligibilityRules(channels: MessageChannel[]) {
+    if (channels.length === 0) return null;
+    return (
+      <div className="eligibility-stage" style={{ marginTop: 16 }}>
+        <div className="eligibility-stage-header">
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Channel Eligibility Rules</div>
+            <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Per-channel rules that determine whether a qualified user can receive this step on each channel.</div>
+          </div>
+        </div>
+        <ChannelEligibilityRules
+          selectedChannels={channels}
+          enabledRules={eligibilityRulesEnabled}
+          onToggleRule={handleToggleEligibilityRule}
+          experimentValues={experimentValues}
+          onExperimentChange={handleExperimentChange}
+          addedCustomRules={addedCustomRules}
+          onAddCustomRule={handleAddCustomRule}
+          onRemoveCustomRule={handleRemoveCustomRule}
+        />
+      </div>
+    );
   }
 
   function toggleChannelExperiment(ch: MessageChannel) {
@@ -670,7 +675,7 @@ export default function JourneyBuilder() {
                     <span className="journey-step-icon">{getStepIcon(step.type)}</span>
                     <div className="journey-step-info">
                       <div className="journey-step-label">{step.label}</div>
-                      <div className="journey-step-type">{step.type === "trigger" ? "Eligibility Rules" : step.type === "multi_channel" ? getMultiChannelMode(step.id) : step.type}</div>
+                      <div className="journey-step-type">{step.type === "trigger" ? "Activation & Audience" : step.type === "multi_channel" ? getMultiChannelMode(step.id) : step.type}</div>
                     </div>
                     {step.type !== "trigger" && step.id !== AUTO_BEST_CHANNEL_ID && (
                       <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStep(step.id); }}>&times;</button>
@@ -938,6 +943,7 @@ export default function JourneyBuilder() {
                             <input className="form-input" type="number" placeholder="e.g., 654321" />
                           </div>
                         </div>
+                        {renderChannelEligibilityRules([step.type])}
                       </>
                     )}
                     {step.type === "delay" && (
@@ -1061,6 +1067,7 @@ export default function JourneyBuilder() {
                           {stepChannels.length > 0 && (
                             <BaseContentSection key={step.id} selectedChannels={isSequential ? priority : stepChannels} />
                           )}
+                          {renderChannelEligibilityRules(isSequential ? priority : stepChannels)}
                         </div>
                       );
                     })()}
@@ -1373,34 +1380,6 @@ export default function JourneyBuilder() {
                           )}
                         </div>
 
-                        {/* ── Channel Eligibility Rules ── */}
-                        <div className="eligibility-stage" style={{ marginTop: 16 }}>
-                          <div className="eligibility-stage-header">
-                            <div>
-                              <div style={{ fontWeight: 700, fontSize: 15 }}>Channel Eligibility Rules</div>
-                              <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Per-channel rules that determine which channels a qualified user can receive.</div>
-                            </div>
-                          </div>
-
-                          {effectiveChannels.length === 0 ? (
-                            <div className="text-muted" style={{ padding: "12px 0", fontSize: 13 }}>
-                              {showBestChannel
-                                ? "Select at least one Entry Channel above to configure channel-specific rules."
-                                : "Add a Send or Multi-Channel step to configure channel-specific rules."}
-                            </div>
-                          ) : (
-                            <ChannelEligibilityRules
-                              selectedChannels={effectiveChannels}
-                              enabledRules={eligibilityRulesEnabled}
-                              onToggleRule={handleToggleEligibilityRule}
-                              experimentValues={experimentValues}
-                              onExperimentChange={handleExperimentChange}
-                              addedCustomRules={addedCustomRules}
-                              onAddCustomRule={handleAddCustomRule}
-                              onRemoveCustomRule={handleRemoveCustomRule}
-                            />
-                          )}
-                        </div>
                       </div>
                     )}
                     {step.type === "best_channel" && (
