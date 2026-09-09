@@ -33,9 +33,7 @@ export default function JourneyBuilder() {
   const { showBestChannel } = usePhase();
   const [journeyName, setJourneyName] = useState("");
   const [description, setDescription] = useState("");
-  const [steps, setSteps] = useState<Step[]>([
-    { id: makeId(), type: "trigger", label: "Entry Source" },
-  ]);
+  const [steps, setSteps] = useState<Step[]>([]);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -476,9 +474,8 @@ export default function JourneyBuilder() {
         if (next.length >= 2) {
           setSteps(s => {
             if (s.some(st => st.id === AUTO_BEST_CHANNEL_ID)) return s;
-            const triggerIdx = s.findIndex(st => st.type === "trigger");
             const inserted = [...s];
-            inserted.splice(triggerIdx + 1, 0, { id: AUTO_BEST_CHANNEL_ID, type: "best_channel", label: "Best Channel Send" });
+            inserted.splice(0, 0, { id: AUTO_BEST_CHANNEL_ID, type: "best_channel", label: "Best Channel Send" });
             return inserted;
           });
           setBestChannelPool(next);
@@ -545,7 +542,7 @@ export default function JourneyBuilder() {
         </div>
         <div className="page-header-actions">
           <button className="btn btn-secondary" onClick={() => navigate("/journeys")}>Cancel</button>
-          <button className="btn btn-primary" disabled={!journeyName || steps.length < 2} onClick={handleSave}>Save Journey</button>
+          <button className="btn btn-primary" disabled={!journeyName || steps.length < 1} onClick={handleSave}>Save Journey</button>
         </div>
       </div>
 
@@ -589,9 +586,8 @@ export default function JourneyBuilder() {
                           setEntryChannel(allChannels);
                           setSteps(s => {
                             if (s.some(st => st.id === AUTO_BEST_CHANNEL_ID)) return s;
-                            const triggerIdx = s.findIndex(st => st.type === "trigger");
                             const inserted = [...s];
-                            inserted.splice(triggerIdx + 1, 0, { id: AUTO_BEST_CHANNEL_ID, type: "best_channel", label: "Best Channel Send" });
+                            inserted.splice(0, 0, { id: AUTO_BEST_CHANNEL_ID, type: "best_channel", label: "Best Channel Send" });
                             return inserted;
                           });
                           setBestChannelPool(allChannels);
@@ -712,6 +708,53 @@ export default function JourneyBuilder() {
               <span className="journey-settings-label">Reporting Label</span>
               <input className="form-input" style={{ width: 150, fontSize: 12 }} placeholder="e.g., post_booking_q2" value={reportingLabel} onChange={e => setReportingLabel(e.target.value)} />
             </div>
+
+            {/* Audience */}
+            <div style={{ fontWeight: 600, fontSize: 12, color: "var(--color-gray-500)", textTransform: "uppercase", letterSpacing: "0.5px", margin: "16px 0 4px" }}>Audience</div>
+            <div className="text-muted" style={{ fontSize: 12, marginBottom: 8 }}>Users who fail these rules never enter the journey.</div>
+            <div className="rule-builder" style={{ marginTop: 12 }}>
+              {journeyRules.map((r, i) => (
+                <div key={r.id} className="rule-row" style={{ flexWrap: "wrap" }}>
+                  {i > 0 && (
+                    <select className="form-select" style={{ width: 70, flex: "none" }} value={r.connector} onChange={e => updateJourneyRule(r.id, "connector", e.target.value)}>
+                      <option value="AND">AND</option>
+                      <option value="OR">OR</option>
+                    </select>
+                  )}
+                  <select className="form-select" style={{ minWidth: 130, flex: 1 }} value={r.attribute} onChange={e => updateJourneyRule(r.id, "attribute", e.target.value)}>
+                    {RULE_ATTRIBUTES.map(a => (
+                      <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
+                    ))}
+                  </select>
+                  <select className="form-select" style={{ width: 120, flex: "none" }} value={r.operator} onChange={e => updateJourneyRule(r.id, "operator", e.target.value)}>
+                    <option value="equals">equals</option>
+                    <option value="not_equals">not equals</option>
+                    <option value="greater_than">greater than</option>
+                    <option value="less_than">less than</option>
+                    <option value="in">in</option>
+                  </select>
+                  <input className="form-input" style={{ width: 100, flex: "none" }} value={String(r.value)} onChange={e => updateJourneyRule(r.id, "value", e.target.value)} />
+                  <button className="rule-remove-btn" onClick={() => removeJourneyRule(r.id)}>&times;</button>
+                </div>
+              ))}
+            </div>
+            <div style={{ position: "relative", marginTop: 12 }}>
+              <button className="btn btn-secondary" onClick={() => setShowJourneyRuleMenu(!showJourneyRuleMenu)}>+ Add Rule</button>
+              {showJourneyRuleMenu && (
+                <div className="channel-rules-menu tier-selection-appear">
+                  {RULE_ATTRIBUTES.map(a => (
+                    <div key={a} className="channel-rules-menu-item" onClick={() => addJourneyRule(a)}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {journeyRules.length > 0 && (
+              <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
+                Preview: {journeyRules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute} ${r.operator.replace("_", " ")} ${r.value}`).join("")}
+              </div>
+            )}
           </div>
 
           {/* Journey Flow */}
@@ -727,9 +770,9 @@ export default function JourneyBuilder() {
                     <span className="journey-step-icon">{getStepIcon(step.type)}</span>
                     <div className="journey-step-info">
                       <div className="journey-step-label">{step.label}</div>
-                      <div className="journey-step-type">{step.type === "trigger" ? "Audience" : step.type === "multi_channel" ? getMultiChannelMode(step.id) : step.type}</div>
+                      <div className="journey-step-type">{step.type === "multi_channel" ? getMultiChannelMode(step.id) : step.type}</div>
                     </div>
-                    {step.type !== "trigger" && step.id !== AUTO_BEST_CHANNEL_ID && (
+                    {step.id !== AUTO_BEST_CHANNEL_ID && (
                       <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStep(step.id); }}>&times;</button>
                     )}
                     {step.id === AUTO_BEST_CHANNEL_ID && (
@@ -877,13 +920,9 @@ export default function JourneyBuilder() {
         <div>
           <div className="bui-box" style={{ position: "sticky", top: 16 }}>
             {(() => {
-              const currentStep = selectedStep ? steps.find(s => s.id === selectedStep) : null;
-              const isTrigger = currentStep?.type === "trigger";
               return (
                 <>
-                  {!isTrigger && (
-                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Step Configuration</div>
-                  )}
+                  <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Step Configuration</div>
                   {!selectedStep ? (
                     <p className="text-muted">Select a step to configure it.</p>
                   ) : (
@@ -892,7 +931,7 @@ export default function JourneyBuilder() {
                       if (!step) return <p className="text-muted">Step not found.</p>;
                       return (
                         <div>
-                          {step.type !== "trigger" && (
+                          {(
                             <div className="form-group">
                               <label className="form-label">Step Label</label>
                               {step.type === "multi_channel" ? (
@@ -1337,64 +1376,6 @@ export default function JourneyBuilder() {
                         </>
                       );
                     })()}
-                    {step.type === "trigger" && (
-                      <div className="tier-selection-appear">
-                        {/* ── Campaign Eligibility Rules ── */}
-                        <div className="eligibility-stage" style={{ marginTop: 4 }}>
-                          <div className="eligibility-stage-header">
-                            <div>
-                              <div style={{ fontWeight: 700, fontSize: 15 }}>Campaign Eligibility Rules</div>
-                              <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Users who fail these rules are excluded from the campaign entirely.</div>
-                            </div>
-                          </div>
-
-                          <div className="rule-builder" style={{ marginTop: 12 }}>
-                            {journeyRules.map((r, i) => (
-                              <div key={r.id} className="rule-row" style={{ flexWrap: "wrap" }}>
-                                {i > 0 && (
-                                  <select className="form-select" style={{ width: 70, flex: "none" }} value={r.connector} onChange={e => updateJourneyRule(r.id, "connector", e.target.value)}>
-                                    <option value="AND">AND</option>
-                                    <option value="OR">OR</option>
-                                  </select>
-                                )}
-                                <select className="form-select" style={{ minWidth: 130, flex: 1 }} value={r.attribute} onChange={e => updateJourneyRule(r.id, "attribute", e.target.value)}>
-                                  {RULE_ATTRIBUTES.map(a => (
-                                    <option key={a} value={a}>{a.replace(/_/g, " ")}</option>
-                                  ))}
-                                </select>
-                                <select className="form-select" style={{ width: 120, flex: "none" }} value={r.operator} onChange={e => updateJourneyRule(r.id, "operator", e.target.value)}>
-                                  <option value="equals">equals</option>
-                                  <option value="not_equals">not equals</option>
-                                  <option value="greater_than">greater than</option>
-                                  <option value="less_than">less than</option>
-                                  <option value="in">in</option>
-                                </select>
-                                <input className="form-input" style={{ width: 100, flex: "none" }} value={String(r.value)} onChange={e => updateJourneyRule(r.id, "value", e.target.value)} />
-                                <button className="rule-remove-btn" onClick={() => removeJourneyRule(r.id)}>&times;</button>
-                              </div>
-                            ))}
-                          </div>
-                          <div style={{ position: "relative", marginTop: 12 }}>
-                            <button className="btn btn-secondary" onClick={() => setShowJourneyRuleMenu(!showJourneyRuleMenu)}>+ Add Rule</button>
-                            {showJourneyRuleMenu && (
-                              <div className="channel-rules-menu tier-selection-appear">
-                                {RULE_ATTRIBUTES.map(a => (
-                                  <div key={a} className="channel-rules-menu-item" onClick={() => addJourneyRule(a)}>
-                                    <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          {journeyRules.length > 0 && (
-                            <div className="text-muted" style={{ marginTop: 8, fontSize: 12 }}>
-                              Preview: {journeyRules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute} ${r.operator.replace("_", " ")} ${r.value}`).join("")}
-                            </div>
-                          )}
-                        </div>
-
-                      </div>
-                    )}
                     {step.type === "best_channel" && (
                       <>
                         {renderActivationMethod(step.id)}
