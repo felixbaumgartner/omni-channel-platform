@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, RULE_ATTRIBUTES, ORCHESTRATION_LABELS, type MessageChannel, type JourneyStepType, type EligibilityRule, type RuleOperator, type OrchestrationMode } from "../types";
 import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, mockTriggers, type PreferenceRule } from "../data/mockData";
@@ -225,18 +225,40 @@ export default function JourneyBuilder() {
    *   - entryChannel: MessageChannel[]   journey-level entry channels selected above
    * Return: MessageChannel[]             initial channel selection for the new step
    *
-   * Trade-offs to consider:
-   *   - Empty array: forces user to make an explicit decision (zero-magic, more clicks).
-   *   - All four channels: maximalist default (matches "Configure content for all channels").
-   *   - entryChannel: keeps the multi-channel step consistent with the journey's
-   *     entry — but if entryChannel has only 1 channel, "Multi" is misleading.
-   *   - Hybrid: use entryChannel when 2+, otherwise fall back to all four.
+   * Phase 1 (Best Channel off): there is no journey-level Entry Channel, so the
+   * step itself owns the channel decision. Start empty and let the step's own
+   * "select at least one channel" prompt drive an explicit choice.
+   *
+   * Phase 2+ (Best Channel on): seed from the Entry Channel routing pool when it
+   * has 2+ channels, otherwise fall back to all four.
    */
   function getInitialMultiChannelChannels(): MessageChannel[] {
+    if (!showBestChannel) return [];
     return entryChannel.length >= 2
       ? entryChannel
       : (["email", "push", "sms", "whatsapp"] as MessageChannel[]);
   }
+
+  /**
+   * Channels the journey actually delivers on, derived from the steps on the
+   * canvas (top-level and inside Decision Split branches). In Phase 1 this is
+   * what scopes the Channel Eligibility Rules, replacing the Entry Channel pool.
+   */
+  const usedChannels = useMemo<MessageChannel[]>(() => {
+    const found = new Set<MessageChannel>();
+    const visit = (list: Step[]) => {
+      for (const st of list) {
+        if (st.type === "email" || st.type === "push" || st.type === "sms" || st.type === "whatsapp") found.add(st.type);
+        else if (st.type === "multi_channel") (multiChannelStates[st.id] || []).forEach(c => found.add(c));
+        else if (st.type === "best_channel") bestChannelPool.forEach(c => found.add(c));
+      }
+    };
+    visit(steps);
+    Object.values(branchSteps).forEach(visit);
+    return DEFAULT_CHANNEL_ORDER.filter(c => found.has(c));
+  }, [steps, branchSteps, multiChannelStates, bestChannelPool]);
+
+  const effectiveChannels = showBestChannel ? entryChannel : usedChannels;
 
   /**
    * A Multi-Channel step carries one of two orchestration modes.
@@ -491,6 +513,7 @@ export default function JourneyBuilder() {
             {/* Entry & Scheduling */}
             <div style={{ fontWeight: 600, fontSize: 12, color: "var(--color-gray-500)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>Entry & Scheduling</div>
 
+            {showBestChannel && (
             <div style={{ marginBottom: 12 }}>
               <div className="journey-settings-label" style={{ marginBottom: 6 }}>Entry Channel</div>
               {showBestChannel && (
@@ -582,6 +605,7 @@ export default function JourneyBuilder() {
                 </div>
               )}
             </div>
+            )}
             <div className="journey-settings-row">
               <span className="journey-settings-label">Entry Window Start</span>
               <input className="form-input" type="date" style={{ width: 150, fontSize: 12 }} value={startDate} onChange={e => setStartDate(e.target.value)} />
@@ -1358,13 +1382,15 @@ export default function JourneyBuilder() {
                             </div>
                           </div>
 
-                          {entryChannel.length === 0 ? (
+                          {effectiveChannels.length === 0 ? (
                             <div className="text-muted" style={{ padding: "12px 0", fontSize: 13 }}>
-                              Select at least one Entry Channel above to configure channel-specific rules.
+                              {showBestChannel
+                                ? "Select at least one Entry Channel above to configure channel-specific rules."
+                                : "Add a Send or Multi-Channel step to configure channel-specific rules."}
                             </div>
                           ) : (
                             <ChannelEligibilityRules
-                              selectedChannels={entryChannel}
+                              selectedChannels={effectiveChannels}
                               enabledRules={eligibilityRulesEnabled}
                               onToggleRule={handleToggleEligibilityRule}
                               experimentValues={experimentValues}
