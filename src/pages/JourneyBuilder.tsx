@@ -318,6 +318,58 @@ export default function JourneyBuilder() {
     setAddedCustomRules(prev => ({ ...prev, [channel]: (prev[channel] || []).filter(r => r.id !== ruleId) }));
   }
 
+  /** The first message-sending step (top-level canvas order) owns the journey's activation method. */
+  const MESSAGE_STEP_TYPES: JourneyStepType[] = ["email", "push", "sms", "whatsapp", "multi_channel", "best_channel"];
+  const firstMessageStepId = steps.find(st => MESSAGE_STEP_TYPES.includes(st.type))?.id ?? null;
+
+  function renderActivationMethod(stepId: string) {
+    if (stepId !== firstMessageStepId) return null;
+    return (
+      <div className="tier-selection-appear">
+        {/* ── Activation Method ── */}
+        <div style={{ marginBottom: 16 }}>
+          <label className="form-label" style={{ marginBottom: 8 }}>Activation Method</label>
+          <div className="radio-card-group">
+            <div className={`radio-card ${activationMethod === "scheduled" ? "selected" : ""}`} onClick={() => { setActivationMethod("scheduled"); setSelectedTriggerId(null); }}>
+              <div className="radio-card-header">
+                <div className="radio-card-radio" />
+                <div className="radio-card-title">Scheduled Run</div>
+              </div>
+              <div className="radio-card-description">
+                Campaign runs on a recurring schedule (e.g., daily batch send).
+              </div>
+            </div>
+            <div className={`radio-card ${activationMethod === "trigger" ? "selected" : ""}`} onClick={() => setActivationMethod("trigger")}>
+              <div className="radio-card-header">
+                <div className="radio-card-radio" />
+                <div className="radio-card-title">Message Trigger</div>
+              </div>
+              <div className="radio-card-description">
+                Campaign fires when a trigger event occurs in real time.
+              </div>
+            </div>
+          </div>
+
+          {activationMethod === "trigger" && (
+            <div className="tier-selection-appear" style={{ marginTop: 12 }}>
+              <label className="form-label">Select Trigger</label>
+              <select
+                className="form-select"
+                value={selectedTriggerId ?? ""}
+                onChange={e => setSelectedTriggerId(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">Choose a trigger...</option>
+                {mockTriggers.filter(t => t.status === "Live").map(t => (
+                  <option key={t.id} value={t.id}>{t.name} ({t.inputTopic})</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   /** Per-channel consent / reachability rules, rendered inside the step that delivers on those channels. */
   function renderChannelEligibilityRules(channels: MessageChannel[]) {
     if (channels.length === 0) return null;
@@ -675,7 +727,7 @@ export default function JourneyBuilder() {
                     <span className="journey-step-icon">{getStepIcon(step.type)}</span>
                     <div className="journey-step-info">
                       <div className="journey-step-label">{step.label}</div>
-                      <div className="journey-step-type">{step.type === "trigger" ? "Activation & Audience" : step.type === "multi_channel" ? getMultiChannelMode(step.id) : step.type}</div>
+                      <div className="journey-step-type">{step.type === "trigger" ? "Audience" : step.type === "multi_channel" ? getMultiChannelMode(step.id) : step.type}</div>
                     </div>
                     {step.type !== "trigger" && step.id !== AUTO_BEST_CHANNEL_ID && (
                       <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStep(step.id); }}>&times;</button>
@@ -866,6 +918,7 @@ export default function JourneyBuilder() {
                           )}
                     {(step.type === "email" || step.type === "push" || step.type === "sms" || step.type === "whatsapp") && (
                       <>
+                        {renderActivationMethod(step.id)}
                         {/* Campaign Name */}
                         <div className="form-group">
                           <label className="form-label">Campaign Name</label>
@@ -966,6 +1019,7 @@ export default function JourneyBuilder() {
                       const priority = getChannelPriority(step.id);
                       return (
                         <div className="tier-selection-appear">
+                          {renderActivationMethod(step.id)}
                           {/* Channel Selection */}
                           <div className="form-group">
                             <label className="form-label">Channels</label>
@@ -1285,47 +1339,6 @@ export default function JourneyBuilder() {
                     })()}
                     {step.type === "trigger" && (
                       <div className="tier-selection-appear">
-                        {/* ── Activation Method ── */}
-                        <div style={{ marginBottom: 16 }}>
-                          <label className="form-label" style={{ marginBottom: 8 }}>Activation Method</label>
-                          <div className="radio-card-group">
-                            <div className={`radio-card ${activationMethod === "scheduled" ? "selected" : ""}`} onClick={() => { setActivationMethod("scheduled"); setSelectedTriggerId(null); }}>
-                              <div className="radio-card-header">
-                                <div className="radio-card-radio" />
-                                <div className="radio-card-title">Scheduled Run</div>
-                              </div>
-                              <div className="radio-card-description">
-                                Campaign runs on a recurring schedule (e.g., daily batch send).
-                              </div>
-                            </div>
-                            <div className={`radio-card ${activationMethod === "trigger" ? "selected" : ""}`} onClick={() => setActivationMethod("trigger")}>
-                              <div className="radio-card-header">
-                                <div className="radio-card-radio" />
-                                <div className="radio-card-title">Message Trigger</div>
-                              </div>
-                              <div className="radio-card-description">
-                                Campaign fires when a trigger event occurs in real time.
-                              </div>
-                            </div>
-                          </div>
-
-                          {activationMethod === "trigger" && (
-                            <div className="tier-selection-appear" style={{ marginTop: 12 }}>
-                              <label className="form-label">Select Trigger</label>
-                              <select
-                                className="form-select"
-                                value={selectedTriggerId ?? ""}
-                                onChange={e => setSelectedTriggerId(e.target.value ? Number(e.target.value) : null)}
-                              >
-                                <option value="">Choose a trigger...</option>
-                                {mockTriggers.filter(t => t.status === "Live").map(t => (
-                                  <option key={t.id} value={t.id}>{t.name} ({t.inputTopic})</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                        </div>
-
                         {/* ── Campaign Eligibility Rules ── */}
                         <div className="eligibility-stage" style={{ marginTop: 4 }}>
                           <div className="eligibility-stage-header">
@@ -1384,6 +1397,7 @@ export default function JourneyBuilder() {
                     )}
                     {step.type === "best_channel" && (
                       <>
+                        {renderActivationMethod(step.id)}
                         {/* Channel Pool Selection */}
                         <div className="form-group">
                           <label className="form-label">Channel Selection</label>
