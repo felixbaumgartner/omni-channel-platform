@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { channelMetrics, dailySends, mockCampaigns, mockUnifiedGroups, channelOverlap } from "../data/mockData";
+import { channelMetrics, dailySends, mockCampaigns, channelOverlap } from "../data/mockData";
 import { CHANNEL_ICONS, ORCHESTRATION_LABELS, type MessageChannel } from "../types";
 
 function formatNum(n: number): string {
@@ -28,7 +28,7 @@ export default function Analytics() {
       <div className="page-header">
         <div className="page-header-main">
           <h1 className="page-title">Analytics</h1>
-          <p className="page-subtitle">Unified campaign performance across all channels</p>
+          <p className="page-subtitle">Campaign performance across all channels</p>
         </div>
         <div className="page-header-actions">
           <select className="form-select" style={{ width: "auto" }} value={period} onChange={e => setPeriod(e.target.value)}>
@@ -58,18 +58,18 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Unified Campaign Group Performance */}
+      {/* Multi-Channel Campaign Performance */}
       <div className="bui-box">
         <div className="section-header">
           <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>Unified Campaign Group Performance</div>
-            <div className="text-muted">Aggregate metrics across linked channel campaigns</div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>Multi-Channel Campaign Performance</div>
+            <div className="text-muted">Aggregate metrics for campaigns running on more than one channel</div>
           </div>
         </div>
         <table className="data-table">
           <thead>
             <tr>
-              <th>Group</th>
+              <th>Campaign</th>
               <th>Channels</th>
               <th>Orchestration</th>
               <th style={{ textAlign: "right" }}>Total Reach</th>
@@ -78,11 +78,11 @@ export default function Analytics() {
             </tr>
           </thead>
           <tbody>
-            {mockUnifiedGroups.map(g => (
+            {mockCampaigns.filter(c => c.channels.length > 1 && c.orchestrationMode).map(g => (
               <tr key={g.id}>
                 <td>
                   <strong>{g.name}</strong>
-                  <div style={{ fontSize: 11, color: "var(--color-gray-500)" }}>{g.id}</div>
+                  <div style={{ fontSize: 11, color: "var(--color-gray-500)" }}>{g.description}</div>
                 </td>
                 <td>
                   {g.channels.map(ch => (
@@ -93,12 +93,12 @@ export default function Analytics() {
                 </td>
                 <td>
                   <span className={`badge-orchestration badge-orchestration--${g.orchestrationMode}`}>
-                    {ORCHESTRATION_LABELS[g.orchestrationMode]}
+                    {ORCHESTRATION_LABELS[g.orchestrationMode!]}
                   </span>
                 </td>
-                <td style={{ textAlign: "right" }}>{formatNum(g.totalReach)}</td>
-                <td style={{ textAlign: "right" }}>{formatNum(g.uniqueReach)}</td>
-                <td style={{ textAlign: "right" }}>{g.aggregateClickRate}%</td>
+                <td style={{ textAlign: "right" }}>{formatNum(g.deliveryCount || 0)}</td>
+                <td style={{ textAlign: "right" }}>{formatNum(g.uniqueReach || g.deliveryCount || 0)}</td>
+                <td style={{ textAlign: "right" }}>{g.clickRate}%</td>
               </tr>
             ))}
           </tbody>
@@ -233,7 +233,6 @@ export default function Analytics() {
               <th>Campaign</th>
               <th>Channels</th>
               <th>Type</th>
-              <th>Group</th>
               <th style={{ textAlign: "right" }}>Sent</th>
               <th style={{ textAlign: "right" }}>Click Rate</th>
             </tr>
@@ -244,7 +243,6 @@ export default function Analytics() {
                 <td><strong>{c.name}</strong></td>
                 <td>{c.channels.map(ch => <span key={ch} style={{ marginRight: 4 }}>{CHANNEL_ICONS[ch]}</span>)}</td>
                 <td><span className={`badge ${c.type === "transactional" ? "badge-constructive" : c.type === "marketing" ? "badge-marketing" : "badge-outline"}`}>{c.type}</span></td>
-                <td>{c.unifiedGroupId ? <span className="badge badge-brand" style={{ fontSize: 10 }}>{c.unifiedGroupId}</span> : <span className="text-muted">-</span>}</td>
                 <td style={{ textAlign: "right" }}>{formatNum(c.deliveryCount || 0)}</td>
                 <td style={{ textAlign: "right" }}>{c.clickRate ? c.clickRate + "%" : "N/A"}</td>
               </tr>

@@ -1,4 +1,4 @@
-import type { Campaign, Journey, UnifiedCampaignGroup, SubscriberProfile, EligibilityRule, MessageChannel } from "../types";
+import type { Campaign, Journey, SubscriberProfile, EligibilityRule, MessageChannel } from "../types";
 
 /* ── Rule-Based Routing Rules & Default Channel Order ── */
 
@@ -56,7 +56,12 @@ export const mockCampaigns: Campaign[] = [
     pipeline: "Scheduled: Daily EMK",
     createdAt: "5 Mar 2026", updatedAt: "5 Mar 2026", updatedBy: "engage-team",
     deliveryCount: 5200000, openRate: 34.2, clickRate: 8.7,
-    unifiedGroupId: "UCG-2026-001", funnel: "upper", vertical: "accommodation", orchestrationMode: "best_channel",
+    channelDeliveries: [
+      { channel: "email", contentId: 5501, messageCategory: "deal_discovery", status: "active" },
+      { channel: "push", contentId: 5502, messageCategory: "travel_ideas", status: "active" },
+      { channel: "sms", contentId: 5503, messageCategory: "genius_offers", status: "active" },
+    ], uniqueReach: 4560000, deduplicationWindowHours: 24,
+    funnel: "upper", vertical: "accommodation", orchestrationMode: "best_channel",
   },
   {
     id: 1004, name: "payment_receipt_email",
@@ -72,7 +77,11 @@ export const mockCampaigns: Campaign[] = [
     pipeline: "Scheduled: Daily Notifications",
     createdAt: "3 Mar 2026", updatedAt: "3 Mar 2026", updatedBy: "genius-team",
     deliveryCount: 1800000, openRate: 28.5, clickRate: 6.2,
-    unifiedGroupId: "UCG-2026-002", funnel: "retention", vertical: "accommodation", orchestrationMode: "multi_channel",
+    channelDeliveries: [
+      { channel: "push", contentId: 5504, messageCategory: "loyalty", status: "active" },
+      { channel: "email", contentId: 5505, messageCategory: "genius_programme", status: "active" },
+    ], uniqueReach: 1620000, deduplicationWindowHours: 48,
+    funnel: "retention", vertical: "accommodation", orchestrationMode: "multi_channel",
   },
   {
     id: 1006, name: "checkin_reminder_push",
@@ -96,7 +105,12 @@ export const mockCampaigns: Campaign[] = [
     pipeline: "Trigger: cart_abandon",
     createdAt: "10 Feb 2026", updatedAt: "5 Mar 2026", updatedBy: "convert-team",
     deliveryCount: 3100000, openRate: 41.8, clickRate: 12.3,
-    unifiedGroupId: "UCG-2026-003", funnel: "lower", vertical: "accommodation", orchestrationMode: "sequential",
+    channelDeliveries: [
+      { channel: "push", contentId: 5506, messageCategory: "price_alerts", status: "active" },
+      { channel: "email", contentId: 5507, messageCategory: "deal_discovery", status: "active" },
+      { channel: "whatsapp", contentId: 5508, messageCategory: "offers", status: "active" },
+    ], uniqueReach: 2480000, deduplicationWindowHours: 12,
+    funnel: "lower", vertical: "accommodation", orchestrationMode: "sequential",
   },
   {
     id: 1009, name: "booking_modification_sms",
@@ -113,7 +127,12 @@ export const mockCampaigns: Campaign[] = [
     pipeline: "Trigger: loyalty_status_change",
     createdAt: "28 Feb 2026", updatedAt: "1 Mar 2026", updatedBy: "loyalty-team",
     deliveryCount: 620000, openRate: 72.1, clickRate: 35.6,
-    unifiedGroupId: "UCG-2026-004", funnel: "retention", vertical: "accommodation", orchestrationMode: "multi_channel",
+    channelDeliveries: [
+      { channel: "email", contentId: 5509, messageCategory: "genius_programme", status: "active" },
+      { channel: "push", contentId: 5510, messageCategory: "loyalty", status: "active" },
+      { channel: "whatsapp", contentId: 5511, messageCategory: "loyalty", status: "active" },
+    ], uniqueReach: 620000,
+    funnel: "retention", vertical: "accommodation", orchestrationMode: "multi_channel",
   },
   {
     id: 1011, name: "price_alert_push",
@@ -257,70 +276,6 @@ export const dailySends: DailyMetric[] = [
   { date: "Mar 7", email: 530000, push: 395000, sms: 92000, whatsapp: 79000 },
 ];
 
-/* ── Unified Campaign Groups ── */
-
-export const mockUnifiedGroups: UnifiedCampaignGroup[] = [
-  {
-    id: "UCG-2026-001", name: "Summer Deals Omni-Channel",
-    description: "Cross-channel summer promotional campaign with intelligent routing",
-    orchestrationMode: "best_channel",
-    channels: ["email", "push", "sms"],
-    channelDeliveries: [
-      { channel: "email", contentId: 5501, messageCategory: "deal_discovery", status: "active", campaignId: 1003 },
-      { channel: "push", contentId: 5502, messageCategory: "travel_ideas", status: "active", campaignId: 1003 },
-      { channel: "sms", contentId: 5503, messageCategory: "genius_offers", status: "active", campaignId: 1003 },
-    ],
-    deduplicationEnabled: true, deduplicationWindowHours: 24,
-    totalReach: 5200000, uniqueReach: 4560000,
-    aggregateOpenRate: 34.2, aggregateClickRate: 8.7,
-    status: "Published", type: "marketing",
-  },
-  {
-    id: "UCG-2026-002", name: "Genius Level Promotion",
-    description: "Targeted push + email for Genius members",
-    orchestrationMode: "multi_channel",
-    channels: ["push", "email"],
-    channelDeliveries: [
-      { channel: "push", contentId: 5504, messageCategory: "loyalty", status: "active", campaignId: 1005 },
-      { channel: "email", contentId: 5505, messageCategory: "genius_programme", status: "active", campaignId: 1005 },
-    ],
-    deduplicationEnabled: true, deduplicationWindowHours: 48,
-    totalReach: 1800000, uniqueReach: 1620000,
-    aggregateOpenRate: 28.5, aggregateClickRate: 6.2,
-    status: "Published", type: "marketing",
-  },
-  {
-    id: "UCG-2026-003", name: "Cart Abandonment Recovery",
-    description: "Sequential cross-channel recovery: push first, email fallback, WhatsApp reminder",
-    orchestrationMode: "sequential",
-    channels: ["push", "email", "whatsapp"],
-    channelDeliveries: [
-      { channel: "push", contentId: 5506, messageCategory: "price_alerts", status: "active", campaignId: 1008 },
-      { channel: "email", contentId: 5507, messageCategory: "deal_discovery", status: "active", campaignId: 1008 },
-      { channel: "whatsapp", contentId: 5508, messageCategory: "offers", status: "active", campaignId: 1008 },
-    ],
-    deduplicationEnabled: true, deduplicationWindowHours: 12,
-    totalReach: 3100000, uniqueReach: 2480000,
-    aggregateOpenRate: 41.8, aggregateClickRate: 12.3,
-    status: "Live", type: "marketing",
-  },
-  {
-    id: "UCG-2026-004", name: "Loyalty Upgrade Notification",
-    description: "Cross-channel Genius level upgrade celebration",
-    orchestrationMode: "multi_channel",
-    channels: ["email", "push", "whatsapp"],
-    channelDeliveries: [
-      { channel: "email", contentId: 5509, messageCategory: "genius_programme", status: "active", campaignId: 1010 },
-      { channel: "push", contentId: 5510, messageCategory: "loyalty", status: "active", campaignId: 1010 },
-      { channel: "whatsapp", contentId: 5511, messageCategory: "loyalty", status: "active", campaignId: 1010 },
-    ],
-    deduplicationEnabled: false, deduplicationWindowHours: 0,
-    totalReach: 620000, uniqueReach: 620000,
-    aggregateOpenRate: 72.1, aggregateClickRate: 35.6,
-    status: "Live", type: "non_marketing",
-  },
-];
-
 /* ── Subscriber Profiles ── */
 
 export const mockSubscriberProfiles: SubscriberProfile[] = [
@@ -382,7 +337,6 @@ export const mockEligibilityRules: EligibilityRule[] = [
 /* ── Omni-Channel KPI Data ── */
 
 export const omniChannelKPIs = {
-  unifiedGroupCount: 4,
   dedupRate: 12.4,
   bestChannelRouting: 34.2,
   multiChannelReachability: 78.6,
@@ -591,7 +545,6 @@ export interface MockCampaignPriority {
   priority?: number;
   channels: MessageChannel[];
   source: string;
-  unifiedGroupId?: string;
 }
 
 export const mockCampaignPriorities: MockCampaignPriority[] = [
@@ -600,9 +553,9 @@ export const mockCampaignPriorities: MockCampaignPriority[] = [
   { campaignId: 1012, campaignName: "security_alert", communicationClass: "transactional", channels: ["sms", "email"], source: "Transactional" },
   { campaignId: 1006, campaignName: "checkin_reminder", communicationClass: "service", priority: 95, channels: ["push", "email"], source: "Trigger: checkin_reminder" },
   { campaignId: 1011, campaignName: "price_alert", communicationClass: "lifecycle", priority: 82, channels: ["push", "email"], source: "Trigger: price_change" },
-  { campaignId: 1008, campaignName: "cart_abandonment_omni", communicationClass: "lifecycle", priority: 78, channels: ["push", "email"], source: "Trigger: cart_abandon", unifiedGroupId: "UCG-2026-003" },
-  { campaignId: 1005, campaignName: "genius_promo", communicationClass: "promotional", priority: 62, channels: ["push", "email"], source: "Scheduled: Daily", unifiedGroupId: "UCG-2026-002" },
-  { campaignId: 1003, campaignName: "summer_deals_omnichannel", communicationClass: "promotional", priority: 55, channels: ["email", "push", "sms"], source: "Scheduled: Daily", unifiedGroupId: "UCG-2026-001" },
+  { campaignId: 1008, campaignName: "cart_abandonment_omni", communicationClass: "lifecycle", priority: 78, channels: ["push", "email"], source: "Trigger: cart_abandon" },
+  { campaignId: 1005, campaignName: "genius_promo", communicationClass: "promotional", priority: 62, channels: ["push", "email"], source: "Scheduled: Daily" },
+  { campaignId: 1003, campaignName: "summer_deals_omnichannel", communicationClass: "promotional", priority: 55, channels: ["email", "push", "sms"], source: "Scheduled: Daily" },
 ];
 
 /* ── Subscription Categories ── */

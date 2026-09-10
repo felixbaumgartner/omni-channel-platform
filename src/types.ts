@@ -299,31 +299,13 @@ export const CHANNEL_ELIGIBILITY_RULES: ChannelEligibilityGroup[] = [
   },
 ];
 
-/* ── Unified Campaign Group ── */
+/* ── Per-channel delivery inside a multi-channel campaign ── */
 
 export interface ChannelDelivery {
   channel: MessageChannel;
   contentId: number | null;
   messageCategory: string;
   status: "active" | "paused" | "no_send";
-  campaignId: number;
-}
-
-export interface UnifiedCampaignGroup {
-  id: string;
-  name: string;
-  description: string;
-  orchestrationMode: OrchestrationMode;
-  channels: MessageChannel[];
-  channelDeliveries: ChannelDelivery[];
-  deduplicationEnabled: boolean;
-  deduplicationWindowHours: number;
-  totalReach: number;
-  uniqueReach: number;
-  aggregateOpenRate: number;
-  aggregateClickRate: number;
-  status: CampaignStatus;
-  type: MessageType;
 }
 
 /* ── Subscriber Profile ── */
@@ -371,7 +353,11 @@ export interface Campaign {
   deliveryCount?: number;
   openRate?: number;
   clickRate?: number;
-  unifiedGroupId?: string;
+  /** Present on multi-channel campaigns: the per-channel content behind the one campaign. */
+  channelDeliveries?: ChannelDelivery[];
+  /** Subscribers reached after cross-channel deduplication. */
+  uniqueReach?: number;
+  deduplicationWindowHours?: number;
   funnel?: Funnel;
   vertical?: Vertical;
   orchestrationMode?: OrchestrationMode;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockCampaigns, mockUnifiedGroups } from "../data/mockData";
+import { mockCampaigns } from "../data/mockData";
 import { CHANNEL_ICONS, TYPE_LABELS, ORCHESTRATION_LABELS, type MessageType, type MessageChannel } from "../types";
 import { usePhase } from "../context/PhaseContext";
 
@@ -31,8 +31,7 @@ export default function CampaignList() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortField, setSortField] = useState("updated_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [viewMode, setViewMode] = useState<"channel" | "unified">("unified");
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const filtered = mockCampaigns
     .filter(m => {
@@ -48,16 +47,14 @@ export default function CampaignList() {
       return a.id > b.id ? dir : -dir;
     });
 
-  const toggleGroup = (id: string) => {
-    setExpandedGroups(prev => {
+  const toggleExpanded = (id: number) => {
+    setExpanded(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   };
 
-  // Campaigns not in any unified group
-  const ungroupedCampaigns = filtered.filter(c => !c.unifiedGroupId);
 
   return (
     <div className="app-page">
@@ -71,29 +68,8 @@ export default function CampaignList() {
         </div>
       </div>
 
-      {/* View Toggle + Filters */}
+      {/* Filters */}
       <div className="filter-card">
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
-          <span style={{ fontWeight: 600, fontSize: 13, color: "var(--color-gray-500)" }}>View:</span>
-          <div className="view-toggle">
-            <button className={`view-toggle-btn ${viewMode === "unified" ? "active" : ""}`} onClick={() => setViewMode("unified")}>
-              Unified View
-            </button>
-            <button className={`view-toggle-btn ${viewMode === "channel" ? "active" : ""}`} onClick={() => setViewMode("channel")}>
-              Per-Channel View
-            </button>
-          </div>
-          {viewMode === "unified" && (
-            <span style={{ fontSize: 12, color: "var(--color-gray-500)" }}>
-              Campaigns grouped by Unified Campaign Group
-            </span>
-          )}
-          {viewMode === "channel" && (
-            <span style={{ fontSize: 12, color: "var(--color-gray-500)" }}>
-              Legacy: individual channel campaigns (PROD view)
-            </span>
-          )}
-        </div>
         <div className="filter-row">
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Search</label>
@@ -135,9 +111,7 @@ export default function CampaignList() {
       <div className="results-card">
         <div className="results-header">
           <div className="results-count">
-            {viewMode === "unified"
-              ? `${mockUnifiedGroups.length} Groups + ${ungroupedCampaigns.length} Standalone`
-              : `${filtered.length} ${filtered.length === 1 ? "Campaign" : "Campaigns"}`}
+            {`${filtered.length} ${filtered.length === 1 ? "Campaign" : "Campaigns"}`}
           </div>
           <div className="results-sort">
             <span className="results-sort-label">Sort by</span>
@@ -152,143 +126,72 @@ export default function CampaignList() {
           </div>
         </div>
 
-        {viewMode === "unified" ? (
-          /* ── Unified View ── */
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {mockUnifiedGroups.map(g => {
-              const isExpanded = expandedGroups.has(g.id);
-              const groupCampaigns = filtered.filter(c => c.unifiedGroupId === g.id);
-              if (groupCampaigns.length === 0 && filterText) return null;
-              return (
-                <div key={g.id} className="ucg-card">
-                  <div className="ucg-card-header">
-                    <span className="badge badge-brand" style={{ fontSize: 11 }}>{g.id}</span>
-                    <span className="ucg-card-title">{g.name}</span>
-                    <TypeBadge type={g.type} />
-                    <StatusBadge status={g.status} />
-                    {(showBestChannel || g.orchestrationMode !== "best_channel") && (
-                    <span className={`badge-orchestration badge-orchestration--${g.orchestrationMode}`}>
-                      {ORCHESTRATION_LABELS[g.orchestrationMode]}
-                    </span>
-                    )}
-                    <div className="ucg-card-channels">
-                      {g.channels.map(ch => (
-                        <span key={ch} className={`ucg-card-channel ucg-card-channel--${channelClass(ch)}`}>
-                          {CHANNEL_ICONS[ch]}
+        <div className="results-list">
+          {filtered.length === 0 && (
+            <div style={{ padding: 32, textAlign: "center", color: "var(--color-gray-500)" }}>
+              No campaigns found matching the current filters.
+            </div>
+          )}
+          {filtered.map(m => {
+            const isExpanded = expanded.has(m.id);
+            const deliveries = m.channelDeliveries || [];
+            return (
+              <div key={m.id} className="list-card" style={{ flexDirection: "column", alignItems: "stretch" }}>
+                <div style={{ display: "flex", gap: 16 }}>
+                  <div className="list-card-content">
+                    <div className="list-card-title">
+                      <span>{m.name}</span>
+                      <TypeBadge type={m.type} />
+                      <StatusBadge status={m.status} />
+                      {m.orchestrationMode && m.channels.length > 1 && (showBestChannel || m.orchestrationMode !== "best_channel") && (
+                        <span className={`badge-orchestration badge-orchestration--${m.orchestrationMode}`} style={{ fontSize: 10 }}>
+                          {ORCHESTRATION_LABELS[m.orchestrationMode]}
                         </span>
+                      )}
+                    </div>
+                    <div className="list-card-subtitle">{m.description}</div>
+                    <div className="list-card-meta">
+                      {m.channels.map(ch => (
+                        <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {ch === "whatsapp" ? "WhatsApp" : ch === "push" ? "Push" : ch.charAt(0).toUpperCase() + ch.slice(1)}</span>
                       ))}
+                      <span className="badge badge-media">{m.pipeline}</span>
+                      {m.deliveryCount && <span className="badge badge-media">{formatNum(m.deliveryCount)} sent</span>}
+                      {m.uniqueReach && m.uniqueReach !== m.deliveryCount && <span className="badge badge-media">{formatNum(m.uniqueReach)} unique after dedup</span>}
+                      <span className="badge badge-media">Updated {m.updatedAt} by {m.updatedBy}</span>
                     </div>
                   </div>
-                  <div className="ucg-card-metrics">
-                    <div className="ucg-card-metric">
-                      <div className="ucg-card-metric-value">{formatNum(g.totalReach)}</div>
-                      <div className="ucg-card-metric-label">Total Reach</div>
-                    </div>
-                    <div className="ucg-card-metric">
-                      <div className="ucg-card-metric-value">{formatNum(g.uniqueReach)}</div>
-                      <div className="ucg-card-metric-label">Unique (Deduped)</div>
-                    </div>
-                    <div className="ucg-card-metric">
-                      <div className="ucg-card-metric-value">{g.aggregateClickRate}%</div>
-                      <div className="ucg-card-metric-label">Click Rate</div>
-                    </div>
+                  <div className="list-card-actions">
+                    <button className="btn btn-tertiary" style={{ fontSize: 12 }}>Clone</button>
                   </div>
-                  <div className="ucg-card-expand" onClick={() => toggleGroup(g.id)}>
-                    {isExpanded ? "\u25BC" : "\u25B6"} {g.channelDeliveries.length} channel deliveries &mdash; {g.description}
-                  </div>
-                  {isExpanded && (
-                    <div className="ucg-card-children" style={{ paddingTop: 12 }}>
-                      {g.channelDeliveries.map(cd => (
-                        <div key={cd.channel} className="ucg-child-row">
-                          <span className={`ucg-card-channel ucg-card-channel--${channelClass(cd.channel)}`}>
-                            {CHANNEL_ICONS[cd.channel]}
-                          </span>
-                          <strong>{cd.channel === "whatsapp" ? "WhatsApp" : cd.channel.charAt(0).toUpperCase() + cd.channel.slice(1)}</strong>
-                          <span className="badge badge-outline" style={{ fontSize: 11 }}>{cd.messageCategory}</span>
-                          <span className={`badge ${cd.status === "active" ? "badge-constructive" : "badge-stopped"}`} style={{ fontSize: 11 }}>
-                            {cd.status}
-                          </span>
-                          <span className="text-muted" style={{ marginLeft: "auto" }}>Campaign #{cd.campaignId}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
-              );
-            })}
-
-            {/* Ungrouped campaigns */}
-            {ungroupedCampaigns.length > 0 && (
-              <>
-                <div style={{ fontWeight: 600, fontSize: 13, color: "var(--color-gray-500)", padding: "8px 0", marginTop: 8 }}>
-                  Standalone Campaigns (not in a unified group)
-                </div>
-                {ungroupedCampaigns.map(m => (
-                  <div key={m.id} className="list-card">
-                    <div className="list-card-content">
-                      <div className="list-card-title">
-                        <span>{m.name}</span>
-                        <TypeBadge type={m.type} />
-                        <StatusBadge status={m.status} />
-                      </div>
-                      <div className="list-card-subtitle">{m.description}</div>
-                      <div className="list-card-meta">
-                        {m.channels.map(ch => (
-                          <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {ch === "whatsapp" ? "WhatsApp" : ch === "push" ? "Push" : ch.charAt(0).toUpperCase() + ch.slice(1)}</span>
+                {deliveries.length > 0 && (
+                  <>
+                    <div className="ucg-card-expand" onClick={() => toggleExpanded(m.id)}>
+                      {isExpanded ? "\u25BC" : "\u25B6"} {deliveries.length} channel deliveries
+                    </div>
+                    {isExpanded && (
+                      <div className="ucg-card-children" style={{ paddingTop: 12 }}>
+                        {deliveries.map(cd => (
+                          <div key={cd.channel} className="ucg-child-row">
+                            <span className={`ucg-card-channel ucg-card-channel--${channelClass(cd.channel)}`}>
+                              {CHANNEL_ICONS[cd.channel]}
+                            </span>
+                            <strong>{cd.channel === "whatsapp" ? "WhatsApp" : cd.channel.charAt(0).toUpperCase() + cd.channel.slice(1)}</strong>
+                            <span className="badge badge-outline" style={{ fontSize: 11 }}>{cd.messageCategory}</span>
+                            <span className={`badge ${cd.status === "active" ? "badge-constructive" : "badge-stopped"}`} style={{ fontSize: 11 }}>
+                              {cd.status}
+                            </span>
+                            {cd.contentId && <span className="text-muted" style={{ marginLeft: "auto" }}>Content #{cd.contentId}</span>}
+                          </div>
                         ))}
-                        <span className="badge badge-media">{m.pipeline}</span>
-                        {m.deliveryCount && <span className="badge badge-media">{formatNum(m.deliveryCount)} sent</span>}
                       </div>
-                    </div>
-                    <div className="list-card-actions">
-                      <button className="btn btn-tertiary" style={{ fontSize: 12 }}>Clone</button>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        ) : (
-          /* ── Per-Channel (Legacy) View ── */
-          <div className="results-list">
-            {filtered.length === 0 && (
-              <div style={{ padding: 32, textAlign: "center", color: "var(--color-gray-500)" }}>
-                No campaigns found matching the current filters.
-              </div>
-            )}
-            {filtered.map(m => (
-              <div key={m.id} className="list-card">
-                <div className="list-card-content">
-                  <div className="list-card-title">
-                    <span>{m.name}</span>
-                    <TypeBadge type={m.type} />
-                    <StatusBadge status={m.status} />
-                    {m.unifiedGroupId && (
-                      <span className="badge badge-brand" style={{ fontSize: 10 }}>{m.unifiedGroupId}</span>
                     )}
-                    {m.orchestrationMode && (showBestChannel || m.orchestrationMode !== "best_channel") && (
-                      <span className={`badge-orchestration badge-orchestration--${m.orchestrationMode}`} style={{ fontSize: 10 }}>
-                        {ORCHESTRATION_LABELS[m.orchestrationMode]}
-                      </span>
-                    )}
-                  </div>
-                  <div className="list-card-subtitle">{m.description}</div>
-                  <div className="list-card-meta">
-                    {m.channels.map(ch => (
-                      <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {ch === "whatsapp" ? "WhatsApp" : ch === "push" ? "Push" : ch.charAt(0).toUpperCase() + ch.slice(1)}</span>
-                    ))}
-                    <span className="badge badge-media">{m.pipeline}</span>
-                    {m.deliveryCount && <span className="badge badge-media">{formatNum(m.deliveryCount)} sent</span>}
-                    <span className="badge badge-media">Updated {m.updatedAt} by {m.updatedBy}</span>
-                  </div>
-                </div>
-                <div className="list-card-actions">
-                  <button className="btn btn-tertiary" style={{ fontSize: 12 }}>Clone</button>
-                </div>
+                  </>
+                )}
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

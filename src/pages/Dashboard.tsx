@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { mockCampaigns, mockJourneys, channelMetrics, dailySends, mockUnifiedGroups } from "../data/mockData";
+import { mockCampaigns, mockJourneys, channelMetrics, dailySends } from "../data/mockData";
 import { CHANNEL_ICONS, ORCHESTRATION_LABELS, type MessageChannel } from "../types";
 
 function formatNum(n: number): string {
@@ -63,23 +63,22 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Unified Campaign Groups */}
+      {/* Multi-channel campaigns */}
       <div className="bui-box">
         <div className="section-header">
           <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>Unified Campaign Groups</div>
-            <div className="text-muted">Campaigns linked across channels with orchestration</div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>Multi-Channel Campaigns</div>
+            <div className="text-muted">One campaign running on several channels</div>
           </div>
           <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => navigate("/campaigns")}>View All</button>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {mockUnifiedGroups.map(g => (
+          {mockCampaigns.filter(c => c.channels.length > 1 && c.orchestrationMode).map(g => (
             <div key={g.id} className="ucg-card">
               <div className="ucg-card-header">
-                <span className="badge badge-brand" style={{ fontSize: 11 }}>{g.id}</span>
                 <span className="ucg-card-title">{g.name}</span>
                 <span className={`badge-orchestration badge-orchestration--${g.orchestrationMode}`}>
-                  {ORCHESTRATION_LABELS[g.orchestrationMode]}
+                  {ORCHESTRATION_LABELS[g.orchestrationMode!]}
                 </span>
                 <div className="ucg-card-channels">
                   {g.channels.map(ch => (
@@ -91,15 +90,15 @@ export default function Dashboard() {
               </div>
               <div className="ucg-card-metrics">
                 <div className="ucg-card-metric">
-                  <div className="ucg-card-metric-value">{formatNum(g.totalReach)}</div>
+                  <div className="ucg-card-metric-value">{formatNum(g.deliveryCount || 0)}</div>
                   <div className="ucg-card-metric-label">Total Reach</div>
                 </div>
                 <div className="ucg-card-metric">
-                  <div className="ucg-card-metric-value">{formatNum(g.uniqueReach)}</div>
+                  <div className="ucg-card-metric-value">{formatNum(g.uniqueReach || g.deliveryCount || 0)}</div>
                   <div className="ucg-card-metric-label">Unique Reach</div>
                 </div>
                 <div className="ucg-card-metric">
-                  <div className="ucg-card-metric-value">{g.aggregateClickRate}%</div>
+                  <div className="ucg-card-metric-value">{g.clickRate}%</div>
                   <div className="ucg-card-metric-label">Click Rate</div>
                 </div>
               </div>
@@ -190,7 +189,6 @@ export default function Dashboard() {
                 <div className="mini-card-title">
                   {c.name}
                   <span className="badge badge-constructive" style={{ fontSize: 10, padding: "1px 6px" }}>Live</span>
-                  {c.unifiedGroupId && <span className="badge badge-brand" style={{ fontSize: 10, padding: "1px 6px" }}>{c.unifiedGroupId}</span>}
                 </div>
                 <div className="mini-card-meta">
                   {c.channels.map(ch => (

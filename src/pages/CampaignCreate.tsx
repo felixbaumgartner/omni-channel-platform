@@ -139,9 +139,6 @@ export default function CampaignCreate() {
           <h2 style={{ marginBottom: 8 }}>Omni-Channel Campaign Created</h2>
           <p className="text-muted mb-16">"{campaignName}" has been saved as a {purposeLabel} campaign{selectedChannels.length > 0 ? ` targeting ${selectedChannels.map(ch => CHANNEL_LABELS[ch]).join(", ")}` : " with system-decided channel routing"}.</p>
           <p className="text-muted mb-16">Delivery Mode: <strong>{selectedChannels.length === 0 ? "Best Channel (System Decides)" : selectedChannels.length === 1 ? "Fixed Channel" : deliveryMode === "experiment" ? "Channel Experiment" : ORCHESTRATION_LABELS[deliveryMode]}</strong></p>
-          {selectedChannels.length > 1 && (
-            <p className="text-muted mb-16">Unified Campaign Group: <span className="badge badge-brand">UCG-2026-{String(Math.floor(Math.random() * 900) + 100)}</span></p>
-          )}
           <div className="btn-group" style={{ justifyContent: "center", marginTop: 24 }}>
             <button className="btn btn-secondary" onClick={() => navigate("/campaigns")}>View All Campaigns</button>
             <button className="btn btn-primary" onClick={() => window.location.reload()}>Create Another</button>
@@ -281,7 +278,7 @@ export default function CampaignCreate() {
             </div>
           </div>
 
-          {/* Channel Selection (P0: Unified Campaign Object) */}
+          {/* Channel Selection */}
           <div className="bui-box">
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Selection</div>
             <p className="text-muted mb-16">Select channels for this campaign. A single campaign can target all channels.</p>
@@ -360,7 +357,7 @@ export default function CampaignCreate() {
               <div className="info-banner tier-selection-appear" style={{ marginTop: 16 }}>
                 <span className="info-banner-icon">&#128279;</span>
                 <span>
-                  <strong>Unified Campaign Group</strong> &mdash; In PROD, each channel is a separate campaign. Omni-Channel creates a unified campaign group spanning all {selectedChannels.length} selected channels with a single UCG ID.
+                  <strong>One campaign, {selectedChannels.length} channels.</strong> In PROD each channel is a separate campaign. Here a single campaign owns all selected channels, with one priority, one holdout and per-channel content.
                 </span>
               </div>
             )}

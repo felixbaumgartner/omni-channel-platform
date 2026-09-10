@@ -19,12 +19,12 @@ Each page shows both the PROD-aligned baseline and the omni-channel enhancements
 ### Overview
 | Page | Route | Description |
 |------|-------|-------------|
-| **Dashboard** | `/dashboard` | Omni-channel intelligence KPIs, unified campaign groups, channel performance, daily send volume |
+| **Dashboard** | `/dashboard` | Omni-channel intelligence KPIs, multi-channel campaigns, channel performance, daily send volume |
 
 ### Messaging
 | Page | Route | Description |
 |------|-------|-------------|
-| **Campaigns** | `/campaigns` | Unified view (grouped by UCG) vs per-channel view toggle, orchestration mode badges, expandable channel deliveries |
+| **Campaigns** | `/campaigns` | One list of campaigns with channel chips, orchestration mode badges and expandable per-channel deliveries |
 | **Campaign Create** | `/campaign/new` | Classification questionnaire, campaign metadata (funnel/vertical), eligibility rules builder, 3 delivery modes (Best Channel / Multi-Channel / Sequential Fallback), cross-channel dedup, compliance |
 | **Transactional Create** | `/campaign/new/transactional` | SLA priority tiers (P0/P1/P2), transactional fallback chain with per-channel SLA, idempotency dedup |
 | **Journeys** | `/journeys` | Orchestration type badges (Single/Cross-Channel/Omni), channel effectiveness bars, cross-channel handoff metrics |
@@ -43,14 +43,14 @@ Each page shows both the PROD-aligned baseline and the omni-channel enhancements
 | Page | Route | Description |
 |------|-------|-------------|
 | **Channel Preferences** | `/channel-preferences` | ML/heuristic routing engine, subscriber profiles, dedup engine, frequency capping |
-| **Analytics** | `/analytics` | Routing lift, channel overlap Venn diagram, UCG performance, subscriber reachability tiers, cross-channel attribution |
+| **Analytics** | `/analytics` | Routing lift, channel overlap Venn diagram, multi-channel campaign performance, subscriber reachability tiers, cross-channel attribution |
 
 ---
 
 ## Key Omni-Channel Concepts
 
-### Unified Campaign Groups (UCGs)
-A UCG links channel-specific campaigns under one ID (e.g., `UCG-2026-001`). In PROD, "summer_deals" is 3 separate campaigns (email, push, SMS). With omni-channel, it's one UCG with 3 channel deliveries, shared dedup, and aggregate metrics.
+### One campaign, many channels
+In PROD, "summer_deals" is 3 separate campaigns (email, push, SMS). With omni-channel it is one campaign that owns 3 channel deliveries, one priority, shared dedup, and aggregate metrics. There is no separate grouping object; the campaign is the unit.
 
 ### Delivery Modes
 - **Best Channel** — System picks one optimal channel per subscriber using CDP signals + ML
@@ -66,8 +66,8 @@ Prevents the same subscriber from receiving the same message on multiple channel
 - **Omni-Channel** — Uses Best Channel Send nodes for AI-routed delivery
 
 ### No-Send Behavior
-Each suppression rule specifies what happens across the UCG when triggered:
-- **Suppress All** — Block entire UCG (GDPR, cross-channel fatigue)
+Each suppression rule specifies what happens across the campaign when triggered:
+- **Suppress All** — Block the entire campaign (GDPR, cross-channel fatigue)
 - **Suppress Channel** — Block one channel only (unsubscribed category)
 - **Fallback** — Redirect to next channel in priority (frequency cap, market restriction)
 
@@ -117,13 +117,13 @@ src/
 ├── styles.css                           # Global BUI-aligned stylesheet
 ├── main.tsx                             # Entry point
 ├── data/
-│   └── mockData.ts                      # All mock data (campaigns, journeys, UCGs, triggers, holdouts, etc.)
+│   └── mockData.ts                      # All mock data (campaigns, journeys, triggers, holdouts, etc.)
 ├── components/
 │   ├── ClassificationQuestionnaire.tsx  # Message type classifier (marketing/non-marketing/transactional)
 │   └── BaseContentSection.tsx           # Per-channel content management with channel-specific categories
 └── pages/
     ├── Dashboard.tsx                    # Overview with omni-channel KPIs
-    ├── CampaignList.tsx                 # Unified vs per-channel view
+    ├── CampaignList.tsx                 # Campaign list with per-channel deliveries
     ├── CampaignCreate.tsx               # Full campaign creation with metadata, rules, delivery modes
     ├── TransactionalCreate.tsx          # Transactional with SLA tiers + fallback chain
     ├── JourneyList.tsx                  # Journey list with orchestration badges
@@ -134,7 +134,7 @@ src/
     ├── NoSendReasons.tsx                # Suppression rules with omni-channel behavior
     ├── Subscriptions.tsx                # Consent matrix + gap analysis + subscriber lookup
     ├── ChannelPreferences.tsx           # Routing engine + subscriber profiles + dedup + freq caps
-    └── Analytics.tsx                    # Unified analytics with channel overlap + attribution
+    └── Analytics.tsx                    # Analytics with channel overlap + attribution
 ```
 
 ---
@@ -152,4 +152,4 @@ This prototype is informed by the production [marketingmessaging-tools](https://
 
 The key architectural shift from PROD to omni-channel:
 - PROD: 1 campaign = 1 channel, multi-channel at journey level only
-- Omni: 1 UCG = N channel deliveries, intelligent routing at campaign level
+- Omni: 1 campaign = N channel deliveries, intelligent routing at campaign level

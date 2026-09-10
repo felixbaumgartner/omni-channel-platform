@@ -51,7 +51,6 @@ export default function CampaignPriority() {
                         </span>
                       ))}
                     </div>
-                    {p.unifiedGroupId && <span className="badge badge-brand" style={{ fontSize: 10 }}>{p.unifiedGroupId}</span>}
                     <div className="priority-bar" style={{ width: 80 }}>
                       <div className="priority-bar-fill" style={{
                         width: `${p.priority ?? 100}%`,

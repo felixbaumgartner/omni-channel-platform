@@ -239,7 +239,7 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
           {crossChannelCoordinated ? (
             <div className="alert alert-info">
               <div className="alert-title">Coordinated Mode Active</div>
-              All {channels.length} channels use the same hash range ({hashStart}% – {hashEnd}%). This ensures clean incrementality measurement across the unified campaign group.
+              All {channels.length} channels use the same hash range ({hashStart}% – {hashEnd}%). This ensures clean incrementality measurement across the whole campaign.
             </div>
           ) : (
             <div className="tier-selection-appear">
@@ -382,7 +382,7 @@ export default function HoldoutManagement() {
             <div className="omni-kpi-card">
               <div className="kpi-label">Cross-Channel Coordinated</div>
               <div className="kpi-value">{crossChannelCount}</div>
-              <div className="kpi-sub">unified holdout across channels</div>
+              <div className="kpi-sub">one holdout across channels</div>
             </div>
             <div className="omni-kpi-card">
               <div className="kpi-label">Matched Campaigns</div>
@@ -395,7 +395,7 @@ export default function HoldoutManagement() {
           <div className="info-banner">
             <span className="info-banner-icon">&#128279;</span>
             <span>
-              <strong>Cross-Channel Holdout Coordination:</strong> In PROD, holdouts are per-channel. With omni-channel, a subscriber in an email holdout is automatically held out from push/SMS for the same UCG, ensuring clean incrementality measurement.
+              <strong>Cross-Channel Holdout Coordination:</strong> In PROD, holdouts are per-channel. With omni-channel, a subscriber in an email holdout is automatically held out from push/SMS for the same campaign, ensuring clean incrementality measurement.
             </span>
           </div>
 
