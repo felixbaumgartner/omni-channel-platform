@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { audienceEstimationData } from "../data/mockData";
+import { audienceEstimationData, DEFAULT_CHANNEL_ORDER } from "../data/mockData";
 import { CHANNEL_ICONS, CHANNEL_LABELS, ORCHESTRATION_LABELS, RULE_ATTRIBUTES, type MessageChannel, type OrchestrationMode } from "../types";
 import { usePhase } from "../context/PhaseContext";
 import { ChannelEligibilityRules } from "../components/ChannelSpecificRules";
@@ -40,6 +40,7 @@ export default function AudienceEstimationCreate() {
   const [channels, setChannels] = useState<MessageChannel[]>([]);
   const [orchestrationMode, setOrchestrationMode] = useState<OrchestrationMode>(showBestChannel ? "best_channel" : "multi_channel");
   const [rules, setRules] = useState<RuleRow[]>([]);
+  const [priorityOverride, setPriorityOverride] = useState<MessageChannel[]>([]);
   const [showRuleMenu, setShowRuleMenu] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduling, setScheduling] = useState(false);
@@ -80,6 +81,37 @@ export default function AudienceEstimationCreate() {
   const toggleChannel = (ch: MessageChannel) => {
     setChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
   };
+
+  // The fallback ladder is the selected channels, ordered. Explicit reorders are kept;
+  // newly selected channels join at the bottom in the platform default order.
+  const priority: MessageChannel[] = [
+    ...priorityOverride.filter(c => channels.includes(c)),
+    ...DEFAULT_CHANNEL_ORDER.filter(c => channels.includes(c) && !priorityOverride.includes(c)),
+  ];
+  const movePriority = (index: number, dir: "up" | "down") => {
+    const target = dir === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= priority.length) return;
+    const next = [...priority];
+    [next[index], next[target]] = [next[target], next[index]];
+    setPriorityOverride(next);
+  };
+  const isSequential = orchestrationMode === "sequential";
+  const priorityLabel = priority.map(c => CHANNEL_LABELS[c]).join(" > ");
+
+  // Sequential waterfall: each rung only reaches subscribers no earlier rung could.
+  // Channel reachability is treated as independent, which is the simplest honest
+  // assumption without an overlap matrix.
+  const waterfall = (() => {
+    const base = audienceEstimationData.baseEligible;
+    let remaining = base;
+    const rungs = priority.map((ch, i) => {
+      const pct = audienceEstimationData.channelReachability[ch].pct / 100;
+      const delivered = Math.round(remaining * pct);
+      remaining -= delivered;
+      return { channel: ch, rank: i + 1, reachable: audienceEstimationData.channelReachability[ch].reachable, delivered, cumulative: base - remaining };
+    });
+    return { rungs, reached: base - remaining, suppressed: remaining, base };
+  })();
 
   const addRule = (attribute: string) => {
     setRules(prev => [...prev, { id: Date.now(), attribute, operator: "equals", value: "", connector: "AND" }]);
@@ -125,7 +157,7 @@ export default function AudienceEstimationCreate() {
           <h2 style={{ marginBottom: 8 }}>Segment Created Successfully</h2>
           <p className="text-muted mb-16">
             "{name}" has been saved as a {channels.length}-channel segment
-            using <strong>{ORCHESTRATION_LABELS[orchestrationMode]}</strong> delivery mode.
+            using <strong>{ORCHESTRATION_LABELS[orchestrationMode]}</strong> delivery mode{isSequential ? <> in the order <strong>{priorityLabel}</strong></> : null}.
           </p>
           <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 16, flexWrap: "wrap" }}>
             {channels.map(ch => (
@@ -195,6 +227,7 @@ export default function AudienceEstimationCreate() {
               <tbody>
                 <tr><td style={{ fontWeight: 600, width: 140 }}>Channels</td><td>{channels.map(ch => `${CHANNEL_ICONS[ch]} ${CHANNEL_LABELS[ch]}`).join(", ")}</td></tr>
                 <tr><td style={{ fontWeight: 600 }}>Delivery Mode</td><td>{ORCHESTRATION_LABELS[orchestrationMode]}</td></tr>
+                {isSequential && <tr><td style={{ fontWeight: 600 }}>Priority Order</td><td>{priorityLabel}</td></tr>}
                 <tr><td style={{ fontWeight: 600 }}>Rules</td><td>{rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute.replace(/_/g, " ")} ${r.operator.replace(/_/g, " ")} ${r.value}`).join("")}</td></tr>
               </tbody>
             </table>
@@ -255,23 +288,101 @@ export default function AudienceEstimationCreate() {
                   </span>
                 </td>
               </tr>
-              <tr>
-                <td style={{ fontWeight: 600 }}>Channels</td>
-                <td>{channels.map(ch => `${CHANNEL_ICONS[ch]} ${CHANNEL_LABELS[ch]}`).join("  ")}</td>
-              </tr>
+              {isSequential ? (
+                <tr>
+                  <td style={{ fontWeight: 600 }}>Priority Order</td>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      {priority.map((ch, i) => (
+                        <span key={ch} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <span className="fallback-number">{i + 1}</span>
+                          <span>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
+                          {i === 0 && <span className="badge badge-brand" style={{ fontSize: 9 }}>Primary</span>}
+                          {i < priority.length - 1 && <span className="text-muted">&#8250;</span>}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <tr>
+                  <td style={{ fontWeight: 600 }}>Channels</td>
+                  <td>{channels.map(ch => `${CHANNEL_ICONS[ch]} ${CHANNEL_LABELS[ch]}`).join("  ")}</td>
+                </tr>
+              )}
               <tr>
                 <td style={{ fontWeight: 600 }}>Eligibility Rules</td>
                 <td style={{ fontSize: 13 }}>{rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute.replace(/_/g, " ")} ${r.operator.replace(/_/g, " ")} ${r.value}`).join("")}</td>
               </tr>
               <tr>
                 <td style={{ fontWeight: 600 }}>Estimated Audience</td>
-                <td style={{ fontSize: 20, fontWeight: 700 }}>{formatNum(modeData.uniqueReach)} subscribers</td>
+                <td style={{ fontSize: 20, fontWeight: 700 }}>
+                  {formatNum(isSequential ? waterfall.reached : modeData.uniqueReach)} subscribers
+                  {isSequential && <span className="text-muted" style={{ fontSize: 12, fontWeight: 400, marginLeft: 8 }}>one message each, {formatNum(waterfall.suppressed)} unreachable on every rung</span>}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
 
         {/* Per-Channel Breakdown */}
+        {isSequential ? (
+          <div className="bui-box">
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Fallback Waterfall</div>
+            <p className="text-muted" style={{ fontSize: 12, marginBottom: 12 }}>
+              Subscribers are walked down the ladder in your priority order. Each rung only delivers to subscribers that no rung above it could reach, so volume concentrates on the primary channel and the order changes the split.
+            </p>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th style={{ width: 60 }}>Rung</th>
+                  <th>Channel</th>
+                  <th style={{ textAlign: "right" }}>Reachable</th>
+                  <th style={{ textAlign: "right" }}>Delivered here</th>
+                  <th style={{ textAlign: "right" }}>Cumulative</th>
+                  <th style={{ width: 200 }}>Share of sends</th>
+                </tr>
+              </thead>
+              <tbody>
+                {waterfall.rungs.map(r => {
+                  const share = waterfall.reached ? Math.round(r.delivered / waterfall.reached * 100) : 0;
+                  return (
+                    <tr key={r.channel}>
+                      <td><span className="fallback-number">{r.rank}</span></td>
+                      <td>
+                        {CHANNEL_ICONS[r.channel]} {CHANNEL_LABELS[r.channel]}{" "}
+                        {r.rank === 1 ? <span className="badge badge-brand" style={{ fontSize: 9 }}>Primary</span> : <span className="badge badge-outline" style={{ fontSize: 9 }}>Fallback</span>}
+                      </td>
+                      <td style={{ textAlign: "right" }} className="text-muted">{formatNum(r.reachable)}</td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>{formatNum(r.delivered)}</td>
+                      <td style={{ textAlign: "right" }}>{formatNum(r.cumulative)}</td>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div className="priority-bar"><div className="priority-bar-fill" style={{ width: `${share}%`, background: CHANNEL_COLORS[r.channel] }} /></div>
+                          <span style={{ fontSize: 12, width: 36, textAlign: "right" }}>{share}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr>
+                  <td></td>
+                  <td className="text-muted">Not reachable on any rung</td>
+                  <td></td>
+                  <td style={{ textAlign: "right" }} className="text-muted">{formatNum(waterfall.suppressed)}</td>
+                  <td style={{ textAlign: "right" }} className="text-muted">{formatNum(waterfall.base)} eligible</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="info-banner" style={{ marginTop: 12, fontSize: 12 }}>
+              <span className="info-banner-icon">&#9993;</span>
+              <span>
+                <strong>Total sends equal unique reach.</strong> {formatNum(waterfall.reached)} messages for {formatNum(waterfall.reached)} subscribers. Moving {CHANNEL_LABELS[priority[priority.length - 1]]} to the top of the ladder would shift volume onto it; reorder the priority on the segment to compare.
+              </span>
+            </div>
+          </div>
+        ) : (
         <div className="bui-box">
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>
             {orchestrationMode === "best_channel" ? "Channel Routing Breakdown" : "Per-Channel Send Volume"}
@@ -299,6 +410,7 @@ export default function AudienceEstimationCreate() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     );
   }
@@ -391,10 +503,34 @@ export default function AudienceEstimationCreate() {
                 <div className="radio-card-title">Sequential Fallback</div>
               </div>
               <div className="radio-card-description">
-                Estimates reach assuming channels are walked in priority order and each subscriber receives exactly one message on the first channel they consent to. Same reach as Best Channel, but volume concentrates on the top channel.
+                Estimates reach assuming channels are walked in the priority order you set below and each subscriber receives exactly one message on the first channel they are opted in to and reachable on.
               </div>
             </div>
           </div>
+
+          {isSequential && (
+            <div className="tier-selection-appear" style={{ marginTop: 16 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Channel Priority Order</div>
+              <p className="text-muted" style={{ fontSize: 12, marginBottom: 8 }}>
+                The list is walked top-down. The estimation shows how much volume each rung takes, so the order changes the result.
+              </p>
+              <div className="fallback-sequence">
+                {priority.map((ch, i) => (
+                  <div key={ch} className="fallback-item" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span className="fallback-number">{i + 1}</span>
+                    <span style={{ fontSize: 13 }}>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
+                    {i === 0 && <span className="badge badge-brand" style={{ fontSize: 9 }}>Primary</span>}
+                    {i > 0 && <span className="badge badge-outline" style={{ fontSize: 9 }}>Fallback</span>}
+                    <span className="text-muted" style={{ fontSize: 11, marginLeft: 8 }}>{audienceEstimationData.channelReachability[ch].pct}% reachable</span>
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
+                      <button className="btn btn-secondary" style={{ padding: "2px 6px", fontSize: 10, lineHeight: 1, opacity: i === 0 ? 0.3 : 1 }} disabled={i === 0} onClick={() => movePriority(i, "up")} title="Move up">&#9650;</button>
+                      <button className="btn btn-secondary" style={{ padding: "2px 6px", fontSize: 10, lineHeight: 1, opacity: i === priority.length - 1 ? 0.3 : 1 }} disabled={i === priority.length - 1} onClick={() => movePriority(i, "down")} title="Move down">&#9660;</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
