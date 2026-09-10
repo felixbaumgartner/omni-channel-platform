@@ -28,7 +28,7 @@ Each page shows both the PROD-aligned baseline and the omni-channel enhancements
 | **Campaign Create** | `/campaign/new` | Classification questionnaire, campaign metadata (funnel/vertical), eligibility rules builder, 3 delivery modes (Best Channel / Multi-Channel / Sequential Fallback), cross-channel dedup, compliance |
 | **Transactional Create** | `/campaign/new/transactional` | SLA priority tiers (P0/P1/P2), transactional fallback chain with per-channel SLA, idempotency dedup |
 | **Journeys** | `/journeys` | Orchestration type badges (Single/Cross-Channel/Omni), channel effectiveness bars, cross-channel handoff metrics |
-| **Journey Builder** | `/journey/new` | Per-channel Send steps, Multi-Channel step (fan-out or Sequential Fallback), Decision Split, Wait; channel eligibility rules scoped to the channels in use. Entry Channel routing pool and Best Channel Send appear in Phase 2+ |
+| **Journey Builder** | `/journey/new` | Per-channel Send steps, Multi-Channel step (fan-out or Sequential Fallback, with follow-up rotation across steps), Decision Split, Wait; channel eligibility rules scoped to the channels in use. Entry Channel routing pool and Best Channel Send appear in Phase 2+ |
 | **Message Triggers** | `/triggers` | Event-driven triggers with omni-channel routing flow visualization (Event → Rules → Channel Router → Channels) |
 
 ### Controls
