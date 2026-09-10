@@ -24,7 +24,7 @@ const channelClass = (ch: MessageChannel) => ch === "whatsapp" ? "whatsapp" : ch
 
 export default function CampaignList() {
   const navigate = useNavigate();
-  const { showBestChannel } = usePhase();
+  const { visibleMode } = usePhase();
   const [filterText, setFilterText] = useState("");
   const [filterChannel, setFilterChannel] = useState("all");
   const [filterType, setFilterType] = useState("all");
@@ -143,9 +143,9 @@ export default function CampaignList() {
                       <span>{m.name}</span>
                       <TypeBadge type={m.type} />
                       <StatusBadge status={m.status} />
-                      {m.orchestrationMode && m.channels.length > 1 && (showBestChannel || m.orchestrationMode !== "best_channel") && (
-                        <span className={`badge-orchestration badge-orchestration--${m.orchestrationMode}`} style={{ fontSize: 10 }}>
-                          {ORCHESTRATION_LABELS[m.orchestrationMode]}
+                      {m.orchestrationMode && m.channels.length > 1 && (
+                        <span className={`badge-orchestration badge-orchestration--${visibleMode(m.orchestrationMode)}`} style={{ fontSize: 10 }}>
+                          {ORCHESTRATION_LABELS[visibleMode(m.orchestrationMode)]}
                         </span>
                       )}
                     </div>

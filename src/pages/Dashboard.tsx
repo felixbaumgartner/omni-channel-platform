@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { mockCampaigns, mockJourneys, channelMetrics, dailySends } from "../data/mockData";
 import { CHANNEL_ICONS, ORCHESTRATION_LABELS, type MessageChannel } from "../types";
+import { usePhase } from "../context/PhaseContext";
 
 function formatNum(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
@@ -14,6 +15,7 @@ const channelClass = (ch: MessageChannel) =>
   ch === "whatsapp" ? "whatsapp" : ch;
 
 export default function Dashboard() {
+  const { visibleMode, visibleJourneyType } = usePhase();
   const navigate = useNavigate();
   const liveCampaigns = mockCampaigns.filter(c => c.status === "Live");
   const activeJourneys = mockJourneys.filter(j => j.status === "Active");
@@ -77,8 +79,8 @@ export default function Dashboard() {
             <div key={g.id} className="ucg-card">
               <div className="ucg-card-header">
                 <span className="ucg-card-title">{g.name}</span>
-                <span className={`badge-orchestration badge-orchestration--${g.orchestrationMode}`}>
-                  {ORCHESTRATION_LABELS[g.orchestrationMode!]}
+                <span className={`badge-orchestration badge-orchestration--${visibleMode(g.orchestrationMode!)}`}>
+                  {ORCHESTRATION_LABELS[visibleMode(g.orchestrationMode!)]}
                 </span>
                 <div className="ucg-card-channels">
                   {g.channels.map(ch => (
@@ -215,8 +217,8 @@ export default function Dashboard() {
                   {j.name}
                   <span className="badge badge-constructive" style={{ fontSize: 10, padding: "1px 6px" }}>Active</span>
                   {j.orchestrationType && (
-                    <span className={`badge-journey-type badge-journey-type--${j.orchestrationType}`}>
-                      {j.orchestrationType === "single_channel" ? "Single" : j.orchestrationType === "cross_channel" ? "Cross-Channel" : "Omni"}
+                    <span className={`badge-journey-type badge-journey-type--${visibleJourneyType(j.orchestrationType)}`}>
+                      {visibleJourneyType(j.orchestrationType) === "single_channel" ? "Single" : visibleJourneyType(j.orchestrationType) === "cross_channel" ? "Cross-Channel" : "Omni"}
                     </span>
                   )}
                 </div>

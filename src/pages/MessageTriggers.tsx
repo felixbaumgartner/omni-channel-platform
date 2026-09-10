@@ -19,7 +19,7 @@ export default function MessageTriggers() {
       <div className="page-header">
         <div className="page-header-main">
           <h1 className="page-title">Message Triggers</h1>
-          <p className="page-subtitle">Event-driven trigger configuration with omni-channel routing</p>
+          <p className="page-subtitle">Event-driven trigger configuration across channels</p>
         </div>
         <div className="page-header-actions">
           <button className="btn btn-primary" onClick={() => navigate("/trigger/new")}>+ New Trigger</button>

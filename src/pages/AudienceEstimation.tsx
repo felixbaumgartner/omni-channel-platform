@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockSegments } from "../data/mockData";
 import { CHANNEL_ICONS, CHANNEL_LABELS, ORCHESTRATION_LABELS, type MessageChannel } from "../types";
+import { usePhase } from "../context/PhaseContext";
 
 function formatNum(n: number): string {
   if (n >= 1_000_000) return "~" + (n / 1_000_000).toFixed(1) + "M";
@@ -16,6 +17,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function AudienceEstimation() {
+  const { visibleMode } = usePhase();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -102,8 +104,8 @@ export default function AudienceEstimation() {
                     ))}
                   </td>
                   <td>
-                    <span className={`badge-orchestration badge-orchestration--${seg.orchestrationMode}`}>
-                      {ORCHESTRATION_LABELS[seg.orchestrationMode]}
+                    <span className={`badge-orchestration badge-orchestration--${visibleMode(seg.orchestrationMode)}`}>
+                      {ORCHESTRATION_LABELS[visibleMode(seg.orchestrationMode)]}
                     </span>
                   </td>
                   <td>

@@ -17,7 +17,7 @@ const ORCH_LABELS = {
 
 export default function JourneyList() {
   const navigate = useNavigate();
-  const { showBestChannel } = usePhase();
+  const { visibleJourneyType } = usePhase();
 
   return (
     <div className="app-page">
@@ -44,9 +44,9 @@ export default function JourneyList() {
                   <span className={`badge ${j.status === "Active" ? "badge-constructive" : j.status === "Draft" ? "badge-draft" : j.status === "Paused" ? "badge-callout" : "badge-archived"}`}>
                     {j.status}
                   </span>
-                  {j.orchestrationType && (showBestChannel || j.orchestrationType !== "omni_channel") && (
-                    <span className={`badge-journey-type badge-journey-type--${j.orchestrationType}`}>
-                      {ORCH_LABELS[j.orchestrationType]}
+                  {j.orchestrationType && (
+                    <span className={`badge-journey-type badge-journey-type--${visibleJourneyType(j.orchestrationType)}`}>
+                      {ORCH_LABELS[visibleJourneyType(j.orchestrationType)]}
                     </span>
                   )}
                 </div>

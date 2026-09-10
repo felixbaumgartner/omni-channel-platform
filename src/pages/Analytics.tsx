@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { channelMetrics, dailySends, mockCampaigns, channelOverlap } from "../data/mockData";
+import { usePhase } from "../context/PhaseContext";
 import { CHANNEL_ICONS, ORCHESTRATION_LABELS, type MessageChannel } from "../types";
 
 function formatNum(n: number): string {
@@ -12,6 +13,7 @@ const maxSend = Math.max(...dailySends.flatMap(d => [d.email, d.push, d.sms, d.w
 const channelClass = (ch: MessageChannel) => ch === "whatsapp" ? "whatsapp" : ch;
 
 export default function Analytics() {
+  const { visibleMode } = usePhase();
   const [period, setPeriod] = useState("7d");
 
   const totalSent = channelMetrics.reduce((s, m) => s + m.sent, 0);
@@ -92,8 +94,8 @@ export default function Analytics() {
                   ))}
                 </td>
                 <td>
-                  <span className={`badge-orchestration badge-orchestration--${g.orchestrationMode}`}>
-                    {ORCHESTRATION_LABELS[g.orchestrationMode!]}
+                  <span className={`badge-orchestration badge-orchestration--${visibleMode(g.orchestrationMode!)}`}>
+                    {ORCHESTRATION_LABELS[visibleMode(g.orchestrationMode!)]}
                   </span>
                 </td>
                 <td style={{ textAlign: "right" }}>{formatNum(g.deliveryCount || 0)}</td>
