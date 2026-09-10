@@ -19,7 +19,7 @@ const STEP_OPTIONS: { type: JourneyStepType; label: string; icon: string; descri
   { type: "push", label: "Send Push", icon: "\uD83D\uDD14", description: "Send a push notification" },
   { type: "sms", label: "Send SMS", icon: "\uD83D\uDCF1", description: "Send an SMS message" },
   { type: "whatsapp", label: "WhatsApp Message", icon: "\uD83D\uDCE8", description: "Show an WhatsApp card" },
-  { type: "multi_channel", label: "Multi-Channel", icon: "\uD83C\uDF10", description: "Send across multiple channels" },
+  { type: "multi_channel", label: "Multi-Channel", icon: "\uD83C\uDF10", description: "Fan out or Sequential Fallback across channels" },
   { type: "best_channel", label: "Best Channel Send", icon: "\u2728", description: "Auto-select best channel" },
   { type: "delay", label: "Wait / Delay", icon: "\u23F3", description: "Wait before next step" },
   { type: "condition", label: "Decision Split", icon: "\u2753", description: "Branch based on behavior" },
@@ -209,11 +209,13 @@ export default function JourneyBuilder() {
     return multiChannelStates[stepId] || [];
   }
   function toggleMultiChannelChannel(stepId: string, ch: MessageChannel) {
-    setMultiChannelStates(prev => {
-      const current = prev[stepId] || [];
-      const next = current.includes(ch) ? current.filter(c => c !== ch) : [...current, ch];
-      return { ...prev, [stepId]: next };
-    });
+    const current = getMultiChannelChannels(stepId);
+    const next = current.includes(ch) ? current.filter(c => c !== ch) : [...current, ch];
+    setMultiChannelStates(prev => ({ ...prev, [stepId]: next }));
+    // A fallback ladder needs at least two rungs; below that the step is plain fan-out again.
+    if (next.length < 2) {
+      setMultiChannelModes(prev => ({ ...prev, [stepId]: "multi_channel" }));
+    }
   }
 
   /**
@@ -253,13 +255,12 @@ export default function JourneyBuilder() {
   const [multiChannelPriority, setMultiChannelPriority] = useState<Record<string, MessageChannel[]>>({});
 
   function getMultiChannelMode(stepId: string): StepOrchestrationMode {
+    if (getMultiChannelChannels(stepId).length < 2) return "multi_channel";
     return multiChannelModes[stepId] || "multi_channel";
   }
 
   function changeMultiChannelMode(stepId: string, mode: StepOrchestrationMode) {
     setMultiChannelModes(prev => ({ ...prev, [stepId]: mode }));
-    // The canvas node reads step.label, so keep it in sync with the chosen mode.
-    setSteps(prev => prev.map(s => s.id === stepId ? { ...s, label: ORCHESTRATION_LABELS[mode] } : s));
   }
 
   /**
@@ -770,7 +771,7 @@ export default function JourneyBuilder() {
                     <span className="journey-step-icon">{getStepIcon(step.type)}</span>
                     <div className="journey-step-info">
                       <div className="journey-step-label">{step.label}</div>
-                      <div className="journey-step-type">{step.type === "multi_channel" ? getMultiChannelMode(step.id) : step.type}</div>
+                      <div className="journey-step-type">{step.type === "multi_channel" ? ORCHESTRATION_LABELS[getMultiChannelMode(step.id)] : step.type}</div>
                     </div>
                     {step.id !== AUTO_BEST_CHANNEL_ID && (
                       <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStep(step.id); }}>&times;</button>
@@ -934,25 +935,7 @@ export default function JourneyBuilder() {
                           {(
                             <div className="form-group">
                               <label className="form-label">Step Label</label>
-                              {step.type === "multi_channel" ? (
-                                <>
-                                  <select
-                                    className="form-select"
-                                    value={getMultiChannelMode(step.id)}
-                                    onChange={e => changeMultiChannelMode(step.id, e.target.value as StepOrchestrationMode)}
-                                  >
-                                    <option value="multi_channel">{ORCHESTRATION_LABELS.multi_channel}</option>
-                                    <option value="sequential">{ORCHESTRATION_LABELS.sequential}</option>
-                                  </select>
-                                  <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
-                                    {getMultiChannelMode(step.id) === "sequential"
-                                      ? "Channels are walked in the priority order you set. The first channel the subscriber is opted in to and reachable on receives the message."
-                                      : "The message fans out to every selected channel within this single step."}
-                                  </div>
-                                </>
-                              ) : (
-                                <input className="form-input" value={step.label} onChange={e => setSteps(prev => prev.map(s => s.id === step.id ? { ...s, label: e.target.value } : s))} />
-                              )}
+                              <input className="form-input" value={step.label} onChange={e => setSteps(prev => prev.map(s => s.id === step.id ? { ...s, label: e.target.value } : s))} />
                             </div>
                           )}
                     {(step.type === "email" || step.type === "push" || step.type === "sms" || step.type === "whatsapp") && (
@@ -1087,18 +1070,39 @@ export default function JourneyBuilder() {
                                 <span>Pick at least one channel to configure its content.</span>
                               </div>
                             )}
-                            {stepChannels.length === 1 && !isSequential && (
+                            {stepChannels.length === 1 && (
                               <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                                 <span className="info-banner-icon">&#128274;</span>
-                                <span><strong>Single channel</strong> &mdash; only {CHANNEL_LABELS[stepChannels[0]]}. Add more channels to fan out.</span>
+                                <span><strong>Single channel.</strong> Only {CHANNEL_LABELS[stepChannels[0]]}. Add more channels to fan out or build a fallback ladder.</span>
                               </div>
                             )}
-                            {stepChannels.length === 1 && isSequential && (
-                              <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
-                                <span className="info-banner-icon">&#128274;</span>
-                                <span><strong>Single rung.</strong> Only {CHANNEL_LABELS[stepChannels[0]]}, so there is nothing to fall back to. Add more channels to build a ladder.</span>
+                          </div>
+
+                          {/* Channel Selection (delivery mode), mirrors the Campaign create page */}
+                          {stepChannels.length >= 2 && (
+                          <div className="form-group tier-selection-appear">
+                            <div style={{ fontWeight: 600, fontSize: 14 }}>Channel Selection</div>
+                            <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Of the eligible channels, how should the system choose which to send?</p>
+                            <div className="radio-card-group">
+                              <div className={`radio-card ${!isSequential ? "selected" : ""}`} onClick={() => changeMultiChannelMode(step.id, "multi_channel")}>
+                                <div className="radio-card-header">
+                                  <div className="radio-card-radio" />
+                                  <div className="radio-card-title">Multi-Channel</div>
+                                </div>
+                                <div className="radio-card-description">
+                                  Deliver across all eligible channels simultaneously. Consent and frequency caps enforced per channel.
+                                </div>
                               </div>
-                            )}
+                              <div className={`radio-card ${isSequential ? "selected" : ""}`} onClick={() => changeMultiChannelMode(step.id, "sequential")}>
+                                <div className="radio-card-header">
+                                  <div className="radio-card-radio" />
+                                  <div className="radio-card-title">Sequential Fallback</div>
+                                </div>
+                                <div className="radio-card-description">
+                                  Channels are evaluated in the priority order you set. The first channel the subscriber is opted in to and reachable on receives the message. Exactly one message per subscriber.
+                                </div>
+                              </div>
+                            </div>
                             {stepChannels.length >= 2 && !isSequential && (
                               <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                                 <span className="info-banner-icon">&#9989;</span>
@@ -1112,6 +1116,7 @@ export default function JourneyBuilder() {
                               </div>
                             )}
                           </div>
+                          )}
 
                           {/* Channel Priority Order -- Sequential Fallback only */}
                           {isSequential && stepChannels.length > 0 && (

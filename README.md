@@ -34,7 +34,7 @@ Each page shows both the PROD-aligned baseline and the omni-channel enhancements
 ### Controls
 | Page | Route | Description |
 |------|-------|-------------|
-| **Campaign Priority** | `/campaign-priority` | Per-channel and per-UCG priority matrix views, cross-channel conflict resolution |
+| **Campaign Priority** | `/campaign-priority` | Communication-class priority bands (one priority per campaign, applied on every channel), cross-channel conflict resolution |
 | **Holdout Management** | `/holdouts` | Cross-channel coordinated holdouts with synchronized hash ranges across channels |
 | **No-Send Reasons** | `/no-send` | Suppression rules with omni-channel behavior: suppress-all, suppress-channel, or fallback-to-other |
 | **Subscriptions** | `/subscriptions` | Janet consent matrix, consent gap analysis with opportunities, subscriber lookup, real-time API sync status |
@@ -129,7 +129,7 @@ src/
     ├── JourneyList.tsx                  # Journey list with orchestration badges
     ├── JourneyBuilder.tsx               # Visual builder with omni-channel step types
     ├── MessageTriggers.tsx              # Event-driven triggers with routing flow
-    ├── CampaignPriority.tsx             # Priority ordering per-channel and per-UCG
+    ├── CampaignPriority.tsx             # Priority ordering by communication class
     ├── HoldoutManagement.tsx            # Holdout groups with cross-channel coordination
     ├── NoSendReasons.tsx                # Suppression rules with omni-channel behavior
     ├── Subscriptions.tsx                # Consent matrix + gap analysis + subscriber lookup

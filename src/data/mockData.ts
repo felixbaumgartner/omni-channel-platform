@@ -563,29 +563,46 @@ export const mockHoldouts: MockHoldout[] = [
 
 /* ── Campaign Priority ── */
 
+/**
+ * Priority is a property of the communication, not the channel. Each campaign
+ * or journey carries one priority that is applied identically on every channel
+ * it runs on, so a subscriber conflict is resolved once regardless of where
+ * each side lands.
+ *
+ * Classes form fixed bands. Transactional and Legal always send and are not
+ * scored; the numeric priority only orders the remaining classes.
+ */
+export type CommunicationClass = "transactional" | "service" | "lifecycle" | "promotional";
+
+export const COMMUNICATION_CLASS_ORDER: CommunicationClass[] = ["transactional", "service", "lifecycle", "promotional"];
+
+export const COMMUNICATION_CLASS_META: Record<CommunicationClass, { label: string; description: string; band: string; locked: boolean }> = {
+  transactional: { label: "Transactional & Legal", description: "Confirmations, security, verification. Always sends and is never outranked.", band: "Locked", locked: true },
+  service: { label: "Service & Trip Information", description: "Non-marketing messages tied to a booking the customer already holds.", band: "90 to 99", locked: false },
+  lifecycle: { label: "Lifecycle Triggers", description: "Behaviour-driven marketing such as cart abandonment and price alerts.", band: "70 to 89", locked: false },
+  promotional: { label: "Promotional & Scheduled", description: "Deals, programme promotions and other scheduled marketing sends.", band: "40 to 69", locked: false },
+};
+
 export interface MockCampaignPriority {
   campaignId: number;
   campaignName: string;
-  channel: MessageChannel;
-  pipeline: string;
-  priority: number;
-  type: "marketing" | "non_marketing" | "transactional";
+  communicationClass: CommunicationClass;
+  /** One number per communication. Undefined for locked classes that always send. */
+  priority?: number;
+  channels: MessageChannel[];
+  source: string;
   unifiedGroupId?: string;
 }
 
 export const mockCampaignPriorities: MockCampaignPriority[] = [
-  { campaignId: 1001, campaignName: "booking_confirmation_email", channel: "email", pipeline: "Transactional Priority", priority: 100, type: "transactional" },
-  { campaignId: 1012, campaignName: "security_alert_sms_email", channel: "email", pipeline: "Transactional Priority", priority: 99, type: "transactional" },
-  { campaignId: 1002, campaignName: "otp_verification_sms", channel: "sms", pipeline: "Transactional Priority", priority: 100, type: "transactional" },
-  { campaignId: 1003, campaignName: "summer_deals_omnichannel", channel: "email", pipeline: "Scheduled: Daily EMK", priority: 85, type: "marketing", unifiedGroupId: "UCG-2026-001" },
-  { campaignId: 1003, campaignName: "summer_deals_omnichannel", channel: "push", pipeline: "Scheduled: Daily Notifications", priority: 80, type: "marketing", unifiedGroupId: "UCG-2026-001" },
-  { campaignId: 1003, campaignName: "summer_deals_omnichannel", channel: "sms", pipeline: "Scheduled: Daily SMS", priority: 70, type: "marketing", unifiedGroupId: "UCG-2026-001" },
-  { campaignId: 1008, campaignName: "cart_abandonment_omni", channel: "push", pipeline: "Trigger: cart_abandon", priority: 90, type: "marketing", unifiedGroupId: "UCG-2026-003" },
-  { campaignId: 1008, campaignName: "cart_abandonment_omni", channel: "email", pipeline: "Trigger: cart_abandon", priority: 75, type: "marketing", unifiedGroupId: "UCG-2026-003" },
-  { campaignId: 1005, campaignName: "genius_promo_push_email", channel: "push", pipeline: "Scheduled: Daily Notifications", priority: 82, type: "marketing", unifiedGroupId: "UCG-2026-002" },
-  { campaignId: 1005, campaignName: "genius_promo_push_email", channel: "email", pipeline: "Scheduled: Daily EMK", priority: 78, type: "marketing", unifiedGroupId: "UCG-2026-002" },
-  { campaignId: 1006, campaignName: "checkin_reminder_push", channel: "push", pipeline: "Trigger: checkin_reminder", priority: 88, type: "non_marketing" },
-  { campaignId: 1011, campaignName: "price_alert_push", channel: "push", pipeline: "Trigger: price_change", priority: 72, type: "marketing" },
+  { campaignId: 1001, campaignName: "booking_confirmation", communicationClass: "transactional", channels: ["email"], source: "Transactional" },
+  { campaignId: 1002, campaignName: "otp_verification", communicationClass: "transactional", channels: ["sms"], source: "Transactional" },
+  { campaignId: 1012, campaignName: "security_alert", communicationClass: "transactional", channels: ["sms", "email"], source: "Transactional" },
+  { campaignId: 1006, campaignName: "checkin_reminder", communicationClass: "service", priority: 95, channels: ["push", "email"], source: "Trigger: checkin_reminder" },
+  { campaignId: 1011, campaignName: "price_alert", communicationClass: "lifecycle", priority: 82, channels: ["push", "email"], source: "Trigger: price_change" },
+  { campaignId: 1008, campaignName: "cart_abandonment_omni", communicationClass: "lifecycle", priority: 78, channels: ["push", "email"], source: "Trigger: cart_abandon", unifiedGroupId: "UCG-2026-003" },
+  { campaignId: 1005, campaignName: "genius_promo", communicationClass: "promotional", priority: 62, channels: ["push", "email"], source: "Scheduled: Daily", unifiedGroupId: "UCG-2026-002" },
+  { campaignId: 1003, campaignName: "summer_deals_omnichannel", communicationClass: "promotional", priority: 55, channels: ["email", "push", "sms"], source: "Scheduled: Daily", unifiedGroupId: "UCG-2026-001" },
 ];
 
 /* ── Subscription Categories ── */
