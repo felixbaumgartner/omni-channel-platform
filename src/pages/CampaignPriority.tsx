@@ -10,10 +10,6 @@ const rankClass = (cls: CommunicationClass) =>
 export default function CampaignPriority() {
   const [showLegacy, setShowLegacy] = useState(false);
 
-  const scored = mockCampaignPriorities.filter(p => p.priority !== undefined);
-  const ucgs = new Set(mockCampaignPriorities.filter(p => p.unifiedGroupId).map(p => p.unifiedGroupId!));
-  const channelRuns = mockCampaignPriorities.reduce((n, p) => n + p.channels.length, 0);
-
   return (
     <div className="app-page">
       <div className="page-header">
@@ -21,37 +17,6 @@ export default function CampaignPriority() {
           <h1 className="page-title">Campaign Priority</h1>
           <p className="page-subtitle">When two communications target the same subscriber, the higher class wins, then the higher priority inside the class.</p>
         </div>
-      </div>
-
-      {/* KPIs */}
-      <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-        <div className="kpi-card">
-          <div className="kpi-label">Communications</div>
-          <div className="kpi-value">{mockCampaignPriorities.length}</div>
-          <div className="kpi-sub">one priority each, across {channelRuns} channel runs</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-label">Always Send</div>
-          <div className="kpi-value">{mockCampaignPriorities.length - scored.length}</div>
-          <div className="kpi-sub">transactional and legal, not scored</div>
-        </div>
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Unified Groups</div>
-          <div className="kpi-value">{ucgs.size}</div>
-          <div className="kpi-sub">same priority on every channel</div>
-        </div>
-        <div className="omni-kpi-card">
-          <div className="kpi-label">Cross-Channel Conflicts</div>
-          <div className="kpi-value">3</div>
-          <div className="kpi-sub">resolved once per subscriber</div>
-        </div>
-      </div>
-
-      <div className="info-banner">
-        <span className="info-banner-icon">&#128200;</span>
-        <span>
-          <strong>Priority follows the communication, not the channel.</strong> A booking confirmation outranks a summer deal whether it goes out by email, push or SMS. Each campaign or journey carries one priority that applies on every channel it runs on, so a subscriber conflict is resolved the same way regardless of where each side lands. Channel fatigue is handled by frequency caps, not by priority.
-        </span>
       </div>
 
       {/* Class bands */}
