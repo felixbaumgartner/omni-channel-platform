@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { CHANNEL_LABELS, CHANNEL_ICONS, RULE_ATTRIBUTES, ORCHESTRATION_LABELS, type MessageChannel, type JourneyStepType, type EligibilityRule, type RuleOperator, type OrchestrationMode } from "../types";
 import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, mockTriggers, type PreferenceRule } from "../data/mockData";
@@ -469,6 +469,21 @@ export default function JourneyBuilder() {
     }
     setShowAddMenu(false);
   }
+
+  /**
+   * Phase 1: a new journey starts with a Multi-Channel step already on the canvas,
+   * so the marketer configures the first send instead of choosing it from a menu.
+   * Seeded once; removing it afterwards is allowed and does not re-add it.
+   */
+  const seededPhase1 = useRef(false);
+  useEffect(() => {
+    if (showBestChannel || seededPhase1.current || steps.length > 0) return;
+    seededPhase1.current = true;
+    const id = makeId();
+    setSteps([{ id, type: "multi_channel", label: "Multi-Channel" }]);
+    setMultiChannelStates(prev => ({ ...prev, [id]: [] }));
+    setSelectedStep(id);
+  }, [showBestChannel, steps.length]);
 
   function removeStep(id: string) {
     setSteps(prev => prev.filter(s => s.id !== id));
