@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { CHANNEL_ICONS, CHANNEL_LABELS } from "../types";
 import { COMMUNICATION_CLASS_META, COMMUNICATION_CLASS_ORDER, mockCampaignPriorities, type CommunicationClass } from "../data/mockData";
 
@@ -8,8 +7,6 @@ const rankClass = (cls: CommunicationClass) =>
   cls === "transactional" ? "critical" : cls === "service" ? "high" : "medium";
 
 export default function CampaignPriority() {
-  const [showLegacy, setShowLegacy] = useState(false);
-
   return (
     <div className="app-page">
       <div className="page-header">
@@ -63,17 +60,6 @@ export default function CampaignPriority() {
         })}
       </div>
 
-      {/* Legacy comparison */}
-      <div className="bui-box" style={{ marginTop: 24 }}>
-        <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => setShowLegacy(v => !v)}>
-          {showLegacy ? "Hide" : "Show"} how PROD orders this today
-        </button>
-        {showLegacy && (
-          <div className="text-muted" style={{ marginTop: 12, fontSize: 12 }}>
-            In PROD each channel pipeline keeps its own priority list, so the same campaign can hold a different number on email, push and SMS and two pipelines can resolve the same subscriber conflict differently. The class bands above replace those per-pipeline lists with one decision per communication.
-          </div>
-        )}
-      </div>
     </div>
   );
 }
