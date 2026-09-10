@@ -54,6 +54,9 @@ export default function JourneyBuilder() {
   const [channelExperiments, setChannelExperiments] = useState<Record<string, { enabled: boolean; tag: string; variants: string[] }>>({});
   const [journeyRules, setJourneyRules] = useState<EligibilityRule[]>([]);
   const [showJourneyRuleMenu, setShowJourneyRuleMenu] = useState(false);
+  // Per-step Campaign Eligibility Rules. Users who fail them skip this step only.
+  const [stepRules, setStepRules] = useState<Record<string, EligibilityRule[]>>({});
+  const [stepRuleMenuOpen, setStepRuleMenuOpen] = useState<string | null>(null);
 
   // Activation Method (mirrors campaign page)
   const [activationMethod, setActivationMethod] = useState<"scheduled" | "trigger">("scheduled");
@@ -392,6 +395,67 @@ export default function JourneyBuilder() {
   }
 
   /** Per-channel consent / reachability rules, rendered inside the step that delivers on those channels. */
+  function renderCampaignEligibilityRules(stepId: string) {
+    const rules = stepRules[stepId] || [];
+    const setRules = (next: EligibilityRule[]) => setStepRules(prev => ({ ...prev, [stepId]: next }));
+    const update = (id: string, field: keyof EligibilityRule, value: string) =>
+      setRules(rules.map(r => r.id === id ? { ...r, [field]: value } : r));
+    return (
+      <div className="eligibility-stage" style={{ marginTop: 8, marginBottom: 12 }}>
+        <div className="eligibility-stage-header">
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Campaign Eligibility Rules</div>
+            <div className="text-muted" style={{ fontSize: 11, marginTop: 2 }}>Users who fail these rules skip this step. They stay in the journey.</div>
+          </div>
+        </div>
+        <div className="rule-builder" style={{ marginTop: 10 }}>
+          {rules.map((r, i) => (
+            <div key={r.id} className="rule-row" style={{ flexWrap: "wrap" }}>
+              {i > 0 && (
+                <select className="form-select" style={{ width: 70, flex: "none" }} value={r.connector} onChange={e => update(r.id, "connector", e.target.value)}>
+                  <option value="AND">AND</option>
+                  <option value="OR">OR</option>
+                </select>
+              )}
+              <select className="form-select" style={{ minWidth: 130, flex: 1 }} value={r.attribute} onChange={e => update(r.id, "attribute", e.target.value)}>
+                {RULE_ATTRIBUTES.map(a => <option key={a} value={a}>{a.replace(/_/g, " ")}</option>)}
+              </select>
+              <select className="form-select" style={{ width: 120, flex: "none" }} value={r.operator} onChange={e => update(r.id, "operator", e.target.value)}>
+                <option value="equals">equals</option>
+                <option value="not_equals">not equals</option>
+                <option value="greater_than">greater than</option>
+                <option value="less_than">less than</option>
+                <option value="in">in</option>
+              </select>
+              <input className="form-input" style={{ width: 100, flex: "none" }} value={String(r.value)} onChange={e => update(r.id, "value", e.target.value)} placeholder="Value" />
+              <button className="rule-remove-btn" onClick={() => setRules(rules.filter(x => x.id !== r.id))}>&times;</button>
+            </div>
+          ))}
+        </div>
+        <div style={{ position: "relative", marginTop: 10 }}>
+          <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => setStepRuleMenuOpen(stepRuleMenuOpen === stepId ? null : stepId)}>+ Add Rule</button>
+          {stepRuleMenuOpen === stepId && (
+            <div className="channel-rules-menu tier-selection-appear">
+              {RULE_ATTRIBUTES.map(a => (
+                <div key={a} className="channel-rules-menu-item" onClick={() => {
+                  setRules([...rules, { id: `sr_${Date.now()}`, attribute: a, operator: "equals" as RuleOperator, value: "", connector: "AND" }]);
+                  setStepRuleMenuOpen(null);
+                }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{a.replace(/_/g, " ")}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        {rules.length > 0 && (
+          <div className="text-muted" style={{ marginTop: 8, fontSize: 11 }}>
+            Preview: {rules.map((r, i) => `${i > 0 ? ` ${r.connector} ` : ""}${r.attribute.replace(/_/g, " ")} ${r.operator.replace(/_/g, " ")} ${r.value}`).join("")}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   function renderChannelEligibilityRules(channels: MessageChannel[]) {
     if (channels.length === 0) return null;
     return (
@@ -1006,6 +1070,9 @@ export default function JourneyBuilder() {
                           </div>
                         )}
 
+                        {renderCampaignEligibilityRules(step.id)}
+                        {renderChannelEligibilityRules([step.type])}
+
                         {/* Content Template */}
                         <div className="form-group">
                           <label className="form-label">Content Template</label>
@@ -1055,7 +1122,6 @@ export default function JourneyBuilder() {
                             <input className="form-input" type="number" placeholder="e.g., 654321" />
                           </div>
                         </div>
-                        {renderChannelEligibilityRules([step.type])}
                       </>
                     )}
                     {step.type === "delay" && (
@@ -1243,11 +1309,13 @@ export default function JourneyBuilder() {
                             </div>
                           )}
 
+                          {stepChannels.length > 0 && renderCampaignEligibilityRules(step.id)}
+                          {renderChannelEligibilityRules(isSequential ? priority : stepChannels)}
+
                           {/* Per-channel Base Content (reused from Campaign create) */}
                           {stepChannels.length > 0 && (
                             <BaseContentSection key={step.id} selectedChannels={isSequential ? priority : stepChannels} />
                           )}
-                          {renderChannelEligibilityRules(isSequential ? priority : stepChannels)}
                         </div>
                       );
                     })()}
@@ -1580,6 +1648,9 @@ export default function JourneyBuilder() {
                           <div className="text-muted" style={{ fontSize: 11, marginTop: 4 }}>Campaign creator&rsquo;s preferred order. Used when the routing rule has no signal.</div>
                         </div>
                         )}
+
+                        {bestChannelPool.length >= 1 && renderCampaignEligibilityRules(step.id)}
+                        {bestChannelPool.length >= 1 && renderChannelEligibilityRules(bestChannelPool)}
 
                         {/* Per-Channel Content — when channels selected OR best-channel content toggle on */}
                         {(bestChannelPool.length >= 1 || bestChannelContentEnabled) && (
