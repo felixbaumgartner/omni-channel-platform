@@ -28,7 +28,7 @@ Each page shows both the PROD-aligned baseline and the omni-channel enhancements
 | **Campaign Create** | `/campaign/new` | Classification questionnaire, campaign metadata (funnel/vertical), eligibility rules builder, 3 delivery modes (Best Channel / Multi-Channel / Sequential Fallback), cross-channel dedup, compliance |
 | **Transactional Create** | `/campaign/new/transactional` | SLA priority tiers (P0/P1/P2), transactional fallback chain with per-channel SLA, idempotency dedup |
 | **Journeys** | `/journeys` | Orchestration type badges (Single/Cross-Channel/Omni), channel effectiveness bars, cross-channel handoff metrics |
-| **Journey Builder** | `/journey/new` | Per-channel Send steps, Multi-Channel step (fan-out or Sequential Fallback, with an option to avoid the channel used at the previous step), Decision Split, Wait; channel eligibility rules scoped to the channels in use. Entry Channel routing pool and Best Channel Send appear in Phase 2+ |
+| **Journey Builder** | `/journey/new` | One Message step (pick channels; one channel is a single-channel send, two or more reveal Multi-Channel, Sequential Fallback and, in Phase 2+, Best Channel), Decision Split, Wait; campaign and channel eligibility rules per step, ahead of content. Sequential Fallback can avoid the channel used at the previous step |
 | **Message Triggers** | `/triggers` | Event-driven triggers with omni-channel routing flow visualization (Event → Rules → Channel Router → Channels) |
 
 ### Controls
@@ -63,7 +63,7 @@ Prevents the same subscriber from receiving the same message on multiple channel
 ### Orchestration Types (Journeys)
 - **Single Channel** — PROD current state
 - **Cross-Channel** — Uses CrossChannelEligibility nodes for branching
-- **Omni-Channel** — Uses Best Channel Send nodes for AI-routed delivery
+- **Omni-Channel** — Message steps in Best Channel mode for rule-routed delivery
 
 ### No-Send Behavior
 Each suppression rule specifies what happens across the campaign when triggered:

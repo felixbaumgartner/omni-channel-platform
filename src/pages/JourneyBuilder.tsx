@@ -15,14 +15,9 @@ interface Step {
 }
 
 const STEP_OPTIONS: { type: JourneyStepType; label: string; icon: string; description: string }[] = [
-  { type: "email", label: "Send Email", icon: "\u2709", description: "Send an email message" },
-  { type: "push", label: "Send Push", icon: "\uD83D\uDD14", description: "Send a push notification" },
-  { type: "sms", label: "Send SMS", icon: "\uD83D\uDCF1", description: "Send an SMS message" },
-  { type: "whatsapp", label: "WhatsApp Message", icon: "\uD83D\uDCE8", description: "Show an WhatsApp card" },
-  { type: "multi_channel", label: "Multi-Channel", icon: "\uD83C\uDF10", description: "Fan out or Sequential Fallback across channels" },
-  { type: "best_channel", label: "Best Channel Send", icon: "\u2728", description: "Auto-select best channel" },
-  { type: "delay", label: "Wait / Delay", icon: "\u23F3", description: "Wait before next step" },
+  { type: "multi_channel", label: "Message", icon: "\u2709\uFE0F", description: "Send on one or more channels" },
   { type: "condition", label: "Decision Split", icon: "\u2753", description: "Branch based on behavior" },
+  { type: "delay", label: "Wait / Delay", icon: "\u23F3", description: "Wait before next step" },
 ];
 
 let nextId = 1;
@@ -254,7 +249,7 @@ export default function JourneyBuilder() {
    * Mirrors the delivery-mode semantics on the Campaign create page so the same
    * concept means the same thing on both surfaces.
    */
-  type StepOrchestrationMode = Extract<OrchestrationMode, "multi_channel" | "sequential">;
+  type StepOrchestrationMode = OrchestrationMode;
   const [multiChannelModes, setMultiChannelModes] = useState<Record<string, StepOrchestrationMode>>({});
   const [multiChannelPriority, setMultiChannelPriority] = useState<Record<string, MessageChannel[]>>({});
 
@@ -281,7 +276,19 @@ export default function JourneyBuilder() {
 
   function getMultiChannelMode(stepId: string): StepOrchestrationMode {
     if (getMultiChannelChannels(stepId).length < 2) return "multi_channel";
-    return multiChannelModes[stepId] || "multi_channel";
+    const mode = multiChannelModes[stepId] || "multi_channel";
+    return mode === "best_channel" && !showBestChannel ? "sequential" : mode;
+  }
+
+  /** Canvas sub-line for a Message step: the channels, then the delivery mode once there are two or more. */
+  function describeMessageStep(stepId: string): string {
+    const chs = getMultiChannelChannels(stepId);
+    if (chs.length === 0) return "No channel selected";
+    if (chs.length === 1) return CHANNEL_LABELS[chs[0]];
+    const mode = getMultiChannelMode(stepId);
+    const list = mode === "sequential" ? getChannelPriority(stepId).map(c => CHANNEL_LABELS[c]).join(" > ") : chs.map(c => CHANNEL_LABELS[c]).join(", ");
+    const suffix = mode === "sequential" && getRotate(stepId) ? " \u00B7 varies from previous" : "";
+    return `${list} \u00B7 ${ORCHESTRATION_LABELS[mode]}${suffix}`;
   }
 
   function changeMultiChannelMode(stepId: string, mode: StepOrchestrationMode) {
@@ -544,7 +551,7 @@ export default function JourneyBuilder() {
     if (showBestChannel || seededPhase1.current || steps.length > 0) return;
     seededPhase1.current = true;
     const id = makeId();
-    setSteps([{ id, type: "multi_channel", label: "Multi-Channel" }]);
+    setSteps([{ id, type: "multi_channel", label: "Message" }]);
     setMultiChannelStates(prev => ({ ...prev, [id]: [] }));
     setSelectedStep(id);
   }, [showBestChannel, steps.length]);
@@ -573,18 +580,7 @@ export default function JourneyBuilder() {
     setEntryChannel(prev => {
       const next = prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch];
       if (showBestChannel) {
-        if (next.length >= 2) {
-          setSteps(s => {
-            if (s.some(st => st.id === AUTO_BEST_CHANNEL_ID)) return s;
-            const inserted = [...s];
-            inserted.splice(0, 0, { id: AUTO_BEST_CHANNEL_ID, type: "best_channel", label: "Best Channel Send" });
-            return inserted;
-          });
-          setBestChannelPool(next);
-        } else {
-          setSteps(s => s.filter(st => st.id !== AUTO_BEST_CHANNEL_ID));
-          setBestChannelPool([]);
-        }
+        setBestChannelPool(next.length >= 2 ? next : []);
       }
       return next;
     });
@@ -630,7 +626,7 @@ export default function JourneyBuilder() {
       case "delay": return "\u23F3";
       case "condition": return "\u2753";
       case "best_channel": return "\u2728";
-      case "multi_channel": return "\uD83C\uDF10";
+      case "multi_channel": return "\u2709\uFE0F";
       default: return "\u26A1";
     }
   };
@@ -686,16 +682,9 @@ export default function JourneyBuilder() {
                         if (!entryContentEnabled) {
                           const allChannels: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
                           setEntryChannel(allChannels);
-                          setSteps(s => {
-                            if (s.some(st => st.id === AUTO_BEST_CHANNEL_ID)) return s;
-                            const inserted = [...s];
-                            inserted.splice(0, 0, { id: AUTO_BEST_CHANNEL_ID, type: "best_channel", label: "Best Channel Send" });
-                            return inserted;
-                          });
                           setBestChannelPool(allChannels);
                         } else {
                           setEntryChannel([]);
-                          setSteps(s => s.filter(st => st.id !== AUTO_BEST_CHANNEL_ID));
                           setBestChannelPool([]);
                         }
                         setEntryContentEnabled(prev => !prev);
@@ -872,7 +861,7 @@ export default function JourneyBuilder() {
                     <span className="journey-step-icon">{getStepIcon(step.type)}</span>
                     <div className="journey-step-info">
                       <div className="journey-step-label">{step.label}</div>
-                      <div className="journey-step-type">{step.type === "multi_channel" ? `${ORCHESTRATION_LABELS[getMultiChannelMode(step.id)]}${getMultiChannelMode(step.id) === "sequential" && getRotate(step.id) ? "  \u00B7 varies from previous" : ""}` : step.type}</div>
+                      <div className="journey-step-type">{step.type === "multi_channel" ? describeMessageStep(step.id) : step.type}</div>
                     </div>
                     {step.id !== AUTO_BEST_CHANNEL_ID && (
                       <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStep(step.id); }}>&times;</button>
@@ -1145,13 +1134,26 @@ export default function JourneyBuilder() {
                       return (
                         <div className="tier-selection-appear">
                           {renderActivationMethod(step.id)}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                            <div className="form-group">
+                              <label className="form-label">Campaign Name</label>
+                              <input className="form-input" placeholder={`j1_${step.label.toLowerCase().replace(/\s+/g, "_")}`} />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Campaign Purpose</label>
+                              <select className="form-select">
+                                <option value="marketing">Marketing</option>
+                                <option value="non_marketing">Non-Marketing</option>
+                              </select>
+                            </div>
+                          </div>
                           {/* Channel Selection */}
                           <div className="form-group">
                             <label className="form-label">Channels</label>
                             <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>
                               {isSequential
                                 ? "Select the channels that make up the fallback ladder, then order them below. Each channel gets its own content."
-                                : "Select the channels this step will fan out to. Each channel gets its own content below."}
+                                : "Pick one channel for a single-channel send, or several to choose how they are used. Each channel gets its own content below."}
                             </p>
                             <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
                               {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
@@ -1176,7 +1178,7 @@ export default function JourneyBuilder() {
                             {stepChannels.length === 1 && (
                               <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                                 <span className="info-banner-icon">&#128274;</span>
-                                <span><strong>Single channel.</strong> Only {CHANNEL_LABELS[stepChannels[0]]}. Add more channels to fan out or build a fallback ladder.</span>
+                                <span><strong>Single channel.</strong> This message goes out on {CHANNEL_LABELS[stepChannels[0]]} only. Add a second channel to choose a delivery mode.</span>
                               </div>
                             )}
                           </div>
@@ -1187,7 +1189,18 @@ export default function JourneyBuilder() {
                             <div style={{ fontWeight: 600, fontSize: 14 }}>Channel Selection</div>
                             <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Of the eligible channels, how should the system choose which to send?</p>
                             <div className="radio-card-group">
-                              <div className={`radio-card ${!isSequential ? "selected" : ""}`} onClick={() => changeMultiChannelMode(step.id, "multi_channel")}>
+                              {showBestChannel && (
+                              <div className={`radio-card ${mode === "best_channel" ? "selected" : ""}`} onClick={() => changeMultiChannelMode(step.id, "best_channel")}>
+                                <div className="radio-card-header">
+                                  <div className="radio-card-radio" />
+                                  <div className="radio-card-title">Best Channel</div>
+                                </div>
+                                <div className="radio-card-description">
+                                  Rule-based routing selects the best channel per subscriber. Falls back to the channel priority order when no rule matches.
+                                </div>
+                              </div>
+                              )}
+                              <div className={`radio-card ${mode === "multi_channel" ? "selected" : ""}`} onClick={() => changeMultiChannelMode(step.id, "multi_channel")}>
                                 <div className="radio-card-header">
                                   <div className="radio-card-radio" />
                                   <div className="radio-card-title">Multi-Channel</div>
@@ -1206,7 +1219,13 @@ export default function JourneyBuilder() {
                                 </div>
                               </div>
                             </div>
-                            {stepChannels.length >= 2 && !isSequential && (
+                            {stepChannels.length >= 2 && mode === "best_channel" && (
+                              <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
+                                <span className="info-banner-icon">&#10024;</span>
+                                <span><strong>Best Channel.</strong> The active routing rule picks one of {stepChannels.length} channels per subscriber. The priority order below is the fallback when no rule matches.</span>
+                              </div>
+                            )}
+                            {stepChannels.length >= 2 && mode === "multi_channel" && (
                               <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                                 <span className="info-banner-icon">&#9989;</span>
                                 <span><strong>Multi-Channel</strong> &mdash; the message fans out to {stepChannels.length} channels ({stepChannels.map(c => CHANNEL_LABELS[c]).join(", ")}) within this single step.</span>
@@ -1221,12 +1240,34 @@ export default function JourneyBuilder() {
                           </div>
                           )}
 
-                          {/* Channel Priority Order -- Sequential Fallback only */}
-                          {isSequential && stepChannels.length > 0 && (
+                          {/* Active Routing Rule -- Best Channel only */}
+                          {mode === "best_channel" && stepChannels.length >= 2 && (
                             <div className="form-group tier-selection-appear">
-                              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Channel Priority Order</div>
+                              <label className="form-label">Active Routing Rule</label>
+                              {heuristicRules.map(rule => (
+                                <div key={rule.id} className="rule-card" style={{ marginBottom: 6 }}>
+                                  <div className="rule-card-header">
+                                    <div className="rule-card-priority">P{rule.priority}</div>
+                                    <div className="rule-card-info">
+                                      <div style={{ fontWeight: 600, fontSize: 13 }}>{rule.name}</div>
+                                      <div className="text-muted" style={{ fontSize: 11 }}>{rule.description}</div>
+                                    </div>
+                                  </div>
+                                  <div className="rule-card-logic"><code>{rule.logic}</code></div>
+                                </div>
+                              ))}
+                              <div className="text-muted" style={{ fontSize: 11 }}>If no rule matches, the priority order below is used.</div>
+                            </div>
+                          )}
+
+                          {/* Channel Priority Order -- Sequential Fallback (routing) and Best Channel (fallback) */}
+                          {(isSequential || mode === "best_channel") && stepChannels.length > 0 && (
+                            <div className="form-group tier-selection-appear">
+                              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{isSequential ? "Channel Priority Order" : "Fallback Channel Order"}</div>
                               <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>
-                                This order is the routing decision, not a fallback for a rule. The list is walked top-down and the first channel the subscriber is opted in to and reachable on receives the message.
+                                {isSequential
+                                  ? "This order is the routing decision, not a fallback for a rule. The list is walked top-down and the first channel the subscriber is opted in to and reachable on receives the message."
+                                  : "Used only when the routing rule has no signal for a subscriber."}
                               </p>
                               <label className="form-label">Priority Order</label>
                               <div className="fallback-sequence">
@@ -1256,7 +1297,7 @@ export default function JourneyBuilder() {
                                 ))}
                               </div>
                               {/* Follow-up behaviour */}
-                              {(() => {
+                              {isSequential && (() => {
                                 const rotate = getRotate(step.id);
                                 const single = getRotateSingle(step.id);
                                 const prev = previousMessageStep(step.id);
@@ -1298,6 +1339,7 @@ export default function JourneyBuilder() {
                                   </div>
                                 );
                               })()}
+                              {isSequential && (
                               <div className="info-banner" style={{ marginTop: 8, fontSize: 11 }}>
                                 <span className="info-banner-icon">&#9993;</span>
                                 <span>
@@ -1306,6 +1348,7 @@ export default function JourneyBuilder() {
                                   {getRotate(step.id) && !isFirstMessageStep(step.id) && getRotateSingle(step.id) === "suppress" && " Subscribers whose only usable channel is the one they just received are suppressed at this step."}
                                 </span>
                               </div>
+                              )}
                             </div>
                           )}
 
