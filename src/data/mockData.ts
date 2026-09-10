@@ -526,15 +526,14 @@ export const mockHoldouts: MockHoldout[] = [
  * Classes form fixed bands. Transactional and Legal always send and are not
  * scored; the numeric priority only orders the remaining classes.
  */
-export type CommunicationClass = "transactional" | "service" | "lifecycle" | "promotional";
+export type CommunicationClass = "transactional" | "service" | "marketing";
 
-export const COMMUNICATION_CLASS_ORDER: CommunicationClass[] = ["transactional", "service", "lifecycle", "promotional"];
+export const COMMUNICATION_CLASS_ORDER: CommunicationClass[] = ["transactional", "service", "marketing"];
 
-export const COMMUNICATION_CLASS_META: Record<CommunicationClass, { label: string; description: string; band: string; locked: boolean }> = {
-  transactional: { label: "Transactional & Legal", description: "Confirmations, security, verification. Always sends and is never outranked.", band: "Locked", locked: true },
-  service: { label: "Service & Trip Information", description: "Non-marketing messages tied to a booking the customer already holds.", band: "90 to 99", locked: false },
-  lifecycle: { label: "Lifecycle Triggers", description: "Behaviour-driven marketing such as cart abandonment and price alerts.", band: "70 to 89", locked: false },
-  promotional: { label: "Promotional & Scheduled", description: "Deals, programme promotions and other scheduled marketing sends.", band: "40 to 69", locked: false },
+export const COMMUNICATION_CLASS_META: Record<CommunicationClass, { label: string; description: string; locked: boolean }> = {
+  transactional: { label: "Transactional & Legal", description: "Confirmations, security, verification. Always sends and is never outranked.", locked: true },
+  service: { label: "Service & Trip Information", description: "Non-marketing messages tied to a booking the customer already holds.", locked: false },
+  marketing: { label: "Marketing", description: "Triggered and scheduled marketing: cart abandonment, price alerts, deals and programme promotions.", locked: false },
 };
 
 export interface MockCampaignPriority {
@@ -552,10 +551,10 @@ export const mockCampaignPriorities: MockCampaignPriority[] = [
   { campaignId: 1002, campaignName: "otp_verification", communicationClass: "transactional", channels: ["sms"], source: "Transactional" },
   { campaignId: 1012, campaignName: "security_alert", communicationClass: "transactional", channels: ["sms", "email"], source: "Transactional" },
   { campaignId: 1006, campaignName: "checkin_reminder", communicationClass: "service", priority: 95, channels: ["push", "email"], source: "Trigger: checkin_reminder" },
-  { campaignId: 1011, campaignName: "price_alert", communicationClass: "lifecycle", priority: 82, channels: ["push", "email"], source: "Trigger: price_change" },
-  { campaignId: 1008, campaignName: "cart_abandonment_omni", communicationClass: "lifecycle", priority: 78, channels: ["push", "email"], source: "Trigger: cart_abandon" },
-  { campaignId: 1005, campaignName: "genius_promo", communicationClass: "promotional", priority: 62, channels: ["push", "email"], source: "Scheduled: Daily" },
-  { campaignId: 1003, campaignName: "summer_deals_omnichannel", communicationClass: "promotional", priority: 55, channels: ["email", "push", "sms"], source: "Scheduled: Daily" },
+  { campaignId: 1011, campaignName: "price_alert", communicationClass: "marketing", priority: 82, channels: ["push", "email"], source: "Trigger: price_change" },
+  { campaignId: 1008, campaignName: "cart_abandonment_omni", communicationClass: "marketing", priority: 78, channels: ["push", "email"], source: "Trigger: cart_abandon" },
+  { campaignId: 1005, campaignName: "genius_promo", communicationClass: "marketing", priority: 62, channels: ["push", "email"], source: "Scheduled: Daily" },
+  { campaignId: 1003, campaignName: "summer_deals_omnichannel", communicationClass: "marketing", priority: 55, channels: ["email", "push", "sms"], source: "Scheduled: Daily" },
 ];
 
 /* ── Subscription Categories ── */

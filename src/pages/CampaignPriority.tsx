@@ -3,9 +3,9 @@ import { CHANNEL_ICONS, CHANNEL_LABELS } from "../types";
 import { COMMUNICATION_CLASS_META, COMMUNICATION_CLASS_ORDER, mockCampaignPriorities, type CommunicationClass } from "../data/mockData";
 
 const barColor = (cls: CommunicationClass) =>
-  cls === "service" ? "var(--color-red-600)" : cls === "lifecycle" ? "var(--callout-300)" : "var(--color-blue-500)";
+  cls === "service" ? "var(--callout-300)" : "var(--color-blue-500)";
 const rankClass = (cls: CommunicationClass) =>
-  cls === "transactional" ? "critical" : cls === "service" ? "high" : cls === "lifecycle" ? "medium" : "low";
+  cls === "transactional" ? "critical" : cls === "service" ? "high" : "medium";
 
 export default function CampaignPriority() {
   const [showLegacy, setShowLegacy] = useState(false);
@@ -31,9 +31,7 @@ export default function CampaignPriority() {
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                 <span className={`priority-rank priority-rank--${rankClass(cls)}`}>{bandIndex + 1}</span>
                 <span style={{ fontWeight: 700, fontSize: 16 }}>{meta.label}</span>
-                <span className={`badge ${meta.locked ? "badge-constructive" : "badge-outline"}`} style={{ fontSize: 10 }}>
-                  {meta.locked ? "\uD83D\uDD12 Always sends" : `Band ${meta.band}`}
-                </span>
+                {meta.locked && <span className="badge badge-constructive" style={{ fontSize: 10 }}>{"\uD83D\uDD12 Always sends"}</span>}
               </div>
               <p className="text-muted" style={{ fontSize: 12, marginBottom: 12 }}>{meta.description}</p>
               <div className="priority-stack">
