@@ -521,7 +521,6 @@ export default function AudienceEstimationCreate() {
                     <span style={{ fontSize: 13 }}>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
                     {i === 0 && <span className="badge badge-brand" style={{ fontSize: 9 }}>Primary</span>}
                     {i > 0 && <span className="badge badge-outline" style={{ fontSize: 9 }}>Fallback</span>}
-                    <span className="text-muted" style={{ fontSize: 11, marginLeft: 8 }}>{audienceEstimationData.channelReachability[ch].pct}% reachable</span>
                     <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
                       <button className="btn btn-secondary" style={{ padding: "2px 6px", fontSize: 10, lineHeight: 1, opacity: i === 0 ? 0.3 : 1 }} disabled={i === 0} onClick={() => movePriority(i, "up")} title="Move up">&#9650;</button>
                       <button className="btn btn-secondary" style={{ padding: "2px 6px", fontSize: 10, lineHeight: 1, opacity: i === priority.length - 1 ? 0.3 : 1 }} disabled={i === priority.length - 1} onClick={() => movePriority(i, "down")} title="Move down">&#9660;</button>
