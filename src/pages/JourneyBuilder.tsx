@@ -256,16 +256,25 @@ export default function JourneyBuilder() {
   const [multiChannelPriority, setMultiChannelPriority] = useState<Record<string, MessageChannel[]>>({});
 
   /**
-   * Follow-up behaviour for a Sequential Fallback step. When rotate is on, channels
-   * this subscriber already received earlier in the journey drop to the bottom of
-   * the ladder, so a second touch lands on a different channel where one exists.
+   * Follow-up behaviour for a Sequential Fallback step. When rotate is on, the
+   * channel this subscriber received at the previous message step drops to the
+   * bottom of the ladder, so consecutive touches alternate (email, push, email)
+   * instead of exhausting every channel across the journey.
    */
   type RotateSingle = "repeat" | "suppress";
   const [multiChannelRotate, setMultiChannelRotate] = useState<Record<string, boolean>>({});
   const [multiChannelRotateSingle, setMultiChannelRotateSingle] = useState<Record<string, RotateSingle>>({});
   const getRotate = (stepId: string) => !!multiChannelRotate[stepId];
   const getRotateSingle = (stepId: string): RotateSingle => multiChannelRotateSingle[stepId] || "repeat";
-  const isFirstMessageStep = (stepId: string) => steps.find(st => ["email", "push", "sms", "whatsapp", "best_channel", "multi_channel"].includes(st.type))?.id === stepId;
+  const previousMessageStep = (stepId: string): Step | null => {
+    const messageSteps = steps.filter(st => ["email", "push", "sms", "whatsapp", "best_channel", "multi_channel"].includes(st.type));
+    const idx = messageSteps.findIndex(st => st.id === stepId);
+    return idx > 0 ? messageSteps[idx - 1] : null;
+  };
+  const isFirstMessageStep = (stepId: string) => previousMessageStep(stepId) === null;
+  const describeStep = (st: Step) => st.type === "multi_channel"
+    ? `${st.label} (${ORCHESTRATION_LABELS[getMultiChannelMode(st.id)]})`
+    : st.label;
 
   function getMultiChannelMode(stepId: string): StepOrchestrationMode {
     if (getMultiChannelChannels(stepId).length < 2) return "multi_channel";
@@ -784,7 +793,7 @@ export default function JourneyBuilder() {
                     <span className="journey-step-icon">{getStepIcon(step.type)}</span>
                     <div className="journey-step-info">
                       <div className="journey-step-label">{step.label}</div>
-                      <div className="journey-step-type">{step.type === "multi_channel" ? `${ORCHESTRATION_LABELS[getMultiChannelMode(step.id)]}${getMultiChannelMode(step.id) === "sequential" && getRotate(step.id) ? " \u00B7 rotates" : ""}` : step.type}</div>
+                      <div className="journey-step-type">{step.type === "multi_channel" ? `${ORCHESTRATION_LABELS[getMultiChannelMode(step.id)]}${getMultiChannelMode(step.id) === "sequential" && getRotate(step.id) ? "  \u00B7 varies from previous" : ""}` : step.type}</div>
                     </div>
                     {step.id !== AUTO_BEST_CHANNEL_ID && (
                       <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStep(step.id); }}>&times;</button>
@@ -1169,36 +1178,36 @@ export default function JourneyBuilder() {
                               {(() => {
                                 const rotate = getRotate(step.id);
                                 const single = getRotateSingle(step.id);
-                                const first = isFirstMessageStep(step.id);
+                                const prev = previousMessageStep(step.id);
                                 return (
                                   <div style={{ marginTop: 12 }}>
                                     <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>Follow-up behaviour</div>
-                                    {first ? (
-                                      <p className="text-muted" style={{ fontSize: 11 }}>Applies from the second message step onward. Nothing has been delivered to the subscriber before this step.</p>
+                                    {!prev ? (
+                                      <p className="text-muted" style={{ fontSize: 11 }}>This is the first message step, so there is no previous send to vary against.</p>
                                     ) : (
                                       <>
                                         <div className="journey-settings-row">
-                                          <span className="journey-settings-label" style={{ fontSize: 12 }}>Skip channels already delivered earlier in this journey</span>
+                                          <span className="journey-settings-label" style={{ fontSize: 12 }}>Avoid the channel used at the previous step</span>
                                           <label className="toggle-switch toggle-switch--sm">
-                                            <input type="checkbox" checked={rotate} onChange={e => setMultiChannelRotate(prev => ({ ...prev, [step.id]: e.target.checked }))} />
+                                            <input type="checkbox" checked={rotate} onChange={e => setMultiChannelRotate(prev2 => ({ ...prev2, [step.id]: e.target.checked }))} />
                                             <span className="toggle-slider" />
                                           </label>
                                         </div>
                                         <p className="text-muted" style={{ fontSize: 11, marginTop: 4 }}>
-                                          Channels this subscriber has already received in this journey move to the bottom of the ladder, so a follow-up lands on a different channel where one is available.
+                                          Previous step: <strong>{describeStep(prev)}</strong>. The channel this subscriber received there moves to the bottom of this ladder, so this touch lands on a different channel where one is available. Only the immediately previous send counts, so three steps in a row alternate rather than run out of channels.
                                         </p>
                                         {rotate && (
                                           <div className="tier-selection-appear">
                                             <div className="journey-settings-row" style={{ marginTop: 8 }}>
-                                              <span className="journey-settings-label" style={{ fontSize: 12 }}>If only one channel is usable</span>
-                                              <select className="form-select" style={{ width: 170, fontSize: 12 }} value={single} onChange={e => setMultiChannelRotateSingle(prev => ({ ...prev, [step.id]: e.target.value as RotateSingle }))}>
+                                              <span className="journey-settings-label" style={{ fontSize: 12 }}>If that is the only usable channel</span>
+                                              <select className="form-select" style={{ width: 170, fontSize: 12 }} value={single} onChange={e => setMultiChannelRotateSingle(prev2 => ({ ...prev2, [step.id]: e.target.value as RotateSingle }))}>
                                                 <option value="repeat">Send on it again</option>
                                                 <option value="suppress">Suppress this step</option>
                                               </select>
                                             </div>
                                             {priority.length >= 2 && (
                                               <p className="text-muted" style={{ fontSize: 11, marginTop: 6 }}>
-                                                A subscriber who received {CHANNEL_LABELS[priority[0]]} at an earlier step gets {CHANNEL_LABELS[priority[1]]} here. One who received {CHANNEL_LABELS[priority[1]]} gets {CHANNEL_LABELS[priority[0]]}.
+                                                Received {CHANNEL_LABELS[priority[0]]} at the previous step: gets {CHANNEL_LABELS[priority[1]]} here. Received {CHANNEL_LABELS[priority[1]]}: gets {CHANNEL_LABELS[priority[0]]} here.
                                               </p>
                                             )}
                                           </div>
@@ -1212,8 +1221,8 @@ export default function JourneyBuilder() {
                                 <span className="info-banner-icon">&#9993;</span>
                                 <span>
                                   <strong>One message per subscriber.</strong> Evaluation stops at the first qualifying channel, so later channels are never sent and there is nothing to deduplicate. A subscriber with no consented, reachable channel in this list is suppressed.
-                                  {getRotate(step.id) && !isFirstMessageStep(step.id) && " Channels already used earlier in this journey are tried last."}
-                                  {getRotate(step.id) && !isFirstMessageStep(step.id) && getRotateSingle(step.id) === "suppress" && " Subscribers with no unused channel are suppressed at this step."}
+                                  {getRotate(step.id) && !isFirstMessageStep(step.id) && " The channel used at the previous step is tried last."}
+                                  {getRotate(step.id) && !isFirstMessageStep(step.id) && getRotateSingle(step.id) === "suppress" && " Subscribers whose only usable channel is the one they just received are suppressed at this step."}
                                 </span>
                               </div>
                             </div>
