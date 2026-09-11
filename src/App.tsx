@@ -96,6 +96,9 @@ function AppLayout() {
             <div className="app-nav-link">
               <NavLink to="/campaign-priority" className={nav}>Campaign Priority</NavLink>
             </div>
+            <div className="app-nav-link">
+              <NavLink to="/holdouts" className={nav}>Holdout Management</NavLink>
+            </div>
           </div>
 
           <div className="app-nav-section">
