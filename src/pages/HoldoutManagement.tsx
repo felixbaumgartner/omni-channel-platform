@@ -13,6 +13,44 @@ const HASH_COLORS: Record<string, string> = {
 };
 
 const ALL_CHANNELS: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
+
+interface HoldoutOverlap {
+  holdout: MockHoldout;
+  channels: MessageChannel[];
+  sameSalt: boolean;
+  overlapPct: number;
+}
+
+/* Live holdouts whose scope intersects the draft. Same salt: the hash ranges
+   pick the same subscribers, so overlap is the range intersection. Different
+   salt: two independent draws, so overlap is the product of the two sizes. */
+function findOverlaps(
+  existing: MockHoldout[],
+  channels: MessageChannel[],
+  funnels: string[],
+  verticals: string[],
+  salt: string,
+  start: number,
+  end: number,
+): HoldoutOverlap[] {
+  const size = Math.max(0, end - start);
+  if (size === 0) return [];
+  return existing
+    .filter(h => h.status === "Live")
+    .map(h => {
+      const sharedChannels = h.channels.filter(c => channels.includes(c));
+      const sharesScope = sharedChannels.length > 0
+        && h.funnels.some(f => funnels.includes(f))
+        && h.verticals.some(v => verticals.includes(v));
+      if (!sharesScope) return null;
+      const sameSalt = salt.length > 0 && h.salt === salt;
+      const overlapPct = sameSalt
+        ? Math.max(0, Math.min(end, h.hashRange.end) - Math.max(start, h.hashRange.start))
+        : (size * (h.hashRange.end - h.hashRange.start)) / 100;
+      return { holdout: h, channels: sharedChannels, sameSalt, overlapPct };
+    })
+    .filter((o): o is HoldoutOverlap => o !== null && o.overlapPct > 0);
+}
 const ALL_FUNNELS = ["pre_book", "post_book", "post_trip", "reactivation"] as const;
 const ALL_VERTICALS = ["accommodation", "flights", "attractions", "car_rental"] as const;
 
@@ -21,11 +59,12 @@ const ALL_VERTICALS = ["accommodation", "flights", "attractions", "car_rental"] 
    ═══════════════════════════════════════════════════════ */
 
 interface HoldoutCreateFormProps {
+  existing: MockHoldout[];
   onSave: (holdout: MockHoldout) => void;
   onCancel: () => void;
 }
 
-function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
+function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [purpose, setPurpose] = useState<"marketing" | "test">("marketing");
@@ -43,6 +82,7 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
   const nameValid = /^[a-zA-Z0-9_-]{4,64}$/.test(name);
   const descValid = description.length >= 10 && description.length <= 255;
   const canSave = nameValid && descValid && channels.length > 0 && funnels.length > 0 && verticals.length > 0 && hashPct > 0;
+  const overlaps = findOverlaps(existing, channels, funnels, verticals, salt, Number(hashStart), Number(hashEnd));
 
   function toggleChannel(ch: MessageChannel) {
     setChannels(prev => {
@@ -222,6 +262,25 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
         </div>
       </div>
 
+      {/* ── Overlap with live holdouts ── */}
+      {overlaps.length > 0 && (
+        <div className="alert alert-warning tier-selection-appear" style={{ marginBottom: 0 }}>
+          <div className="alert-title">Overlaps {overlaps.length} live holdout{overlaps.length > 1 ? "s" : ""} in the same scope</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
+            {overlaps.map(o => (
+              <div key={o.holdout.id} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12 }}>
+                <span style={{ fontWeight: 600 }}>{o.holdout.name}</span>
+                <span>{o.channels.map(ch => CHANNEL_ICONS[ch]).join(" ")}</span>
+                <span>{o.sameSalt ? "same salt, ranges share" : "different salt, expected overlap"} <strong>{o.overlapPct.toFixed(1)}%</strong> of subscribers</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 6, fontSize: 12 }}>
+            Subscribers in both groups are held out of both campaigns. Reuse the salt and pick a non-overlapping range to nest this holdout cleanly.
+          </div>
+        </div>
+      )}
+
       {/* ── 5. Omni-Channel Coordination ── */}
       {channels.length > 1 && (
         <div className="bui-box tier-selection-appear">
@@ -237,9 +296,9 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
           </div>
 
           {crossChannelCoordinated ? (
-            <div className="alert alert-info">
-              <div className="alert-title">Coordinated Mode Active</div>
-              All {channels.length} channels use the same hash range ({hashStart}% – {hashEnd}%). This ensures clean incrementality measurement across the whole campaign.
+            <div className="alert alert-info" style={{ marginBottom: 0 }}>
+              <div className="alert-title">Campaign holdout</div>
+              All {channels.length} channels use the same hash range ({hashStart}% to {hashEnd}%). Evaluated once per subscriber per campaign, before channel routing. A held-out subscriber is a final no-send: sequential fallback does not fire and no other channel of that campaign sends. Measured at subscriber level across channels.
             </div>
           ) : (
             <div className="tier-selection-appear">
@@ -268,9 +327,9 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
                   );
                 })}
               </div>
-              <div className="alert alert-warning" style={{ marginTop: 12 }}>
-                <div className="alert-title">Independent Ranges</div>
-                Each channel has an independent holdout range. A subscriber may be held out on email but not on push. This is suitable for channel-specific incrementality tests.
+              <div className="alert alert-warning" style={{ marginTop: 12, marginBottom: 0 }}>
+                <div className="alert-title">Channel holdout</div>
+                Each channel has its own range. A subscriber held out on one channel still receives the campaign on its other channels, so this measures that channel's contribution, not the campaign. A held-out channel is skipped, not retried: fallback does not move the send to the next channel.
               </div>
             </div>
           )}
@@ -364,7 +423,7 @@ export default function HoldoutManagement() {
       </div>
 
       {creating ? (
-        <HoldoutCreateForm onSave={handleCreate} onCancel={() => setCreating(false)} />
+        <HoldoutCreateForm existing={holdouts} onSave={handleCreate} onCancel={() => setCreating(false)} />
       ) : (
         <>
           {/* KPIs */}
@@ -395,7 +454,7 @@ export default function HoldoutManagement() {
           <div className="info-banner">
             <span className="info-banner-icon">&#128279;</span>
             <span>
-              <strong>Cross-Channel Holdout Coordination:</strong> In PROD, holdouts are per-channel. With omni-channel, a subscriber in an email holdout is automatically held out from push/SMS for the same campaign, ensuring clean incrementality measurement.
+              <strong>Omni-channel evaluation:</strong> In PROD each channel checks its own holdout at send time. Here the holdout is decided once per subscriber per campaign, before channel routing. A held-out subscriber is a final no-send and does not trigger fallback to another channel.
             </span>
           </div>
 
@@ -425,6 +484,13 @@ export default function HoldoutManagement() {
                       <span className="badge badge-media">Verticals: {h.verticals.join(", ")}</span>
                       <span className="badge badge-media">{h.matchedCampaigns} campaigns</span>
                       {h.subscribersHeldOut > 0 && <span className="badge badge-media">{formatNum(h.subscribersHeldOut)} held out</span>}
+                    </div>
+                    <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
+                      {h.crossChannelCoordinated
+                        ? "Campaign holdout: one decision per subscriber before routing, final no-send on every channel, measured across channels."
+                        : h.channels.length > 1
+                          ? "Channel holdout: per-channel decision, other channels of the campaign still send, measured per channel."
+                          : `Channel holdout on ${CHANNEL_LABELS[h.channels[0]]}: held-out channel is skipped, not retried on another channel.`}
                     </div>
 
                     {/* Hash Range Visualization */}
