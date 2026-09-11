@@ -451,10 +451,8 @@ export const mockTriggers: MockTrigger[] = [
 
 export interface MockHoldout {
   id: number;
-  parentId?: number;
   name: string;
   description: string;
-  purpose: "marketing" | "non_marketing";
   status: "Live" | "Draft" | "Archived";
   channels: MessageChannel[];
   funnels: string[];
@@ -471,7 +469,7 @@ export const mockHoldouts: MockHoldout[] = [
   {
     id: 4001, name: "global_marketing_holdout_5pct",
     description: "5% global marketing holdout across all channels for incrementality measurement",
-    purpose: "marketing", status: "Live",
+    status: "Live",
     channels: ["email", "push", "sms", "whatsapp"],
     funnels: ["pre_book", "post_book", "post_trip", "reactivation"],
     verticals: ["accommodation"],
@@ -483,7 +481,7 @@ export const mockHoldouts: MockHoldout[] = [
   {
     id: 4002, name: "email_incrementality_10pct",
     description: "10% email-only holdout for email channel incrementality testing",
-    purpose: "marketing", status: "Live",
+    status: "Live",
     channels: ["email"],
     funnels: ["pre_book", "reactivation"],
     verticals: ["accommodation", "flights"],
@@ -492,20 +490,20 @@ export const mockHoldouts: MockHoldout[] = [
     crossChannelCoordinated: false,
   },
   {
-    id: 4003, parentId: 4001, name: "push_engagement_holdout",
-    description: "3% push holdout nested under the global marketing holdout, disjoint range on the parent salt",
-    purpose: "marketing", status: "Live",
+    id: 4003, name: "push_engagement_holdout",
+    description: "3% push holdout for engagement lift measurement",
+    status: "Live",
     channels: ["push"],
     funnels: ["post_book"],
     verticals: ["accommodation"],
-    hashRange: { start: 5, end: 8 }, salt: "mktg_holdout_2026",
+    hashRange: { start: 0, end: 3 }, salt: "push_eng_2026",
     matchedCampaigns: 8, subscribersHeldOut: 390000,
     crossChannelCoordinated: false,
   },
   {
     id: 4004, name: "omni_rewards_holdout",
     description: "Cross-channel rewards holdout — coordinated across email + push + WhatsApp",
-    purpose: "marketing", status: "Draft",
+    status: "Draft",
     channels: ["email", "push", "whatsapp"],
     funnels: ["post_book", "post_trip"],
     verticals: ["accommodation"],

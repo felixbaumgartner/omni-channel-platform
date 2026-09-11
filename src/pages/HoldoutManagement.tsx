@@ -22,26 +22,18 @@ function randomizationUvis(channels: MessageChannel[]): UviType[] {
   return UVI_PRIORITY.filter(u => set.has(u));
 }
 
-const NESTED_LIMIT = 3;
-
-function rangesOverlap(a: { start: number; end: number }, b: { start: number; end: number }): boolean {
-  return a.start < b.end && b.start < a.end;
-}
-
 /* ═══════════════════════════════════════════════════════
    Holdout Creation Form
    ═══════════════════════════════════════════════════════ */
 
 interface HoldoutCreateFormProps {
-  existing: MockHoldout[];
   onSave: (holdout: MockHoldout) => void;
   onCancel: () => void;
 }
 
-function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProps) {
+function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [purpose, setPurpose] = useState<"marketing" | "non_marketing">("marketing");
   const [channels, setChannels] = useState<MessageChannel[]>([]);
   const [funnels, setFunnels] = useState<string[]>([]);
   const [verticals, setVerticals] = useState<string[]>([]);
@@ -50,34 +42,13 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
   const [salt, setSalt] = useState("");
   const [isReward, setIsReward] = useState(false);
 
-  const [parentId, setParentId] = useState<number | "">("");
-
-  const parent = parentId === "" ? undefined : existing.find(h => h.id === parentId);
-  const siblings = parent ? existing.filter(h => h.parentId === parent.id && h.status !== "Archived") : [];
-  const parentCandidates = existing.filter(h => !h.parentId && h.status !== "Archived");
   const uvis = randomizationUvis(channels);
 
   const hashPct = Math.max(0, Math.min(100, Number(hashEnd) - Number(hashStart)));
   const nameValid = /^[a-zA-Z0-9_-]{4,64}$/.test(name);
   const descValid = description.length >= 10 && description.length <= 255;
 
-  const draftRange = { start: Number(hashStart), end: Number(hashEnd) };
-  const nestingErrors: string[] = [];
-  if (parent) {
-    if (siblings.length >= NESTED_LIMIT) nestingErrors.push(`${parent.name} already has ${NESTED_LIMIT} nested holdouts (Live or Draft).`);
-    if (rangesOverlap(draftRange, parent.hashRange)) nestingErrors.push(`Range overlaps the parent range ${parent.hashRange.start}-${parent.hashRange.end}%. A nested holdout is only checked for subscribers outside the parent.`);
-    siblings.filter(sib => rangesOverlap(draftRange, sib.hashRange)).forEach(sib =>
-      nestingErrors.push(`Range overlaps sibling ${sib.name} (${sib.hashRange.start}-${sib.hashRange.end}%).`));
-    const outside = (mine: string[], theirs: string[]) => mine.filter(x => !theirs.includes(x));
-    const badCh = outside(channels, parent.channels);
-    const badFn = outside(funnels, parent.funnels);
-    const badVt = outside(verticals, parent.verticals);
-    if (badCh.length) nestingErrors.push(`Channels not in parent: ${badCh.join(", ")}.`);
-    if (badFn.length) nestingErrors.push(`Funnels not in parent: ${badFn.join(", ")}.`);
-    if (badVt.length) nestingErrors.push(`Verticals not in parent: ${badVt.join(", ")}.`);
-  }
-
-  const canSave = nameValid && descValid && channels.length > 0 && funnels.length > 0 && verticals.length > 0 && hashPct > 0 && nestingErrors.length === 0;
+  const canSave = nameValid && descValid && channels.length > 0 && funnels.length > 0 && verticals.length > 0 && hashPct > 0;
 
   function toggleChannel(ch: MessageChannel) {
     setChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
@@ -90,16 +61,14 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
   function handleSave() {
     const holdout: MockHoldout = {
       id: 4000 + Date.now() % 1000,
-      parentId: parent?.id,
       name,
       description,
-      purpose,
       status: "Draft",
       channels,
       funnels,
       verticals,
       hashRange: { start: Number(hashStart), end: Number(hashEnd) },
-      salt: parent ? parent.salt : (salt || `${name}_${Date.now()}`),
+      salt: salt || `${name}_${Date.now()}`,
       matchedCampaigns: 0,
       subscribersHeldOut: 0,
       crossChannelCoordinated: channels.length > 1,
@@ -128,53 +97,6 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
             {description.length > 0 && !descValid && <span style={{ color: "var(--color-red-600)" }}> &mdash; Min 10 chars required</span>}
           </div>
         </div>
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">Purpose <span style={{ color: "var(--color-red-600)" }}>*</span></label>
-          <div className="radio-card-group">
-            <div className={`radio-card ${purpose === "marketing" ? "selected" : ""}`} onClick={() => setPurpose("marketing")} style={{ padding: 12 }}>
-              <div className="radio-card-header" style={{ marginBottom: 4 }}>
-                <div className="radio-card-radio" />
-                <div className="radio-card-title">Marketing</div>
-              </div>
-              <div className="radio-card-description">Holdout for incrementality measurement of marketing campaigns</div>
-            </div>
-            <div className={`radio-card ${purpose === "non_marketing" ? "selected" : ""}`} onClick={() => setPurpose("non_marketing")} style={{ padding: 12 }}>
-              <div className="radio-card-header" style={{ marginBottom: 4 }}>
-                <div className="radio-card-radio" />
-                <div className="radio-card-title">Non-Marketing</div>
-              </div>
-              <div className="radio-card-description">Holdout for non-marketing communications</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Nesting ── */}
-      <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Parent Holdout</div>
-        <p className="text-muted mb-16">Nest under a live holdout to measure one channel inside a campaign holdout. A nested holdout inherits the parent salt and is only checked for subscribers outside the parent range.</p>
-        <select className="form-input" value={parentId} onChange={e => setParentId(e.target.value === "" ? "" : Number(e.target.value))}>
-          <option value="">None (top-level holdout, own salt)</option>
-          {parentCandidates.map(h => (
-            <option key={h.id} value={h.id}>{h.name} ({h.hashRange.start}-{h.hashRange.end}%, {h.channels.join("/")})</option>
-          ))}
-        </select>
-        {parent && (
-          <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", fontSize: 12 }}>
-            <span className="badge badge-outline">Parent range {parent.hashRange.start}-{parent.hashRange.end}%</span>
-            {siblings.map(sib => (
-              <span key={sib.id} className="badge badge-outline">Sibling {sib.name} {sib.hashRange.start}-{sib.hashRange.end}%</span>
-            ))}
-            <span className="badge badge-media">Salt inherited: {parent.salt}</span>
-            <span className="badge badge-media">{siblings.length}/{NESTED_LIMIT} nested</span>
-          </div>
-        )}
-        {nestingErrors.length > 0 && (
-          <div className="alert alert-warning" style={{ marginTop: 12, marginBottom: 0 }}>
-            <div className="alert-title">Cannot nest as configured</div>
-            {nestingErrors.map(err => <div key={err}>{err}</div>)}
-          </div>
-        )}
       </div>
 
       {/* ── 2. Channel Selection ── */}
@@ -269,8 +191,8 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div className="form-group">
             <label className="form-label">Salt</label>
-            <input className="form-input" placeholder="Auto-generated if empty" value={parent ? parent.salt : salt} disabled={!!parent} onChange={e => setSalt(e.target.value)} />
-            <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>{parent ? "Inherited from the parent so parent and nested ranges partition the same hash space." : "Randomization seed for consistent hashing. Same salt = same subscriber assignment."}</div>
+            <input className="form-input" placeholder="Auto-generated if empty" value={salt} onChange={e => setSalt(e.target.value)} />
+            <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Randomization seed for consistent hashing. Same salt = same subscriber assignment.</div>
           </div>
         </div>
       </div>
@@ -278,11 +200,7 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
       {/* ── Summary & Save ── */}
       <div className="bui-box" style={{ background: "var(--color-gray-50)" }}>
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>Summary</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
-          <div>
-            <div className="text-muted" style={{ fontSize: 11 }}>Purpose</div>
-            <div style={{ fontWeight: 600 }}>{purpose}</div>
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 16 }}>
           <div>
             <div className="text-muted" style={{ fontSize: 11 }}>Channels</div>
             <div style={{ fontWeight: 600 }}>{channels.length > 0 ? channels.map(ch => CHANNEL_ICONS[ch]).join(" ") : "—"}</div>
@@ -294,7 +212,7 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
         </div>
         {!canSave && (
           <div className="alert alert-warning" style={{ marginBottom: 12 }}>
-            Please complete all required fields: name (4-64 chars), description (10-255 chars), at least 1 channel, 1 funnel, 1 vertical, a hash range &gt; 0%{parent ? ", and resolve the nesting errors above" : ""}.
+            Please complete all required fields: name (4-64 chars), description (10-255 chars), at least 1 channel, 1 funnel, 1 vertical, a hash range &gt; 0%.
           </div>
         )}
       </div>
@@ -337,7 +255,7 @@ export default function HoldoutManagement() {
       </div>
 
       {creating ? (
-        <HoldoutCreateForm existing={holdouts} onSave={handleCreate} onCancel={() => setCreating(false)} />
+        <HoldoutCreateForm onSave={handleCreate} onCancel={() => setCreating(false)} />
       ) : (
         <div className="results-card">
           <div className="results-list">
@@ -347,9 +265,6 @@ export default function HoldoutManagement() {
                   <div className="list-card-title">
                     <span>{h.name}</span>
                     <span className={`badge ${h.status === "Live" ? "badge-constructive" : h.status === "Draft" ? "badge-draft" : "badge-archived"}`}>{h.status}</span>
-                    {h.parentId && (
-                      <span className="badge badge-outline">Nested under {holdouts.find(p => p.id === h.parentId)?.name ?? h.parentId}</span>
-                    )}
                   </div>
                   <div className="list-card-meta" style={{ marginTop: 4 }}>
                     {h.channels.map(ch => (
