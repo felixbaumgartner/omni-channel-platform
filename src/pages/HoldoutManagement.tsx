@@ -13,46 +13,30 @@ const HASH_COLORS: Record<string, string> = {
 };
 
 const ALL_CHANNELS: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
-
-interface HoldoutOverlap {
-  holdout: MockHoldout;
-  channels: MessageChannel[];
-  sameSalt: boolean;
-  overlapPct: number;
-}
-
-/* Live holdouts whose scope intersects the draft. Same salt: the hash ranges
-   pick the same subscribers, so overlap is the range intersection. Different
-   salt: two independent draws, so overlap is the product of the two sizes. */
-function findOverlaps(
-  existing: MockHoldout[],
-  channels: MessageChannel[],
-  funnels: string[],
-  verticals: string[],
-  salt: string,
-  start: number,
-  end: number,
-): HoldoutOverlap[] {
-  const size = Math.max(0, end - start);
-  if (size === 0) return [];
-  return existing
-    .filter(h => h.status === "Live")
-    .map(h => {
-      const sharedChannels = h.channels.filter(c => channels.includes(c));
-      const sharesScope = sharedChannels.length > 0
-        && h.funnels.some(f => funnels.includes(f))
-        && h.verticals.some(v => verticals.includes(v));
-      if (!sharesScope) return null;
-      const sameSalt = salt.length > 0 && h.salt === salt;
-      const overlapPct = sameSalt
-        ? Math.max(0, Math.min(end, h.hashRange.end) - Math.max(start, h.hashRange.start))
-        : (size * (h.hashRange.end - h.hashRange.start)) / 100;
-      return { holdout: h, channels: sharedChannels, sameSalt, overlapPct };
-    })
-    .filter((o): o is HoldoutOverlap => o !== null && o.overlapPct > 0);
-}
 const ALL_FUNNELS = ["pre_book", "post_book", "post_trip", "reactivation"] as const;
 const ALL_VERTICALS = ["accommodation", "flights", "attractions", "car_rental"] as const;
+
+/* Mirrors PROD: a holdout hashes UVI type + UVI value + salt, and each
+   channel can only resolve certain UVI types. Priority order is fixed. */
+const UVI_PRIORITY = ["User ID", "Soylent Email ID", "Device ID"] as const;
+type UviType = typeof UVI_PRIORITY[number];
+const CHANNEL_UVIS: Record<MessageChannel, UviType[]> = {
+  email: ["User ID", "Soylent Email ID"],
+  push: ["User ID", "Device ID"],
+  sms: ["User ID"],
+  whatsapp: ["User ID"],
+};
+
+function randomizationUvis(channels: MessageChannel[]): UviType[] {
+  const set = new Set(channels.flatMap(ch => CHANNEL_UVIS[ch]));
+  return UVI_PRIORITY.filter(u => set.has(u));
+}
+
+const NESTED_LIMIT = 3;
+
+function rangesOverlap(a: { start: number; end: number }, b: { start: number; end: number }): boolean {
+  return a.start < b.end && b.start < a.end;
+}
 
 /* ═══════════════════════════════════════════════════════
    Holdout Creation Form
@@ -78,11 +62,34 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
   const [crossChannelCoordinated, setCrossChannelCoordinated] = useState(true);
   const [perChannelRanges, setPerChannelRanges] = useState<Record<string, { start: string; end: string }>>({});
 
+  const [parentId, setParentId] = useState<number | "">("");
+
+  const parent = parentId === "" ? undefined : existing.find(h => h.id === parentId);
+  const siblings = parent ? existing.filter(h => h.parentId === parent.id && h.status !== "Archived") : [];
+  const parentCandidates = existing.filter(h => !h.parentId && h.status !== "Archived");
+  const uvis = randomizationUvis(channels);
+
   const hashPct = Math.max(0, Math.min(100, Number(hashEnd) - Number(hashStart)));
   const nameValid = /^[a-zA-Z0-9_-]{4,64}$/.test(name);
   const descValid = description.length >= 10 && description.length <= 255;
-  const canSave = nameValid && descValid && channels.length > 0 && funnels.length > 0 && verticals.length > 0 && hashPct > 0;
-  const overlaps = findOverlaps(existing, channels, funnels, verticals, salt, Number(hashStart), Number(hashEnd));
+
+  const draftRange = { start: Number(hashStart), end: Number(hashEnd) };
+  const nestingErrors: string[] = [];
+  if (parent) {
+    if (siblings.length >= NESTED_LIMIT) nestingErrors.push(`${parent.name} already has ${NESTED_LIMIT} nested holdouts (Live or Draft).`);
+    if (rangesOverlap(draftRange, parent.hashRange)) nestingErrors.push(`Range overlaps the parent range ${parent.hashRange.start}-${parent.hashRange.end}%. A nested holdout is only checked for subscribers outside the parent.`);
+    siblings.filter(sib => rangesOverlap(draftRange, sib.hashRange)).forEach(sib =>
+      nestingErrors.push(`Range overlaps sibling ${sib.name} (${sib.hashRange.start}-${sib.hashRange.end}%).`));
+    const outside = (mine: string[], theirs: string[]) => mine.filter(x => !theirs.includes(x));
+    const badCh = outside(channels, parent.channels);
+    const badFn = outside(funnels, parent.funnels);
+    const badVt = outside(verticals, parent.verticals);
+    if (badCh.length) nestingErrors.push(`Channels not in parent: ${badCh.join(", ")}.`);
+    if (badFn.length) nestingErrors.push(`Funnels not in parent: ${badFn.join(", ")}.`);
+    if (badVt.length) nestingErrors.push(`Verticals not in parent: ${badVt.join(", ")}.`);
+  }
+
+  const canSave = nameValid && descValid && channels.length > 0 && funnels.length > 0 && verticals.length > 0 && hashPct > 0 && nestingErrors.length === 0;
 
   function toggleChannel(ch: MessageChannel) {
     setChannels(prev => {
@@ -112,6 +119,7 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
 
     const holdout: MockHoldout = {
       id: 4000 + Date.now() % 1000,
+      parentId: parent?.id,
       name,
       description,
       purpose,
@@ -120,7 +128,7 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
       funnels,
       verticals,
       hashRange: { start: Number(hashStart), end: Number(hashEnd) },
-      salt: salt || `${name}_${Date.now()}`,
+      salt: parent ? parent.salt : (salt || `${name}_${Date.now()}`),
       matchedCampaigns: 0,
       subscribersHeldOut: 0,
       crossChannelCoordinated,
@@ -171,10 +179,38 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
         </div>
       </div>
 
+      {/* ── Nesting ── */}
+      <div className="bui-box">
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Parent Holdout</div>
+        <p className="text-muted mb-16">Nest under a live holdout to measure one channel inside a campaign holdout. A nested holdout inherits the parent salt and is only checked for subscribers outside the parent range.</p>
+        <select className="form-input" value={parentId} onChange={e => setParentId(e.target.value === "" ? "" : Number(e.target.value))}>
+          <option value="">None (top-level holdout, own salt)</option>
+          {parentCandidates.map(h => (
+            <option key={h.id} value={h.id}>{h.name} ({h.hashRange.start}-{h.hashRange.end}%, {h.channels.join("/")})</option>
+          ))}
+        </select>
+        {parent && (
+          <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", fontSize: 12 }}>
+            <span className="badge badge-outline">Parent range {parent.hashRange.start}-{parent.hashRange.end}%</span>
+            {siblings.map(sib => (
+              <span key={sib.id} className="badge badge-outline">Sibling {sib.name} {sib.hashRange.start}-{sib.hashRange.end}%</span>
+            ))}
+            <span className="badge badge-media">Salt inherited: {parent.salt}</span>
+            <span className="badge badge-media">{siblings.length}/{NESTED_LIMIT} nested</span>
+          </div>
+        )}
+        {nestingErrors.length > 0 && (
+          <div className="alert alert-warning" style={{ marginTop: 12, marginBottom: 0 }}>
+            <div className="alert-title">Cannot nest as configured</div>
+            {nestingErrors.map(err => <div key={err}>{err}</div>)}
+          </div>
+        )}
+      </div>
+
       {/* ── 2. Channel Selection ── */}
       <div className="bui-box">
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Selection <span style={{ color: "var(--color-red-600)" }}>*</span></div>
-        <p className="text-muted mb-16">Select which channels this holdout group applies to.</p>
+        <p className="text-muted mb-16">Select which channels this holdout group applies to. PROD holdouts support Email and Push today.</p>
         <div className="channel-selector-grid">
           {ALL_CHANNELS.map(ch => (
             <div key={ch} className={`channel-selector-card ${channels.includes(ch) ? "selected" : ""}`} onClick={() => toggleChannel(ch)}>
@@ -184,6 +220,17 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
             </div>
           ))}
         </div>
+        {channels.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 6 }}>RANDOMIZATION IDENTITY (DERIVED FROM CHANNELS, PRIORITY ORDER)</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {uvis.map((u, i) => <span key={u} className="badge badge-outline">{i + 1}. {u}</span>)}
+            </div>
+            <div className="text-muted" style={{ fontSize: 12, marginTop: 6 }}>
+              The hash is UVI type + UVI value + salt. Cross-channel coordination only holds for subscribers who resolve to User ID on every channel. A subscriber known only by {channels.includes("email") ? "Soylent Email ID" : "a channel identifier"}{channels.includes("push") ? " or Device ID" : ""} lands in a different bucket per channel, so that fallback share is measured per channel, not per campaign.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── 3. Scope: Funnels & Verticals ── */}
@@ -262,25 +309,6 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
         </div>
       </div>
 
-      {/* ── Overlap with live holdouts ── */}
-      {overlaps.length > 0 && (
-        <div className="alert alert-warning tier-selection-appear" style={{ marginBottom: 0 }}>
-          <div className="alert-title">Overlaps {overlaps.length} live holdout{overlaps.length > 1 ? "s" : ""} in the same scope</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
-            {overlaps.map(o => (
-              <div key={o.holdout.id} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12 }}>
-                <span style={{ fontWeight: 600 }}>{o.holdout.name}</span>
-                <span>{o.channels.map(ch => CHANNEL_ICONS[ch]).join(" ")}</span>
-                <span>{o.sameSalt ? "same salt, ranges share" : "different salt, expected overlap"} <strong>{o.overlapPct.toFixed(1)}%</strong> of subscribers</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 6, fontSize: 12 }}>
-            Subscribers in both groups are held out of both campaigns. Reuse the salt and pick a non-overlapping range to nest this holdout cleanly.
-          </div>
-        </div>
-      )}
-
       {/* ── 5. Omni-Channel Coordination ── */}
       {channels.length > 1 && (
         <div className="bui-box tier-selection-appear">
@@ -298,7 +326,7 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
           {crossChannelCoordinated ? (
             <div className="alert alert-info" style={{ marginBottom: 0 }}>
               <div className="alert-title">Campaign holdout</div>
-              All {channels.length} channels use the same hash range ({hashStart}% to {hashEnd}%). Evaluated once per subscriber per campaign, before channel routing. A held-out subscriber is a final no-send: sequential fallback does not fire and no other channel of that campaign sends. Measured at subscriber level across channels.
+              All {channels.length} channels use the same salt and hash range ({hashStart}% to {hashEnd}%), randomized on User ID. Evaluated once per subscriber per campaign, before channel routing. A held-out subscriber is a final no-send: sequential fallback does not fire and no other channel of that campaign sends. Measured at subscriber level across channels. In PROD each channel campaign runs this check separately, last after every other no-send reason.
             </div>
           ) : (
             <div className="tier-selection-appear">
@@ -342,8 +370,8 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div className="form-group">
             <label className="form-label">Salt</label>
-            <input className="form-input" placeholder="Auto-generated if empty" value={salt} onChange={e => setSalt(e.target.value)} />
-            <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Randomization seed for consistent hashing. Same salt = same subscriber assignment.</div>
+            <input className="form-input" placeholder="Auto-generated if empty" value={parent ? parent.salt : salt} disabled={!!parent} onChange={e => setSalt(e.target.value)} />
+            <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>{parent ? "Inherited from the parent so parent and nested ranges partition the same hash space." : "Randomization seed for consistent hashing. Same salt = same subscriber assignment."}</div>
           </div>
         </div>
       </div>
@@ -371,7 +399,7 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
         </div>
         {!canSave && (
           <div className="alert alert-warning" style={{ marginBottom: 12 }}>
-            Please complete all required fields: name (4-64 chars), description (10-255 chars), at least 1 channel, 1 funnel, 1 vertical, and a hash range &gt; 0%.
+            Please complete all required fields: name (4-64 chars), description (10-255 chars), at least 1 channel, 1 funnel, 1 vertical, a hash range &gt; 0%{parent ? ", and resolve the nesting errors above" : ""}.
           </div>
         )}
       </div>
@@ -454,7 +482,7 @@ export default function HoldoutManagement() {
           <div className="info-banner">
             <span className="info-banner-icon">&#128279;</span>
             <span>
-              <strong>Omni-channel evaluation:</strong> In PROD each channel checks its own holdout at send time. Here the holdout is decided once per subscriber per campaign, before channel routing. A held-out subscriber is a final no-send and does not trigger fallback to another channel.
+              <strong>Omni-channel evaluation:</strong> In PROD every campaign is one channel, so each channel campaign checks its holdouts separately, last after all other no-send reasons, hashing UVI type + value + salt. Here the holdout is decided once per subscriber per campaign on User ID, before channel routing. A held-out subscriber is a final no-send and does not trigger fallback to another channel.
             </span>
           </div>
 
@@ -474,6 +502,9 @@ export default function HoldoutManagement() {
                       {h.crossChannelCoordinated && (
                         <span className="badge-orchestration badge-orchestration--multi_channel">Cross-Channel Coordinated</span>
                       )}
+                      {h.parentId && (
+                        <span className="badge badge-outline">Nested under {holdouts.find(p => p.id === h.parentId)?.name ?? h.parentId}</span>
+                      )}
                     </div>
                     <div className="list-card-subtitle">{h.description}</div>
                     <div className="list-card-meta" style={{ marginTop: 4 }}>
@@ -486,6 +517,10 @@ export default function HoldoutManagement() {
                       {h.subscribersHeldOut > 0 && <span className="badge badge-media">{formatNum(h.subscribersHeldOut)} held out</span>}
                     </div>
                     <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
+                      Randomized on {randomizationUvis(h.channels).join(" > ")} · salt {h.salt}
+                      {h.parentId ? " · checked only outside the parent range" : ""}
+                    </div>
+                    <div className="text-muted" style={{ marginTop: 2, fontSize: 12 }}>
                       {h.crossChannelCoordinated
                         ? "Campaign holdout: one decision per subscriber before routing, final no-send on every channel, measured across channels."
                         : h.channels.length > 1

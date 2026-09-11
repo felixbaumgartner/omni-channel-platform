@@ -451,6 +451,7 @@ export const mockTriggers: MockTrigger[] = [
 
 export interface MockHoldout {
   id: number;
+  parentId?: number;
   name: string;
   description: string;
   purpose: "marketing" | "test";
@@ -491,13 +492,13 @@ export const mockHoldouts: MockHoldout[] = [
     crossChannelCoordinated: false,
   },
   {
-    id: 4003, name: "push_engagement_holdout",
-    description: "3% push holdout for engagement lift measurement",
+    id: 4003, parentId: 4001, name: "push_engagement_holdout",
+    description: "3% push holdout nested under the global marketing holdout, disjoint range on the parent salt",
     purpose: "test", status: "Live",
     channels: ["push"],
     funnels: ["post_book"],
     verticals: ["accommodation"],
-    hashRange: { start: 0, end: 3 }, salt: "push_eng_2026",
+    hashRange: { start: 5, end: 8 }, salt: "mktg_holdout_2026",
     matchedCampaigns: 8, subscribersHeldOut: 390000,
     crossChannelCoordinated: false,
   },
