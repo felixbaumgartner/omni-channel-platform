@@ -454,7 +454,7 @@ export interface MockHoldout {
   parentId?: number;
   name: string;
   description: string;
-  purpose: "marketing" | "test";
+  purpose: "marketing" | "non_marketing";
   status: "Live" | "Draft" | "Archived";
   channels: MessageChannel[];
   funnels: string[];
@@ -483,7 +483,7 @@ export const mockHoldouts: MockHoldout[] = [
   {
     id: 4002, name: "email_incrementality_10pct",
     description: "10% email-only holdout for email channel incrementality testing",
-    purpose: "test", status: "Live",
+    purpose: "marketing", status: "Live",
     channels: ["email"],
     funnels: ["pre_book", "reactivation"],
     verticals: ["accommodation", "flights"],
@@ -494,7 +494,7 @@ export const mockHoldouts: MockHoldout[] = [
   {
     id: 4003, parentId: 4001, name: "push_engagement_holdout",
     description: "3% push holdout nested under the global marketing holdout, disjoint range on the parent salt",
-    purpose: "test", status: "Live",
+    purpose: "marketing", status: "Live",
     channels: ["push"],
     funnels: ["post_book"],
     verticals: ["accommodation"],

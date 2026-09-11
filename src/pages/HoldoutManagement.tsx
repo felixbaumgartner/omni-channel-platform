@@ -51,7 +51,7 @@ interface HoldoutCreateFormProps {
 function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [purpose, setPurpose] = useState<"marketing" | "test">("marketing");
+  const [purpose, setPurpose] = useState<"marketing" | "non_marketing">("marketing");
   const [channels, setChannels] = useState<MessageChannel[]>([]);
   const [funnels, setFunnels] = useState<string[]>([]);
   const [verticals, setVerticals] = useState<string[]>([]);
@@ -168,12 +168,12 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
               </div>
               <div className="radio-card-description">Holdout for incrementality measurement of marketing campaigns</div>
             </div>
-            <div className={`radio-card ${purpose === "test" ? "selected" : ""}`} onClick={() => setPurpose("test")} style={{ padding: 12 }}>
+            <div className={`radio-card ${purpose === "non_marketing" ? "selected" : ""}`} onClick={() => setPurpose("non_marketing")} style={{ padding: 12 }}>
               <div className="radio-card-header" style={{ marginBottom: 4 }}>
                 <div className="radio-card-radio" />
-                <div className="radio-card-title">Test</div>
+                <div className="radio-card-title">Non-Marketing</div>
               </div>
-              <div className="radio-card-description">Holdout for A/B testing or experimentation purposes</div>
+              <div className="radio-card-description">Holdout for non-marketing communications</div>
             </div>
           </div>
         </div>
