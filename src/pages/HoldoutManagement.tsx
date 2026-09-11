@@ -2,10 +2,6 @@ import { useState } from "react";
 import { CHANNEL_ICONS, CHANNEL_LABELS, type MessageChannel } from "../types";
 import { mockHoldouts, type MockHoldout } from "../data/mockData";
 
-const HASH_COLORS: Record<string, string> = {
-  email: "var(--color-email)", push: "var(--color-push)", sms: "var(--color-sms)", whatsapp: "var(--color-whatsapp)",
-};
-
 const ALL_CHANNELS: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
 const ALL_FUNNELS = ["pre_book", "post_book", "post_trip", "reactivation"] as const;
 const ALL_VERTICALS = ["accommodation", "flights", "attractions", "car_rental"] as const;
@@ -53,8 +49,6 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
   const [hashEnd, setHashEnd] = useState("5");
   const [salt, setSalt] = useState("");
   const [isReward, setIsReward] = useState(false);
-  const [crossChannelCoordinated, setCrossChannelCoordinated] = useState(true);
-  const [perChannelRanges, setPerChannelRanges] = useState<Record<string, { start: string; end: string }>>({});
 
   const [parentId, setParentId] = useState<number | "">("");
 
@@ -86,14 +80,7 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
   const canSave = nameValid && descValid && channels.length > 0 && funnels.length > 0 && verticals.length > 0 && hashPct > 0 && nestingErrors.length === 0;
 
   function toggleChannel(ch: MessageChannel) {
-    setChannels(prev => {
-      const next = prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch];
-      // Auto-populate per-channel ranges when adding
-      if (!prev.includes(ch)) {
-        setPerChannelRanges(r => ({ ...r, [ch]: { start: hashStart, end: hashEnd } }));
-      }
-      return next;
-    });
+    setChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
   }
 
   function toggleItem<T extends string>(list: T[], item: T, setter: (v: T[]) => void) {
@@ -101,16 +88,6 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
   }
 
   function handleSave() {
-    const pcrObj: Record<string, { start: number; end: number }> = {};
-    if (crossChannelCoordinated) {
-      channels.forEach(ch => { pcrObj[ch] = { start: Number(hashStart), end: Number(hashEnd) }; });
-    } else {
-      channels.forEach(ch => {
-        const r = perChannelRanges[ch];
-        pcrObj[ch] = r ? { start: Number(r.start), end: Number(r.end) } : { start: Number(hashStart), end: Number(hashEnd) };
-      });
-    }
-
     const holdout: MockHoldout = {
       id: 4000 + Date.now() % 1000,
       parentId: parent?.id,
@@ -125,8 +102,7 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
       salt: parent ? parent.salt : (salt || `${name}_${Date.now()}`),
       matchedCampaigns: 0,
       subscribersHeldOut: 0,
-      crossChannelCoordinated,
-      perChannelRanges: crossChannelCoordinated ? pcrObj : pcrObj,
+      crossChannelCoordinated: channels.length > 1,
     };
     onSave(holdout);
   }
@@ -285,78 +261,7 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
           </div>
         </div>
 
-        {/* Live preview bar */}
-        <div style={{ marginBottom: 8, fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)" }}>HASH RANGE PREVIEW</div>
-        <div className="holdout-hash-bar" style={{ height: 32 }}>
-          <div className="holdout-hash-fill" style={{
-            left: `${Number(hashStart)}%`,
-            width: `${hashPct}%`,
-            background: channels.length > 1 && crossChannelCoordinated
-              ? "linear-gradient(90deg, var(--color-email), var(--color-push), var(--color-sms), var(--color-whatsapp))"
-              : "var(--color-blue-500)",
-          }}>
-            <span className="holdout-hash-label" style={{ fontSize: 12 }}>{hashPct}%</span>
-          </div>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--color-gray-300)", marginTop: 2 }}>
-          <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
-        </div>
       </div>
-
-      {/* ── 5. Omni-Channel Coordination ── */}
-      {channels.length > 1 && (
-        <div className="bui-box tier-selection-appear">
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>Cross-Channel Holdout Coordination</div>
-              <p className="text-muted" style={{ marginTop: 4 }}>When enabled, the same hash range applies to all selected channels. A subscriber held out on email is also held out on push/SMS/WhatsApp.</p>
-            </div>
-            <label className="toggle-switch">
-              <input type="checkbox" checked={crossChannelCoordinated} onChange={e => setCrossChannelCoordinated(e.target.checked)} />
-              <span className="toggle-slider" />
-            </label>
-          </div>
-
-          {crossChannelCoordinated ? (
-            <div className="alert alert-info" style={{ marginBottom: 0 }}>
-              <div className="alert-title">Campaign holdout</div>
-              All {channels.length} channels use the same salt and hash range ({hashStart}% to {hashEnd}%), randomized on User ID. Evaluated once per subscriber per campaign, before channel routing. A held-out subscriber is a final no-send: sequential fallback does not fire and no other channel of that campaign sends. Measured at subscriber level across channels. In PROD each channel campaign runs this check separately, last after every other no-send reason.
-            </div>
-          ) : (
-            <div className="tier-selection-appear">
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Per-Channel Hash Ranges</div>
-              <p className="text-muted mb-8" style={{ fontSize: 12 }}>Configure different holdout percentages per channel.</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {channels.map(ch => {
-                  const r = perChannelRanges[ch] || { start: hashStart, end: hashEnd };
-                  return (
-                    <div key={ch} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ width: 100, fontSize: 13, fontWeight: 600 }}>{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
-                      <input className="form-input" type="number" min="0" max="100" style={{ width: 70 }} value={r.start}
-                        onChange={e => setPerChannelRanges(prev => ({ ...prev, [ch]: { ...r, start: e.target.value } }))} />
-                      <span className="text-muted">to</span>
-                      <input className="form-input" type="number" min="0" max="100" style={{ width: 70 }} value={r.end}
-                        onChange={e => setPerChannelRanges(prev => ({ ...prev, [ch]: { ...r, end: e.target.value } }))} />
-                      <div className="holdout-hash-bar" style={{ flex: 1, height: 14 }}>
-                        <div className="holdout-hash-fill" style={{
-                          left: `${Number(r.start)}%`,
-                          width: `${Math.max(0, Number(r.end) - Number(r.start))}%`,
-                          background: HASH_COLORS[ch] || "var(--color-blue-500)",
-                        }} />
-                      </div>
-                      <span style={{ width: 40, textAlign: "right", fontWeight: 700, fontSize: 13 }}>{Math.max(0, Number(r.end) - Number(r.start))}%</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="alert alert-warning" style={{ marginTop: 12, marginBottom: 0 }}>
-                <div className="alert-title">Channel holdout</div>
-                Each channel has its own range. A subscriber held out on one channel still receives the campaign on its other channels, so this measures that channel's contribution, not the campaign. A held-out channel is skipped, not retried: fallback does not move the send to the next channel.
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* ── 6. Advanced Settings ── */}
       <div className="bui-box">
@@ -373,7 +278,7 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
       {/* ── Summary & Save ── */}
       <div className="bui-box" style={{ background: "var(--color-gray-50)" }}>
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>Summary</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
           <div>
             <div className="text-muted" style={{ fontSize: 11 }}>Purpose</div>
             <div style={{ fontWeight: 600 }}>{purpose}</div>
@@ -385,10 +290,6 @@ function HoldoutCreateForm({ existing, onSave, onCancel }: HoldoutCreateFormProp
           <div>
             <div className="text-muted" style={{ fontSize: 11 }}>Holdout Size</div>
             <div style={{ fontWeight: 600 }}>{hashPct}%</div>
-          </div>
-          <div>
-            <div className="text-muted" style={{ fontSize: 11 }}>Coordination</div>
-            <div style={{ fontWeight: 600 }}>{channels.length > 1 ? (crossChannelCoordinated ? "Cross-Channel" : "Independent") : "Single Channel"}</div>
           </div>
         </div>
         {!canSave && (
