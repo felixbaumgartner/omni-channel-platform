@@ -2,12 +2,6 @@ import { useState } from "react";
 import { CHANNEL_ICONS, CHANNEL_LABELS, type MessageChannel } from "../types";
 import { mockHoldouts, type MockHoldout } from "../data/mockData";
 
-function formatNum(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(0) + "K";
-  return n.toString();
-}
-
 const HASH_COLORS: Record<string, string> = {
   email: "var(--color-email)", push: "var(--color-push)", sms: "var(--color-sms)", whatsapp: "var(--color-whatsapp)",
 };
@@ -421,14 +415,10 @@ export default function HoldoutManagement() {
   const [creating, setCreating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  const liveCount = holdouts.filter(h => h.status === "Live").length;
-  const crossChannelCount = holdouts.filter(h => h.crossChannelCoordinated).length;
-  const totalHeldOut = holdouts.filter(h => h.status === "Live").reduce((s, h) => s + h.subscribersHeldOut, 0);
-
   function handleCreate(holdout: MockHoldout) {
     setHoldouts(prev => [holdout, ...prev]);
     setCreating(false);
-    setToast(`Holdout group "${holdout.name}" created successfully!`);
+    setToast(`Holdout group "${holdout.name}" created`);
     setTimeout(() => setToast(null), 4000);
   }
 
@@ -437,11 +427,6 @@ export default function HoldoutManagement() {
       <div className="page-header">
         <div className="page-header-main">
           <h1 className="page-title">{creating ? "Create Holdout Group" : "Holdout Management"}</h1>
-          <p className="page-subtitle">
-            {creating
-              ? "Configure a new holdout group for incrementality measurement"
-              : "Channel-specific and cross-channel holdout groups for incrementality measurement"}
-          </p>
         </div>
         <div className="page-header-actions">
           {!creating && (
@@ -453,125 +438,29 @@ export default function HoldoutManagement() {
       {creating ? (
         <HoldoutCreateForm existing={holdouts} onSave={handleCreate} onCancel={() => setCreating(false)} />
       ) : (
-        <>
-          {/* KPIs */}
-          <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-            <div className="kpi-card">
-              <div className="kpi-label">Live Holdouts</div>
-              <div className="kpi-value">{liveCount}</div>
-              <div className="kpi-sub">{holdouts.length} total</div>
-            </div>
-            <div className="kpi-card">
-              <div className="kpi-label">Subscribers Held Out</div>
-              <div className="kpi-value">{formatNum(totalHeldOut)}</div>
-              <div className="kpi-sub">across all live holdouts</div>
-            </div>
-            <div className="omni-kpi-card">
-              <div className="kpi-label">Cross-Channel Coordinated</div>
-              <div className="kpi-value">{crossChannelCount}</div>
-              <div className="kpi-sub">one holdout across channels</div>
-            </div>
-            <div className="omni-kpi-card">
-              <div className="kpi-label">Matched Campaigns</div>
-              <div className="kpi-value">{holdouts.reduce((s, h) => s + h.matchedCampaigns, 0)}</div>
-              <div className="kpi-sub">campaigns affected by holdouts</div>
-            </div>
-          </div>
-
-          {/* Omni-channel info */}
-          <div className="info-banner">
-            <span className="info-banner-icon">&#128279;</span>
-            <span>
-              <strong>Omni-channel evaluation:</strong> In PROD every campaign is one channel, so each channel campaign checks its holdouts separately, last after all other no-send reasons, hashing UVI type + value + salt. Here the holdout is decided once per subscriber per campaign on User ID, before channel routing. A held-out subscriber is a final no-send and does not trigger fallback to another channel.
-            </span>
-          </div>
-
-          {/* Holdout List */}
-          <div className="results-card">
-            <div className="results-header">
-              <div className="results-count">{holdouts.length} Holdout Groups</div>
-            </div>
-            <div className="results-list">
-              {holdouts.map(h => (
-                <div key={h.id} className="list-card" style={{ flexDirection: "column" }}>
-                  <div className="list-card-content">
-                    <div className="list-card-title">
-                      <span>{h.name}</span>
-                      <span className={`badge ${h.status === "Live" ? "badge-constructive" : h.status === "Draft" ? "badge-draft" : "badge-archived"}`}>{h.status}</span>
-                      <span className="badge badge-outline">{h.purpose}</span>
-                      {h.crossChannelCoordinated && (
-                        <span className="badge-orchestration badge-orchestration--multi_channel">Cross-Channel Coordinated</span>
-                      )}
-                      {h.parentId && (
-                        <span className="badge badge-outline">Nested under {holdouts.find(p => p.id === h.parentId)?.name ?? h.parentId}</span>
-                      )}
-                    </div>
-                    <div className="list-card-subtitle">{h.description}</div>
-                    <div className="list-card-meta" style={{ marginTop: 4 }}>
-                      {h.channels.map(ch => (
-                        <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
-                      ))}
-                      <span className="badge badge-media">Funnels: {h.funnels.join(", ")}</span>
-                      <span className="badge badge-media">Verticals: {h.verticals.join(", ")}</span>
-                      <span className="badge badge-media">{h.matchedCampaigns} campaigns</span>
-                      {h.subscribersHeldOut > 0 && <span className="badge badge-media">{formatNum(h.subscribersHeldOut)} held out</span>}
-                    </div>
-                    <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>
-                      Randomized on {randomizationUvis(h.channels).join(" > ")} · salt {h.salt}
-                      {h.parentId ? " · checked only outside the parent range" : ""}
-                    </div>
-                    <div className="text-muted" style={{ marginTop: 2, fontSize: 12 }}>
-                      {h.crossChannelCoordinated
-                        ? "Campaign holdout: one decision per subscriber before routing, final no-send on every channel, measured across channels."
-                        : h.channels.length > 1
-                          ? "Channel holdout: per-channel decision, other channels of the campaign still send, measured per channel."
-                          : `Channel holdout on ${CHANNEL_LABELS[h.channels[0]]}: held-out channel is skipped, not retried on another channel.`}
-                    </div>
-
-                    {/* Hash Range Visualization */}
-                    <div style={{ marginTop: 10 }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 6 }}>
-                        HASH RANGE: {h.hashRange.start}% – {h.hashRange.end}% ({h.hashRange.end - h.hashRange.start}% of traffic)
-                      </div>
-                      <div className="holdout-hash-bar">
-                        <div className="holdout-hash-fill" style={{
-                          left: `${h.hashRange.start}%`,
-                          width: `${h.hashRange.end - h.hashRange.start}%`,
-                          background: h.crossChannelCoordinated ? "linear-gradient(90deg, var(--color-email), var(--color-push), var(--color-sms))" : "var(--color-blue-500)",
-                        }}>
-                          <span className="holdout-hash-label">{h.hashRange.end - h.hashRange.start}%</span>
-                        </div>
-                      </div>
-
-                      {/* Per-channel ranges for cross-channel holdouts */}
-                      {h.crossChannelCoordinated && h.perChannelRanges && (
-                        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--color-gray-500)" }}>PER-CHANNEL HASH RANGES (COORDINATED)</div>
-                          {Object.entries(h.perChannelRanges).map(([ch, range]) => (
-                            <div key={ch} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                              <span style={{ width: 60 }}>{CHANNEL_ICONS[ch as MessageChannel]} {ch}</span>
-                              <div className="holdout-hash-bar" style={{ flex: 1, height: 14 }}>
-                                <div className="holdout-hash-fill" style={{
-                                  left: `${range.start}%`,
-                                  width: `${range.end - range.start}%`,
-                                  background: HASH_COLORS[ch] || "var(--color-blue-500)",
-                                }} />
-                              </div>
-                              <span style={{ width: 50, textAlign: "right", fontWeight: 600 }}>{range.start}-{range.end}%</span>
-                            </div>
-                          ))}
-                          <div className="text-muted" style={{ fontSize: 11, marginTop: 2 }}>
-                            Same hash range across all channels ensures a subscriber held out on email is also held out on push/SMS/WhatsApp.
-                          </div>
-                        </div>
-                      )}
-                    </div>
+        <div className="results-card">
+          <div className="results-list">
+            {holdouts.map(h => (
+              <div key={h.id} className="list-card">
+                <div className="list-card-content">
+                  <div className="list-card-title">
+                    <span>{h.name}</span>
+                    <span className={`badge ${h.status === "Live" ? "badge-constructive" : h.status === "Draft" ? "badge-draft" : "badge-archived"}`}>{h.status}</span>
+                    {h.parentId && (
+                      <span className="badge badge-outline">Nested under {holdouts.find(p => p.id === h.parentId)?.name ?? h.parentId}</span>
+                    )}
+                  </div>
+                  <div className="list-card-meta" style={{ marginTop: 4 }}>
+                    {h.channels.map(ch => (
+                      <span key={ch} className="badge badge-outline">{CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}</span>
+                    ))}
+                    <span className="badge badge-media">{h.hashRange.end - h.hashRange.start}% held out</span>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        </>
+        </div>
       )}
 
       {toast && <div className="toast">{toast}</div>}
