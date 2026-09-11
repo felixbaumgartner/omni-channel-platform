@@ -2,6 +2,13 @@ import { useState } from "react";
 import { CHANNEL_ICONS, CHANNEL_LABELS, type MessageChannel } from "../types";
 import { mockHoldouts, type MockHoldout } from "../data/mockData";
 
+/* Same shape as PROD: 10 base36 characters from a random byte array. */
+function generateSalt(): string {
+  const bytes = new Uint8Array(10);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => (b % 36).toString(36)).join("");
+}
+
 const ALL_CHANNELS: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
 const ALL_FUNNELS = ["pre_book", "post_book", "post_trip", "reactivation"] as const;
 const ALL_VERTICALS = ["accommodation", "flights", "attractions", "car_rental"] as const;
@@ -39,7 +46,7 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
   const [verticals, setVerticals] = useState<string[]>([]);
   const [hashStart, setHashStart] = useState("0");
   const [hashEnd, setHashEnd] = useState("5");
-  const [salt, setSalt] = useState("");
+  const [salt] = useState(generateSalt);
   const [isReward, setIsReward] = useState(false);
 
   const uvis = randomizationUvis(channels);
@@ -68,7 +75,7 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
       funnels,
       verticals,
       hashRange: { start: Number(hashStart), end: Number(hashEnd) },
-      salt: salt || `${name}_${Date.now()}`,
+      salt,
       matchedCampaigns: 0,
       subscribersHeldOut: 0,
       crossChannelCoordinated: channels.length > 1,
@@ -191,8 +198,8 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div className="form-group">
             <label className="form-label">Salt</label>
-            <input className="form-input" placeholder="Auto-generated if empty" value={salt} onChange={e => setSalt(e.target.value)} />
-            <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Randomization seed for consistent hashing. Same salt = same subscriber assignment.</div>
+            <input className="form-input" value={salt} readOnly />
+            <div className="text-muted" style={{ marginTop: 4, fontSize: 12 }}>Auto-generated randomization seed for consistent hashing. Same salt = same subscriber assignment.</div>
           </div>
         </div>
       </div>
