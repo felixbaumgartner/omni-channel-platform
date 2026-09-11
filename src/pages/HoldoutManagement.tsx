@@ -15,13 +15,13 @@ const ALL_VERTICALS = ["accommodation", "flights", "attractions", "car_rental"] 
 
 /* Mirrors PROD: a holdout hashes UVI type + UVI value + salt, and each
    channel can only resolve certain UVI types. Priority order is fixed. */
-const UVI_PRIORITY = ["User ID", "Soylent Email ID", "Device ID"] as const;
+const UVI_PRIORITY = ["BUID", "User ID", "Soylent Email ID", "Device ID"] as const;
 type UviType = typeof UVI_PRIORITY[number];
 const CHANNEL_UVIS: Record<MessageChannel, UviType[]> = {
-  email: ["User ID", "Soylent Email ID"],
-  push: ["User ID", "Device ID"],
-  sms: ["User ID"],
-  whatsapp: ["User ID"],
+  email: ["BUID", "User ID", "Soylent Email ID"],
+  push: ["BUID", "User ID", "Device ID"],
+  sms: ["BUID", "User ID"],
+  whatsapp: ["BUID", "User ID"],
 };
 
 function randomizationUvis(channels: MessageChannel[]): UviType[] {
@@ -126,7 +126,7 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
               {uvis.map((u, i) => <span key={u} className="badge badge-outline">{i + 1}. {u}</span>)}
             </div>
             <div className="text-muted" style={{ fontSize: 12, marginTop: 6 }}>
-              The hash is UVI type + UVI value + salt. Cross-channel coordination only holds for subscribers who resolve to User ID on every channel. A subscriber known only by {channels.includes("email") ? "Soylent Email ID" : "a channel identifier"}{channels.includes("push") ? " or Device ID" : ""} lands in a different bucket per channel, so that fallback share is measured per channel, not per campaign.
+              The hash is UVI type + UVI value + salt. Cross-channel coordination only holds for subscribers who resolve to BUID or User ID on every channel. A subscriber known only by {channels.includes("email") ? "Soylent Email ID" : "a channel identifier"}{channels.includes("push") ? " or Device ID" : ""} lands in a different bucket per channel, so that fallback share is measured per channel, not per campaign.
             </div>
           </div>
         )}
