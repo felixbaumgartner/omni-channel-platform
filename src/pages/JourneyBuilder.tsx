@@ -33,7 +33,6 @@ export default function JourneyBuilder() {
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [entryChannel, setEntryChannel] = useState<MessageChannel[]>([]);
   const [canReenter, setCanReenter] = useState(false);
   const [exclusive, setExclusive] = useState(false);
 
@@ -216,24 +215,12 @@ export default function JourneyBuilder() {
   }
 
   /**
-   * Decide which channels a freshly-added Multi-Channel step starts with.
-   *
-   * Inputs available:
-   *   - entryChannel: MessageChannel[]   journey-level entry channels selected above
-   * Return: MessageChannel[]             initial content selection for the new step
-   *
-   * Phase 1 (Best Channel off): there is no journey-level Entry Channel, so the
-   * step itself owns the channel decision. Start empty and let the step's own
-   * "pick at least one piece of content" prompt drive an explicit choice.
-   *
-   * Phase 2+ (Best Channel on): seed from the Entry Channel routing pool when it
-   * has 2+ channels, otherwise fall back to all four.
+   * A freshly-added Multi-Channel step starts with no content selected in every
+   * phase. There is no journey-level entry content, so the step itself owns the
+   * choice and its "pick at least one piece of content" prompt drives it.
    */
   function getInitialMultiChannelChannels(): MessageChannel[] {
-    if (!showBestChannel) return [];
-    return entryChannel.length >= 2
-      ? entryChannel
-      : (["email", "push", "sms", "whatsapp"] as MessageChannel[]);
+    return [];
   }
 
 
@@ -574,16 +561,6 @@ export default function JourneyBuilder() {
 
   const AUTO_BEST_CHANNEL_ID = "auto_best_channel";
 
-  function toggleEntryChannel(ch: MessageChannel) {
-    setEntryChannel(prev => {
-      const next = prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch];
-      if (showBestChannel) {
-        setBestChannelPool(next.length >= 2 ? next : []);
-      }
-      return next;
-    });
-  }
-
   function moveBestChannel(index: number, direction: "up" | "down") {
     const target = direction === "up" ? index - 1 : index + 1;
     if (target < 0 || target >= bestChannelPool.length) return;
@@ -663,43 +640,6 @@ export default function JourneyBuilder() {
             {/* Entry & Scheduling */}
             <div style={{ fontWeight: 600, fontSize: 12, color: "var(--color-gray-500)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>Entry & Scheduling</div>
 
-            {showBestChannel && (
-            <div style={{ marginBottom: 12 }}>
-              <div className="journey-settings-label" style={{ marginBottom: 6 }}>Entry Content</div>
-              <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
-                {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
-                  <div
-                    key={ch}
-                    className={`channel-selector-card ${entryChannel.includes(ch) ? "selected" : ""}`}
-                    style={{ padding: 10 }}
-                    onClick={() => toggleEntryChannel(ch)}
-                  >
-                    <div className="channel-selector-check">{entryChannel.includes(ch) ? "\u2713" : ""}</div>
-                    <div className="channel-selector-icon" style={{ fontSize: 20, marginBottom: 4 }}>{CHANNEL_ICONS[ch]}</div>
-                    <div className="channel-selector-label" style={{ fontSize: 11 }}>{CHANNEL_LABELS[ch]} Content</div>
-                  </div>
-                ))}
-              </div>
-              {entryChannel.length === 1 && (
-                <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
-                  <span className="info-banner-icon">&#128274;</span>
-                  <span><strong>Single content</strong> &mdash; only {CHANNEL_LABELS[entryChannel[0]]} content. No routing or fallback needed.</span>
-                </div>
-              )}
-              {showBestChannel && entryChannel.length >= 2 && (
-                <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
-                  <span className="info-banner-icon">&#10024;</span>
-                  <span><strong>Best Channel</strong> &mdash; rule-based routing selects from {entryChannel.length} pieces of content. Fallback order applies when no signal.</span>
-                </div>
-              )}
-              {!showBestChannel && entryChannel.length >= 2 && (
-                <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
-                  <span className="info-banner-icon">&#9989;</span>
-                  <span><strong>Multi-Channel</strong> &mdash; subscribers are eligible to receive the message on any of the {entryChannel.length} pieces of selected content ({entryChannel.map(c => CHANNEL_LABELS[c]).join(", ")}). Add a Send step below for each piece of content you want to deliver.</span>
-                </div>
-              )}
-            </div>
-            )}
             <div className="journey-settings-row">
               <span className="journey-settings-label">Entry Window Start</span>
               <input className="form-input" type="date" style={{ width: 150, fontSize: 12 }} value={startDate} onChange={e => setStartDate(e.target.value)} />
@@ -817,7 +757,7 @@ export default function JourneyBuilder() {
                       <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStep(step.id); }}>&times;</button>
                     )}
                     {step.id === AUTO_BEST_CHANNEL_ID && (
-                      <span title="Auto-added from entry content selection" style={{ fontSize: 10, color: "var(--color-gray-400)", marginLeft: "auto", paddingRight: 8 }}>&#128274;</span>
+                      <span title="Auto-added best channel step" style={{ fontSize: 10, color: "var(--color-gray-400)", marginLeft: "auto", paddingRight: 8 }}>&#128274;</span>
                     )}
                   </div>
                   {step.type === "condition" && decisionStates[step.id]?.applied && (() => {
