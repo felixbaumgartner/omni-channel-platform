@@ -106,22 +106,22 @@ function HoldoutCreateForm({ onSave, onCancel }: HoldoutCreateFormProps) {
         </div>
       </div>
 
-      {/* ── 2. Channel Selection ── */}
+      {/* ── 2. Content Selection ── */}
       <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Selection <span style={{ color: "var(--color-red-600)" }}>*</span></div>
-        <p className="text-muted mb-16">Select which channels this holdout group applies to. PROD holdouts support Email and Push today.</p>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Content Selection <span style={{ color: "var(--color-red-600)" }}>*</span></div>
+        <p className="text-muted mb-16">Select which content this holdout group applies to. PROD holdouts support Email and Push content today.</p>
         <div className="channel-selector-grid">
           {ALL_CHANNELS.map(ch => (
             <div key={ch} className={`channel-selector-card ${channels.includes(ch) ? "selected" : ""}`} onClick={() => toggleChannel(ch)}>
               <div className="channel-selector-check">{channels.includes(ch) ? "\u2713" : ""}</div>
               <div className="channel-selector-icon">{CHANNEL_ICONS[ch]}</div>
-              <div className="channel-selector-label">{CHANNEL_LABELS[ch]}</div>
+              <div className="channel-selector-label">{CHANNEL_LABELS[ch]} Content</div>
             </div>
           ))}
         </div>
         {channels.length > 0 && (
           <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 6 }}>RANDOMIZATION IDENTITY (DERIVED FROM CHANNELS, PRIORITY ORDER)</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-gray-500)", marginBottom: 6 }}>RANDOMIZATION IDENTITY (DERIVED FROM SELECTED CONTENT, PRIORITY ORDER)</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {uvis.map((u, i) => <span key={u} className="badge badge-outline">{i + 1}. {u}</span>)}
             </div>

@@ -82,8 +82,8 @@ export default function AudienceEstimationCreate() {
     setChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
   };
 
-  // The fallback ladder is the selected channels, ordered. Explicit reorders are kept;
-  // newly selected channels join at the bottom in the platform default order.
+  // The fallback ladder is the selected content, ordered. Explicit reorders are kept;
+  // newly selected content joins at the bottom in the platform default order.
   const priority: MessageChannel[] = [
     ...priorityOverride.filter(c => channels.includes(c)),
     ...DEFAULT_CHANNEL_ORDER.filter(c => channels.includes(c) && !priorityOverride.includes(c)),
@@ -452,10 +452,10 @@ export default function AudienceEstimationCreate() {
         </div>
       </div>
 
-      {/* Section 2: Channel Selection */}
+      {/* Section 2: Content Selection */}
       <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Selection</div>
-        <p className="text-muted mb-16">Select which channels to include in the audience estimation.</p>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Content Selection</div>
+        <p className="text-muted mb-16">Select which content to include in the audience estimation.</p>
         <div className="channel-selector-grid">
           {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
             <div
@@ -465,7 +465,7 @@ export default function AudienceEstimationCreate() {
             >
               <div className="channel-selector-check">{channels.includes(ch) ? "✓" : ""}</div>
               <div className="channel-selector-icon">{CHANNEL_ICONS[ch]}</div>
-              <div className="channel-selector-label">{CHANNEL_LABELS[ch]}</div>
+              <div className="channel-selector-label">{CHANNEL_LABELS[ch]} Content</div>
             </div>
           ))}
         </div>
@@ -475,7 +475,7 @@ export default function AudienceEstimationCreate() {
       {channels.length > 1 && (
         <div className="bui-box tier-selection-appear">
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Delivery Mode</div>
-          <p className="text-muted mb-16">Choose how messages are routed across the selected channels.</p>
+          <p className="text-muted mb-16">Choose how messages are routed across the selected content.</p>
           <div className="radio-card-group">
             {showBestChannel && (
             <div className={`radio-card ${orchestrationMode === "best_channel" ? "selected" : ""}`} onClick={() => setOrchestrationMode("best_channel")}>
@@ -494,7 +494,7 @@ export default function AudienceEstimationCreate() {
                 <div className="radio-card-title">Multi-Channel</div>
               </div>
               <div className="radio-card-description">
-                Estimates reach assuming all selected channels fire for each eligible subscriber. Projects total volume across every available channel.
+                Estimates reach assuming all selected content fires for each eligible subscriber. Projects total volume across every available channel.
               </div>
             </div>
             <div className={`radio-card ${orchestrationMode === "sequential" ? "selected" : ""}`} onClick={() => setOrchestrationMode("sequential")}>

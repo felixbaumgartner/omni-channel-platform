@@ -5,7 +5,7 @@ import ClassificationQuestionnaire, { type Classification } from "../components/
 import BaseContentSection from "../components/BaseContentSection";
 import ChannelSpecificRules, { ChannelEligibilityRules } from "../components/ChannelSpecificRules";
 import { usePhase } from "../context/PhaseContext";
-import { defaultHeuristicRules, DEFAULT_CHANNEL_ORDER, mockTriggers, type PreferenceRule } from "../data/mockData";
+import { defaultHeuristicRules, mockTriggers, type PreferenceRule } from "../data/mockData";
 
 type DeliveryMode = "best_channel" | "multi_channel" | "sequential" | "experiment";
 
@@ -20,7 +20,6 @@ export default function CampaignCreate() {
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>(showBestChannel ? "best_channel" : "multi_channel");
 
   const [heuristicRules] = useState<PreferenceRule[]>(defaultHeuristicRules.filter(r => r.active));
-  const [bestChannelContentEnabled, setBestChannelContentEnabled] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   // New omni-channel state
@@ -278,78 +277,24 @@ export default function CampaignCreate() {
             </div>
           </div>
 
-          {/* Channel Selection */}
+          {/* Content Selection */}
           <div className="bui-box">
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Selection</div>
-            <p className="text-muted mb-16">Select channels for this campaign. A single campaign can target all channels.</p>
-            {showBestChannel && (
-            <div className="info-banner" style={{ marginBottom: 16, flexDirection: "column", alignItems: "flex-start" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span className="info-banner-icon">&#9889;</span>
-                <strong>The system will automatically select the best channel per subscriber</strong>
-              </div>
-              <div style={{ paddingLeft: 32 }}>
-                <div className="text-muted" style={{ fontSize: 13, marginTop: 6, marginBottom: 8 }}>Enable the toggle below to configure content for all channels, or skip it and select specific channels using the cards below.</div>
-                <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10 }}>
-                  <label className="toggle-switch toggle-switch--sm">
-                    <input type="checkbox" checked={bestChannelContentEnabled} onChange={() => {
-                      if (!bestChannelContentEnabled) {
-                        const allChannels: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
-                        setSelectedChannels(allChannels);
-                        setChannelPriority(allChannels);
-                      } else {
-                        setSelectedChannels([]);
-                        setChannelPriority([]);
-                      }
-                      setBestChannelContentEnabled(prev => !prev);
-                    }} />
-                    <span className="toggle-slider" />
-                  </label>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>Configure content for all channels</span>
-                </div>
-                {bestChannelContentEnabled && (
-                  <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>Content templates for all 4 channels will be available below. The system decides which channel to use at send time.</div>
-                )}
-                <div style={{ fontSize: 13, marginTop: 12, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                  Rule-based routing (evaluated in order):
-                  <span className="info-tooltip-trigger" style={{ cursor: "help", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: "var(--color-blue-100)", color: "var(--color-blue-600)", fontSize: 11, fontWeight: 700, position: "relative" }}>
-                    i
-                    <span className="info-tooltip-content">Recency-weighted click rate across 7d / 30d / 90d windows. Recent activity counts more, but long-term patterns outweigh a single recent interaction. If no rule matches, the platform default priority order is used, and the first channel the subscriber is opted in to and reachable on is selected. If no channel qualifies, the message is suppressed.</span>
-                  </span>
-                </div>
-                <ol style={{ margin: "4px 0 4px 18px", padding: 0, fontSize: 13, lineHeight: 1.7 }}>
-                  {defaultHeuristicRules.filter(r => r.active).map(r => (
-                    <li key={r.id}><strong>{r.name}</strong></li>
-                  ))}
-                </ol>
-                <div style={{ fontSize: 13, marginTop: 6, padding: "6px 12px", background: "rgba(0,53,128,0.06)", borderRadius: 6 }}>
-                  Fallback order: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" > ")}</strong> &middot; <a href="/channel-preferences" style={{ color: "var(--color-blue-600)" }}>Customize</a>
-                </div>
-              </div>
-            </div>
-            )}
-            {showBestChannel && (
-            <div className="text-muted" style={{ textAlign: "center", margin: "8px 0 16px", fontSize: 13, fontStyle: "italic" }}>&mdash; or select specific channels below &mdash;</div>
-            )}
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Content Selection</div>
+            <p className="text-muted mb-16">Select the content for this campaign. A single campaign can carry content for every channel.</p>
             <div className="channel-selector-grid">
               {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
                 <div key={ch} className={`channel-selector-card ${selectedChannels.includes(ch) ? "selected" : ""}`} onClick={() => toggleChannel(ch)}>
                   <div className="channel-selector-check">{selectedChannels.includes(ch) ? "✓" : ""}</div>
                   <div className="channel-selector-icon">{CHANNEL_ICONS[ch]}</div>
-                  <div className="channel-selector-label">{CHANNEL_LABELS[ch]}</div>
+                  <div className="channel-selector-label">{CHANNEL_LABELS[ch]} Content</div>
                 </div>
               ))}
             </div>
-            {bestChannelContentEnabled && selectedChannels.length > 0 && selectedChannels.length < 4 && (
-              <div className="alert alert-warning tier-selection-appear" style={{ marginTop: 12 }}>
-                <strong>Channel mismatch:</strong> "Configure content for all channels" is enabled, but only {selectedChannels.length} of 4 channels are selected. Either turn off the toggle above and use manual channel selection, or re-select all 4 channels.
-              </div>
-            )}
             {selectedChannels.length === 1 && (
               <div className="info-banner tier-selection-appear" style={{ marginTop: 16 }}>
                 <span className="info-banner-icon">&#128274;</span>
                 <span>
-                  <strong>Fixed Channel &mdash; {CHANNEL_LABELS[selectedChannels[0]]} only.</strong> The message will be sent exclusively on {CHANNEL_LABELS[selectedChannels[0]]}. No routing or fallback. Subscribers who are unreachable or have not consented to {CHANNEL_LABELS[selectedChannels[0]]} will be suppressed.
+                  <strong>Single content &mdash; {CHANNEL_LABELS[selectedChannels[0]]} only.</strong> Only {CHANNEL_LABELS[selectedChannels[0]]} content is selected, so the message will be sent exclusively on {CHANNEL_LABELS[selectedChannels[0]]}. No routing or fallback. Subscribers who are unreachable or have not consented to {CHANNEL_LABELS[selectedChannels[0]]} will be suppressed.
                 </span>
               </div>
             )}
@@ -357,7 +302,7 @@ export default function CampaignCreate() {
               <div className="info-banner tier-selection-appear" style={{ marginTop: 16 }}>
                 <span className="info-banner-icon">&#128279;</span>
                 <span>
-                  <strong>One campaign, {selectedChannels.length} channels.</strong> In PROD each channel is a separate campaign. Here a single campaign owns all selected channels, with one priority, one holdout and per-channel content.
+                  <strong>One campaign, {selectedChannels.length} pieces of content.</strong> In PROD each channel is a separate campaign. Here a single campaign owns all selected content, with one priority, one holdout and one piece of content per channel.
                 </span>
               </div>
             )}
@@ -464,13 +409,13 @@ export default function CampaignCreate() {
 
               </div>
 
-              {/* ── Channel Selection (Delivery Mode) ── */}
+              {/* ── Content Selection (Delivery Mode) ── */}
               {selectedChannels.length > 1 && (
                 <div className="eligibility-stage" style={{ marginTop: 16 }}>
                   <div className="eligibility-stage-header">
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 15 }}>Channel Selection</div>
-                      <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Of the eligible channels, how should the system choose which to send?</div>
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>Content Selection</div>
+                      <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Of the eligible content, how should the system choose which to send?</div>
                     </div>
                   </div>
 
@@ -633,7 +578,7 @@ export default function CampaignCreate() {
           )}
 
           {/* Base Content */}
-          <BaseContentSection selectedChannels={selectedChannels.length > 0 ? selectedChannels : bestChannelContentEnabled ? (["email", "push", "sms", "whatsapp"] as MessageChannel[]) : []} />
+          <BaseContentSection selectedChannels={selectedChannels} />
 
           {/* Compliance & Reporting */}
           <div className="bui-box">

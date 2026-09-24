@@ -209,7 +209,7 @@ export function ChannelEligibilityRules({ selectedChannels, enabledRules, onTogg
   if (activeGroups.length === 0) {
     return (
       <div className="text-muted" style={{ padding: 16, textAlign: "center", fontSize: 13 }}>
-        Select at least one channel above to configure channel eligibility rules.
+        Select at least one piece of content above to configure channel eligibility rules.
       </div>
     );
   }

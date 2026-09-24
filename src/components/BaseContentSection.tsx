@@ -272,7 +272,7 @@ export default function BaseContentSection({ selectedChannels }: BaseContentSect
     });
   }
 
-  // Keep active tab in sync with selected channels
+  // Keep active tab in sync with selected content
   if (selectedChannels.length > 0 && !selectedChannels.includes(activeTab)) {
     setActiveTab(selectedChannels[0]);
   }

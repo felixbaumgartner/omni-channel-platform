@@ -34,7 +34,6 @@ export default function JourneyBuilder() {
   const [toast, setToast] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [entryChannel, setEntryChannel] = useState<MessageChannel[]>([]);
-  const [entryContentEnabled, setEntryContentEnabled] = useState(false);
   const [canReenter, setCanReenter] = useState(false);
   const [exclusive, setExclusive] = useState(false);
 
@@ -45,7 +44,6 @@ export default function JourneyBuilder() {
   const [exitRule, setExitRule] = useState("");
   const [heuristicRules] = useState<PreferenceRule[]>(defaultHeuristicRules.filter(r => r.active));
   const [bestChannelPool, setBestChannelPool] = useState<MessageChannel[]>([]);
-  const [bestChannelContentEnabled, setBestChannelContentEnabled] = useState(false);
   const [channelExperiments, setChannelExperiments] = useState<Record<string, { enabled: boolean; tag: string; variants: string[] }>>({});
   const [journeyRules, setJourneyRules] = useState<EligibilityRule[]>([]);
   const [showJourneyRuleMenu, setShowJourneyRuleMenu] = useState(false);
@@ -222,11 +220,11 @@ export default function JourneyBuilder() {
    *
    * Inputs available:
    *   - entryChannel: MessageChannel[]   journey-level entry channels selected above
-   * Return: MessageChannel[]             initial channel selection for the new step
+   * Return: MessageChannel[]             initial content selection for the new step
    *
    * Phase 1 (Best Channel off): there is no journey-level Entry Channel, so the
    * step itself owns the channel decision. Start empty and let the step's own
-   * "select at least one channel" prompt drive an explicit choice.
+   * "pick at least one piece of content" prompt drive an explicit choice.
    *
    * Phase 2+ (Best Channel on): seed from the Entry Channel routing pool when it
    * has 2+ channels, otherwise fall back to all four.
@@ -296,8 +294,8 @@ export default function JourneyBuilder() {
   }
 
   /**
-   * The ladder is always the selected channels, ordered. Any channel the user has
-   * explicitly reordered keeps its position; newly selected channels are appended
+   * The ladder is always the selected content, ordered. Any channel the user has
+   * explicitly reordered keeps its position; newly selected content is appended
    * in the platform default order.
    */
   function getChannelPriority(stepId: string): MessageChannel[] {
@@ -667,50 +665,7 @@ export default function JourneyBuilder() {
 
             {showBestChannel && (
             <div style={{ marginBottom: 12 }}>
-              <div className="journey-settings-label" style={{ marginBottom: 6 }}>Entry Channel</div>
-              {showBestChannel && (
-              <div className="info-banner" style={{ marginBottom: 8, flexDirection: "column", alignItems: "flex-start", fontSize: 11 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span className="info-banner-icon">&#9889;</span>
-                  <strong style={{ fontSize: 12 }}>The system will automatically select the best channel per subscriber</strong>
-                </div>
-                <div style={{ paddingLeft: 28, marginTop: 6 }}>
-                  <div className="text-muted" style={{ fontSize: 11, marginBottom: 6 }}>Enable the toggle below to configure content for all channels, or skip it and select specific channels using the cards below.</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <label className="toggle-switch toggle-switch--sm">
-                      <input type="checkbox" checked={entryContentEnabled} onChange={() => {
-                        if (!entryContentEnabled) {
-                          const allChannels: MessageChannel[] = ["email", "push", "sms", "whatsapp"];
-                          setEntryChannel(allChannels);
-                          setBestChannelPool(allChannels);
-                        } else {
-                          setEntryChannel([]);
-                          setBestChannelPool([]);
-                        }
-                        setEntryContentEnabled(prev => !prev);
-                      }} />
-                      <span className="toggle-slider" />
-                    </label>
-                    <span style={{ fontWeight: 600 }}>Configure content for all channels</span>
-                  </div>
-                  {entryContentEnabled && (
-                    <div className="text-muted" style={{ marginTop: 4 }}>Content templates for all 4 channels will be shown below. The system picks the channel at send time.</div>
-                  )}
-                  <div style={{ marginTop: 6, marginBottom: 4 }}>Rule-based routing (evaluated in order):</div>
-                  <ol style={{ margin: "2px 0 2px 16px", padding: 0, lineHeight: 1.7 }}>
-                    {defaultHeuristicRules.filter(r => r.active).map(r => (
-                      <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
-                    ))}
-                  </ol>
-                  <div style={{ marginTop: 6, padding: "4px 8px", background: "rgba(0,53,128,0.06)", borderRadius: 4 }}>
-                    Fallback order: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" \u2192 ")}</strong>
-                  </div>
-                </div>
-              </div>
-              )}
-              {showBestChannel && (
-              <div className="text-muted" style={{ textAlign: "center", margin: "4px 0 8px", fontSize: 11, fontStyle: "italic" }}>&mdash; or select specific channels below &mdash;</div>
-              )}
+              <div className="journey-settings-label" style={{ marginBottom: 6 }}>Entry Content</div>
               <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
                 {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
                   <div
@@ -721,31 +676,26 @@ export default function JourneyBuilder() {
                   >
                     <div className="channel-selector-check">{entryChannel.includes(ch) ? "\u2713" : ""}</div>
                     <div className="channel-selector-icon" style={{ fontSize: 20, marginBottom: 4 }}>{CHANNEL_ICONS[ch]}</div>
-                    <div className="channel-selector-label" style={{ fontSize: 11 }}>{CHANNEL_LABELS[ch]}</div>
+                    <div className="channel-selector-label" style={{ fontSize: 11 }}>{CHANNEL_LABELS[ch]} Content</div>
                   </div>
                 ))}
               </div>
-              {entryContentEnabled && entryChannel.length > 0 && entryChannel.length < 4 && (
-                <div className="alert alert-warning tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
-                  <strong>Channel mismatch:</strong> "Configure content for all channels" is enabled, but only {entryChannel.length} of 4 channels are selected. Either turn off the toggle above and use manual channel selection, or re-select all 4 channels.
-                </div>
-              )}
               {entryChannel.length === 1 && (
                 <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                   <span className="info-banner-icon">&#128274;</span>
-                  <span><strong>Fixed Channel</strong> &mdash; only {CHANNEL_LABELS[entryChannel[0]]}. No routing or fallback needed.</span>
+                  <span><strong>Single content</strong> &mdash; only {CHANNEL_LABELS[entryChannel[0]]} content. No routing or fallback needed.</span>
                 </div>
               )}
               {showBestChannel && entryChannel.length >= 2 && (
                 <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                   <span className="info-banner-icon">&#10024;</span>
-                  <span><strong>Best Channel</strong> &mdash; rule-based routing selects from {entryChannel.length} channels. Fallback order applies when no signal.</span>
+                  <span><strong>Best Channel</strong> &mdash; rule-based routing selects from {entryChannel.length} pieces of content. Fallback order applies when no signal.</span>
                 </div>
               )}
               {!showBestChannel && entryChannel.length >= 2 && (
                 <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                   <span className="info-banner-icon">&#9989;</span>
-                  <span><strong>Multi-Channel</strong> &mdash; subscribers are eligible to receive the message on any of the {entryChannel.length} selected channels ({entryChannel.map(c => CHANNEL_LABELS[c]).join(", ")}). Add a Send step below for each channel you want to deliver on.</span>
+                  <span><strong>Multi-Channel</strong> &mdash; subscribers are eligible to receive the message on any of the {entryChannel.length} pieces of selected content ({entryChannel.map(c => CHANNEL_LABELS[c]).join(", ")}). Add a Send step below for each piece of content you want to deliver.</span>
                 </div>
               )}
             </div>
@@ -867,7 +817,7 @@ export default function JourneyBuilder() {
                       <button className="journey-step-remove" onClick={e => { e.stopPropagation(); removeStep(step.id); }}>&times;</button>
                     )}
                     {step.id === AUTO_BEST_CHANNEL_ID && (
-                      <span title="Auto-added from entry channel selection" style={{ fontSize: 10, color: "var(--color-gray-400)", marginLeft: "auto", paddingRight: 8 }}>&#128274;</span>
+                      <span title="Auto-added from entry content selection" style={{ fontSize: 10, color: "var(--color-gray-400)", marginLeft: "auto", paddingRight: 8 }}>&#128274;</span>
                     )}
                   </div>
                   {step.type === "condition" && decisionStates[step.id]?.applied && (() => {
@@ -1147,13 +1097,13 @@ export default function JourneyBuilder() {
                               </select>
                             </div>
                           </div>
-                          {/* Channel Selection */}
+                          {/* Content Selection */}
                           <div className="form-group">
-                            <label className="form-label">Channels</label>
+                            <label className="form-label">Content Selection</label>
                             <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>
                               {isSequential
-                                ? "Select the channels that make up the fallback ladder, then order them below. Each channel gets its own content."
-                                : "Pick one channel for a single-channel send, or several to choose how they are used. Each channel gets its own content below."}
+                                ? "Select the content that makes up the fallback ladder, then order it below. Each piece of content is delivered on its own channel."
+                                : "Pick one piece of content for a single-channel send, or several to choose how they are used. Configure each piece of content below."}
                             </p>
                             <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
                               {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
@@ -1165,29 +1115,29 @@ export default function JourneyBuilder() {
                                 >
                                   <div className="channel-selector-check">{stepChannels.includes(ch) ? "✓" : ""}</div>
                                   <div className="channel-selector-icon" style={{ fontSize: 20, marginBottom: 4 }}>{CHANNEL_ICONS[ch]}</div>
-                                  <div className="channel-selector-label" style={{ fontSize: 11 }}>{CHANNEL_LABELS[ch]}</div>
+                                  <div className="channel-selector-label" style={{ fontSize: 11 }}>{CHANNEL_LABELS[ch]} Content</div>
                                 </div>
                               ))}
                             </div>
                             {stepChannels.length === 0 && (
                               <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                                 <span className="info-banner-icon">&#9432;</span>
-                                <span>Pick at least one channel to configure its content.</span>
+                                <span>Pick at least one piece of content to configure it.</span>
                               </div>
                             )}
                             {stepChannels.length === 1 && (
                               <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                                 <span className="info-banner-icon">&#128274;</span>
-                                <span><strong>Single channel.</strong> This message goes out on {CHANNEL_LABELS[stepChannels[0]]} only. Add a second channel to choose a delivery mode.</span>
+                                <span><strong>Single content.</strong> This message goes out on {CHANNEL_LABELS[stepChannels[0]]} only. Add a second piece of content to choose a delivery mode.</span>
                               </div>
                             )}
                           </div>
 
-                          {/* Channel Selection (delivery mode), mirrors the Campaign create page */}
+                          {/* Content Selection (delivery mode), mirrors the Campaign create page */}
                           {stepChannels.length >= 2 && (
                           <div className="form-group tier-selection-appear">
-                            <div style={{ fontWeight: 600, fontSize: 14 }}>Channel Selection</div>
-                            <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Of the eligible channels, how should the system choose which to send?</p>
+                            <div style={{ fontWeight: 600, fontSize: 14 }}>Content Selection</div>
+                            <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Of the eligible content, how should the system choose which to send?</p>
                             <div className="radio-card-group">
                               {showBestChannel && (
                               <div className={`radio-card ${mode === "best_channel" ? "selected" : ""}`} onClick={() => changeMultiChannelMode(step.id, "best_channel")}>
@@ -1577,10 +1527,10 @@ export default function JourneyBuilder() {
                     {step.type === "best_channel" && (
                       <>
                         {renderActivationMethod(step.id)}
-                        {/* Channel Pool Selection */}
+                        {/* Content Pool Selection */}
                         <div className="form-group">
-                          <label className="form-label">Channel Selection</label>
-                          <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Select which channels to include. The routing rule picks the best channel per subscriber; the fallback order is used when the rule has no signal.</p>
+                          <label className="form-label">Content Selection</label>
+                          <p className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Select which content to include. The routing rule picks the best content per subscriber; the fallback order is used when the rule has no signal.</p>
                           <div className="channel-selector-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
                             {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
                               <div
@@ -1591,39 +1541,10 @@ export default function JourneyBuilder() {
                               >
                                 <div className="channel-selector-check">{bestChannelPool.includes(ch) ? "\u2713" : ""}</div>
                                 <div className="channel-selector-icon" style={{ fontSize: 20, marginBottom: 4 }}>{CHANNEL_ICONS[ch]}</div>
-                                <div className="channel-selector-label" style={{ fontSize: 11 }}>{CHANNEL_LABELS[ch]}</div>
+                                <div className="channel-selector-label" style={{ fontSize: 11 }}>{CHANNEL_LABELS[ch]} Content</div>
                               </div>
                             ))}
                           </div>
-                          {bestChannelPool.length === 0 && (
-                            <div className="info-banner tier-selection-appear" style={{ marginTop: 8, flexDirection: "column", alignItems: "flex-start", fontSize: 11 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <span className="info-banner-icon">&#9889;</span>
-                                <strong style={{ fontSize: 12 }}>The system will automatically select the best channel per subscriber</strong>
-                              </div>
-                              <div style={{ paddingLeft: 28, marginTop: 6 }}>
-                                <div style={{ marginBottom: 4 }}>Rule-based routing (evaluated in order):</div>
-                                <ol style={{ margin: "2px 0 2px 16px", padding: 0, lineHeight: 1.7 }}>
-                                  {defaultHeuristicRules.filter(r => r.active).map(r => (
-                                    <li key={r.id}><strong>{r.name}</strong> &mdash; {r.description}</li>
-                                  ))}
-                                </ol>
-                                <div style={{ marginTop: 6, padding: "4px 8px", background: "rgba(0,53,128,0.06)", borderRadius: 4 }}>
-                                  Fallback order: <strong>{DEFAULT_CHANNEL_ORDER.map(ch => CHANNEL_LABELS[ch]).join(" \u2192 ")}</strong>
-                                </div>
-                                <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                                  <label className="toggle-switch toggle-switch--sm">
-                                    <input type="checkbox" checked={bestChannelContentEnabled} onChange={() => setBestChannelContentEnabled(prev => !prev)} />
-                                    <span className="toggle-slider" />
-                                  </label>
-                                  <span style={{ fontWeight: 600 }}>Configure content for all channels</span>
-                                </div>
-                                {bestChannelContentEnabled && (
-                                  <div className="text-muted" style={{ marginTop: 4 }}>Content templates for all 4 channels will be shown below. The system picks the channel at send time.</div>
-                                )}
-                              </div>
-                            </div>
-                          )}
                           {bestChannelPool.length === 1 && (
                             <div className="info-banner tier-selection-appear" style={{ marginTop: 8, fontSize: 11 }}>
                               <span className="info-banner-icon">&#128274;</span>
@@ -1695,13 +1616,13 @@ export default function JourneyBuilder() {
                         {bestChannelPool.length >= 1 && renderCampaignEligibilityRules(step.id)}
                         {bestChannelPool.length >= 1 && renderChannelEligibilityRules(bestChannelPool)}
 
-                        {/* Per-Channel Content — when channels selected OR best-channel content toggle on */}
-                        {(bestChannelPool.length >= 1 || bestChannelContentEnabled) && (
+                        {/* Per-Channel Content */}
+                        {bestChannelPool.length >= 1 && (
                         <div className="form-group tier-selection-appear">
                           <label className="form-label">Content Per Channel</label>
                           <div className="text-muted" style={{ fontSize: 11, marginBottom: 8 }}>Assign content for each channel. Each channel can have its own independent experiment with base and variant templates.</div>
 
-                          {(bestChannelPool.length > 0 ? bestChannelPool : (["email", "push", "sms", "whatsapp"] as MessageChannel[])).map(ch => {
+                          {bestChannelPool.map(ch => {
                             const exp = channelExperiments[ch];
                             const isExpEnabled = exp?.enabled ?? false;
                             return (

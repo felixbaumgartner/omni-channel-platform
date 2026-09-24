@@ -114,26 +114,26 @@ export default function TransactionalCreate() {
         </div>
       </div>
 
-      {/* Channel Selection — multi-select */}
+      {/* Content Selection, multi-select */}
       <div className="bui-box">
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Channel Selection</div>
-        <p className="text-muted mb-16">Select one or more channels for this transactional campaign. Critical messages can be delivered across multiple channels for maximum reliability.</p>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Content Selection</div>
+        <p className="text-muted mb-16">Select one or more pieces of content for this transactional campaign. Critical messages can be delivered across multiple channels for maximum reliability.</p>
         <div className="channel-selector-grid">
           {(["email", "push", "sms", "whatsapp"] as MessageChannel[]).map(ch => (
             <div key={ch} className={`channel-selector-card ${selectedChannels.includes(ch) ? "selected" : ""}`} onClick={() => toggleChannel(ch)}>
               <div className="channel-selector-check">{selectedChannels.includes(ch) ? "\u2713" : ""}</div>
               <div className="channel-selector-icon">{CHANNEL_ICONS[ch]}</div>
-              <div className="channel-selector-label">{CHANNEL_LABELS[ch]}</div>
+              <div className="channel-selector-label">{CHANNEL_LABELS[ch]} Content</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Multi-Channel Delivery — shown when multiple channels selected */}
+      {/* Multi-Channel Delivery, shown when multiple pieces of content are selected */}
       {selectedChannels.length > 1 && (
         <div className="bui-box tier-selection-appear">
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Multi-Channel Delivery</div>
-          <p className="text-muted mb-16">All selected channels fire within a single send event for maximum reliability.</p>
+          <p className="text-muted mb-16">All selected content fires within a single send event for maximum reliability.</p>
 
           {/* Channel Send Spacing */}
           <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Channel Send Spacing</div>
@@ -152,7 +152,7 @@ export default function TransactionalCreate() {
               </div>
             ))}
           </div>
-          <p className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>Channels dispatch in the order shown above. This spacing is a delivery hygiene guardrail — it is not configurable, does not introduce conditional logic, and all selected channels will always fire.</p>
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>Channels dispatch in the order shown above. This spacing is a delivery hygiene guardrail — it is not configurable, does not introduce conditional logic, and all selected content will always fire.</p>
         </div>
       )}
 
