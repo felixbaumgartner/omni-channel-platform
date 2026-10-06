@@ -153,9 +153,6 @@ const ADDITIONAL_CHANNEL_RULES: Record<MessageChannel, { id: string; label: stri
     { id: "push_subscribed", label: "Subscribed to push notifications", description: "User has not disabled push at OS or app level" },
     { id: "push_min_app_version", label: "Minimum app version", description: "User's app version meets minimum requirement for this content" },
     { id: "push_os_filter", label: "OS version filter", description: "Only send to specific OS versions (iOS/Android)" },
-    { id: "push_frequency_cap", label: "Push frequency cap", description: "Skip if user received N+ push messages in the last X days" },
-    { id: "push_quiet_hours", label: "Push quiet hours", description: "Only deliver outside the user's local quiet hours" },
-    { id: "push_region_filter", label: "Region filter", description: "Restrict to users in specific regions/countries" },
   ],
   sms: [
     { id: "sms_has_phone", label: "Has phone number on file", description: "A verified phone number exists for the user" },
