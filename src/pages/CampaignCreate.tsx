@@ -42,12 +42,12 @@ export default function CampaignCreate() {
 
   const campaignRuleMenuRef = useRef<HTMLDivElement>(null);
 
-  // The phase toggle can hide Best Channel after mount, which would leave no mode selected
-  // and leak its heuristic routing block into Phase 1. Fall back to the deterministic
-  // waterfall: it preserves the one-message-per-subscriber intent, whereas falling back to
-  // Multi-Channel would silently turn the campaign into a blast.
+  // The phase toggle can hide Best Channel and Channel Experiment after mount, which would
+  // leave no mode selected and leak their config blocks into Phase 1. Fall back to the
+  // deterministic waterfall: it preserves the one-message-per-subscriber intent, whereas
+  // falling back to Multi-Channel would silently turn the campaign into a blast.
   useEffect(() => {
-    if (!showBestChannel && deliveryMode === "best_channel") setDeliveryMode("sequential");
+    if (!showBestChannel && (deliveryMode === "best_channel" || deliveryMode === "experiment")) setDeliveryMode("sequential");
   }, [showBestChannel, deliveryMode]);
 
   useEffect(() => {
@@ -449,7 +449,7 @@ export default function CampaignCreate() {
                         Channels are evaluated in the priority order you set. The first channel the subscriber is opted in to and reachable on receives the message &mdash; exactly one message per subscriber.
                       </div>
                     </div>
-                    {!showBestChannel && (
+                    {showBestChannel && (
                     <div className={`radio-card ${deliveryMode === "experiment" ? "selected" : ""}`} onClick={() => setDeliveryMode("experiment")}>
                       <div className="radio-card-header">
                         <div className="radio-card-radio" />
